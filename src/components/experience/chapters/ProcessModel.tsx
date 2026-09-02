@@ -11,6 +11,7 @@ import type { QualitySettings } from '@/lib/quality'
 import { concreteMaterial, emissiveMaterial, glassMaterial, metalMaterial, PALETTE } from '@/lib/materials'
 import { useChapterVisibility } from '../hooks'
 import { Block, Grow, InstancedBoxes, type Item } from '../primitives'
+import { AssetModel } from '@/lib/glb'
 
 const STAGE_BEATS = ['process-1', 'process-2', 'process-3', 'process-4', 'process-5']
 
@@ -102,6 +103,13 @@ export function ProcessModel({ quality }: { quality: QualitySettings }) {
 
       {/* 04 — execution */}
       <group position={[0, 0.7, PROCESS_STAGE_Z[3]]}>
+        <AssetModel
+          id="scaffolding"
+          position={[-8, 0, 0]}
+          rotation={[0, -0.3, 0]}
+          quality={quality}
+          lod="auto"
+        />
         <MiniStructure quality={quality} concrete={concrete} steel={steel} glass={glass} />
       </group>
 

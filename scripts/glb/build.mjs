@@ -13,10 +13,14 @@ const stage = (script) => {
   if (result.status !== 0) process.exit(result.status ?? 1)
 }
 
-console.log('\n[1/3] GENERATE')
+console.log('\n[1/5] GENERATE')
 stage('generate-assets.mjs')
-console.log('\n[2/3] OPTIMIZE')
+console.log('\n[2/5] OPTIMIZE')
 stage('optimize-assets.mjs')
-console.log('\n[3/3] INSPECT + VALIDATE')
+console.log('\n[3/5] INSPECT')
 stage('inspect-assets.mjs')
+console.log('\n[4/5] VALIDATE')
+stage('validate-assets.mjs')
+console.log('\n[5/5] VISUAL QA')
+stage('visual-qa.mjs')
 console.log('\n✔ Asset pipeline complete.')

@@ -13,7 +13,9 @@
     "assets:build": "node scripts/glb/build.mjs",
     "assets:generate": "node scripts/glb/generate-assets.mjs",
     "assets:optimize": "node scripts/glb/optimize-assets.mjs",
-    "assets:inspect": "node scripts/glb/inspect-assets.mjs"
+    "assets:inspect": "node scripts/glb/inspect-assets.mjs",
+    "assets:validate": "node scripts/glb/validate-assets.mjs",
+    "assets:visual-qa": "node scripts/glb/visual-qa.mjs"
   },
   "dependencies": {
     "@fontsource/inter": "^5.3.0",

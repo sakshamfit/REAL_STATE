@@ -18,6 +18,7 @@ import {
 } from '@/lib/materials'
 import { useChapterVisibility } from '../hooks'
 import { Block, Grow, InstancedBoxes, type Item } from '../primitives'
+import { AssetModel } from '@/lib/glb'
 
 export function ServicesWorlds({ quality }: { quality: QualitySettings }) {
   return (
@@ -77,6 +78,9 @@ function CivilFrame({ quality }: { quality: QualitySettings }) {
         <InstancedBoxes items={columns} material={concrete} />
         <InstancedBoxes items={beams} material={concrete} />
         <InstancedBoxes items={braces} material={steel} />
+        {/* real scaffolding modules */}
+        <AssetModel id="scaffolding" position={[-11, 0, 12]} quality={quality} lod="auto" />
+        <AssetModel id="scaffolding" position={[11, 0, -14]} rotation={[0, Math.PI, 0]} quality={quality} lod="auto" />
         {/* scaffold planks */}
         <Block size={[28, 0.3, 1.6]} position={[0, 15.6, -12]} material={steel} />
         <Block size={[28, 0.3, 1.6]} position={[0, 15.6, 12]} material={steel} />
@@ -105,19 +109,24 @@ function Residence({ quality }: { quality: QualitySettings }) {
       <Grow beat="service-residential" start={0.03} duration={0.42}>
         <Block size={[36, 0.8, 24]} position={[0, 0.4, 0]} material={dark} />
 
-        {/* ground floor: glass pavilion with a lit interior */}
-        <Block size={[20, 4, 12.4]} position={[0, 2.6, 0]} material={warm} />
-        <Block size={[20.6, 4.6, 13]} position={[0, 2.6, 0]} material={glass} castShadow={false} />
-
-        {/* cantilevered upper volume */}
-        <Block size={[24, 4.2, 13]} position={[3, 8, 0]} material={light} />
-        <Block size={[26, 0.6, 15]} position={[2.4, 10.4, 0]} material={light} />
-        <Block size={[0.7, 6.4, 0.7]} position={[-8.4, 4.6, 5.4]} material={light} />
-        <Block size={[0.7, 6.4, 0.7]} position={[-8.4, 4.6, -5.4]} material={light} />
-
-        {/* blades */}
-        <Block size={[0.35, 4.2, 13.4]} position={[14.6, 8, 0]} material={light} />
-        <Block size={[0.35, 4.2, 13.4]} position={[8.6, 8, 0]} material={light} />
+        {/* real residential GLB massing; procedural pavilion is the fallback */}
+        <AssetModel
+          id="residential-building"
+          position={[0, 0, 0]}
+          quality={quality}
+          fallback={
+            <>
+              <Block size={[20, 4, 12.4]} position={[0, 2.6, 0]} material={warm} />
+              <Block size={[20.6, 4.6, 13]} position={[0, 2.6, 0]} material={glass} castShadow={false} />
+              <Block size={[24, 4.2, 13]} position={[3, 8, 0]} material={light} />
+              <Block size={[26, 0.6, 15]} position={[2.4, 10.4, 0]} material={light} />
+              <Block size={[0.7, 6.4, 0.7]} position={[-8.4, 4.6, 5.4]} material={light} />
+              <Block size={[0.7, 6.4, 0.7]} position={[-8.4, 4.6, -5.4]} material={light} />
+              <Block size={[0.35, 4.2, 13.4]} position={[14.6, 8, 0]} material={light} />
+              <Block size={[0.35, 4.2, 13.4]} position={[8.6, 8, 0]} material={light} />
+            </>
+          }
+        />
       </Grow>
 
       {/* reflecting pool */}
@@ -197,20 +206,25 @@ function Infrastructure({ quality }: { quality: QualitySettings }) {
       <InstancedBoxes items={dashes} material={emissiveMaterial(PALETTE.accent, 0.9)} castShadow={false} />
 
       <Grow beat="service-infrastructure" start={0.05} duration={0.45}>
-        {/* deck + parapets */}
-        <Block size={[44, 1.3, 16]} position={[x, 16, z]} material={concrete} />
-        <Block size={[44, 1.4, 0.7]} position={[x, 17.2, z - 7.7]} material={concrete} />
-        <Block size={[44, 1.4, 0.7]} position={[x, 17.2, z + 7.7]} material={concrete} />
-
-        {/* piers + abutments */}
-        <Block size={[4.2, 16, 9]} position={[x - 18, 8, z]} material={dark} />
-        <Block size={[4.2, 16, 9]} position={[x + 18, 8, z]} material={dark} />
-        <Block size={[6, 16, 12]} position={[x - 24, 8, z]} material={dark} />
-        <Block size={[6, 16, 12]} position={[x + 24, 8, z]} material={dark} />
-
-        {/* arch + hangers */}
-        <InstancedBoxes items={arch} material={concrete} />
-        <InstancedBoxes items={hangers} material={steel} />
+        {/* real bridge GLB; procedural arch is the fallback */}
+        <AssetModel
+          id="bridge"
+          position={[x, 0, z]}
+          quality={quality}
+          fallback={
+            <>
+              <Block size={[44, 1.3, 16]} position={[x, 16, z]} material={concrete} />
+              <Block size={[44, 1.4, 0.7]} position={[x, 17.2, z - 7.7]} material={concrete} />
+              <Block size={[44, 1.4, 0.7]} position={[x, 17.2, z + 7.7]} material={concrete} />
+              <Block size={[4.2, 16, 9]} position={[x - 18, 8, z]} material={dark} />
+              <Block size={[4.2, 16, 9]} position={[x + 18, 8, z]} material={dark} />
+              <Block size={[6, 16, 12]} position={[x - 24, 8, z]} material={dark} />
+              <Block size={[6, 16, 12]} position={[x + 24, 8, z]} material={dark} />
+              <InstancedBoxes items={arch} material={concrete} />
+              <InstancedBoxes items={hangers} material={steel} />
+            </>
+          }
+        />
       </Grow>
     </group>
   )
@@ -260,6 +274,17 @@ function SolarField({ quality }: { quality: QualitySettings }) {
   return (
     <group ref={group} position={[0, 0, 0]}>
       <Grow beat="service-solar" start={0.05} duration={0.5}>
+        {/* detailed tracker GLBs near the camera */}
+        {[-8, 0, 8].map((dx, index) => (
+          <AssetModel
+            key={`solar-${dx}`}
+            id="solar-panel"
+            position={[x + dx, 0, z + (index - 1) * 4.5]}
+            rotation={[0, 0.18 * (index - 1), 0]}
+            quality={quality}
+            lod="auto"
+          />
+        ))}
         <group ref={tracker}>
           <InstancedBoxes items={panels} material={panelMaterial} />
         </group>
@@ -419,10 +444,19 @@ function Warehouse({ quality }: { quality: QualitySettings }) {
   return (
     <group ref={group} position={[x, 0, z]}>
       <Grow beat="service-materials" start={0.04} duration={0.44}>
-        {/* canopy */}
-        <Block size={[36, 1.1, 26]} position={[0, 15.4, 0]} material={steel} />
-        <Block size={[36, 0.5, 0.6]} position={[0, 14.6, -12.6]} material={steel} />
-        <InstancedBoxes items={columns} material={concrete} />
+        {/* real warehouse GLB; open canopy/deck is the fallback */}
+        <AssetModel
+          id="warehouse"
+          position={[0, 0, 0]}
+          quality={quality}
+          fallback={
+            <>
+              <Block size={[36, 1.1, 26]} position={[0, 15.4, 0]} material={steel} />
+              <Block size={[36, 0.5, 0.6]} position={[0, 14.6, -12.6]} material={steel} />
+              <InstancedBoxes items={columns} material={concrete} />
+            </>
+          }
+        />
 
         {/* stock */}
         <InstancedBoxes items={bags} material={light} />
