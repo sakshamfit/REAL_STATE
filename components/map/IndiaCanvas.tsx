@@ -4,42 +4,19 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Grid, Html, Line, Sparkles } from "@react-three/drei";
-import { PRESENCE, type Presence } from "@/data/content";
+import { PRESENCE } from "@/data/content";
+import {
+  PRESENCE_BY_GEO,
+  centroidOf,
+  flattenGeo,
+  project,
+  type IndiaFeature,
+} from "@/lib/india-geo";
 import { clamp01, damp, scrollState } from "@/lib/utils";
 
-type Feature = {
-  name: string;
-  polys: { outer: [number, number][]; holes: [number, number][][] }[];
-};
-
-const LAT0 = (22.4 * Math.PI) / 180;
-const SCALE = 1.0;
-
-function project(lon: number, lat: number): [number, number] {
-  return [(lon - 82.6) * Math.cos(LAT0) * SCALE, (23.2 - lat) * SCALE];
-}
-
-const presenceByGeo = new Map<string, Presence>(PRESENCE.map((p) => [p.geoName, p]));
 const hub = PRESENCE[0].cities?.[0];
 
-function flatten(geo: any): Feature[] {
-  const features: Feature[] = [];
-  for (const f of geo.features) {
-    const name = f.properties?.name ?? "Unknown";
-    const polys: Feature["polys"] = [];
-    const geoms = f.geometry.type === "MultiPolygon" ? f.geometry.coordinates : [f.geometry.coordinates];
-    for (const poly of geoms) {
-      polys.push({
-        outer: poly[0].map((c: number[]) => [c[0], c[1]]),
-        holes: poly.slice(1).map((ring: number[][]) => ring.map((c) => [c[0], c[1]])),
-      });
-    }
-    features.push({ name, polys });
-  }
-  return features;
-}
-
-function buildGeometry(f: Feature): THREE.BufferGeometry {
+function buildGeometry(f: IndiaFeature): THREE.BufferGeometry {
   const group = new THREE.BufferGeometry();
   const geos: THREE.BufferGeometry[] = [];
   for (const poly of f.polys) {
@@ -73,7 +50,6 @@ function buildGeometry(f: Feature): THREE.BufferGeometry {
     g.computeVertexNormals();
     geos.push(g);
   }
-  // merge
   if (geos.length === 1) return geos[0];
   let total = 0;
   let idxTotal = 0;
@@ -100,20 +76,15 @@ function buildGeometry(f: Feature): THREE.BufferGeometry {
   return group;
 }
 
-function centroid(f: Feature): [number, number] {
-  let sx = 0;
-  let sy = 0;
-  let n = 0;
-  for (const poly of f.polys) {
-    for (const [lon, lat] of poly.outer) {
-      const [x, y] = project(lon, lat);
-      sx += x;
-      sy += y;
-      n++;
-    }
-  }
-  return [sx / n, sy / n];
-}
+const STATE_COLORS = {
+  base: "#c7cdd9",
+  tier2: "#d0bd8d",
+  tier1: "#e3bd6a",
+  hover: "#edc879",
+  selected: "#dd8f12",
+  edge: "#98a1b2",
+  edgeHot: "#8a5203",
+} as const;
 
 function States({
   features,
@@ -122,7 +93,7 @@ function States({
   onHover,
   onSelect,
 }: {
-  features: Feature[];
+  features: IndiaFeature[];
   hovered: string | null;
   selected: string | null;
   onHover: (name: string | null) => void;
@@ -130,19 +101,18 @@ function States({
 }) {
   const refs = useRef<(THREE.Group | null)[]>([]);
   const geometries = useMemo(() => features.map((f) => buildGeometry(f)), [features]);
-  const centroids = useMemo(() => features.map((f) => centroid(f)), [features]);
+  const centroids = useMemo(() => features.map((f) => centroidOf(f)), [features]);
   const mats = useMemo(
     () =>
       features.map((f) => {
-        const p = presenceByGeo.get(f.name);
-        const base = p ? (p.tier === 1 ? "#2c313c" : "#23262e") : "#171a20";
-        const em = p ? (p.tier === 1 ? "#241a04" : "#1a1204") : "#000000";
+        const p = PRESENCE_BY_GEO.get(f.name);
+        const color = p ? (p.tier === 1 ? STATE_COLORS.tier1 : STATE_COLORS.tier2) : STATE_COLORS.base;
         return new THREE.MeshStandardMaterial({
-          color: base,
-          roughness: 0.62,
-          metalness: 0.35,
-          emissive: em,
-          emissiveIntensity: p ? 0.55 : 0.12,
+          color,
+          roughness: 0.72,
+          metalness: 0.08,
+          emissive: p ? "#6b4306" : "#23262c",
+          emissiveIntensity: p ? 0.22 : 0.08,
           polygonOffset: true,
           polygonOffsetFactor: -1,
         });
@@ -150,18 +120,24 @@ function States({
     [features]
   );
 
-  // recolor on hover/selection change
   useEffect(() => {
     features.forEach((f, i) => {
       const m = mats[i];
-      const p = presenceByGeo.get(f.name);
-      const baseHover = hovered === f.name;
-      const baseSel = selected === f.name;
-      const color = baseSel ? "#3a3f47" : baseHover ? "#4a505c" : p ? (p.tier === 1 ? "#2c313c" : "#23262e") : "#171a20";
-      const em = baseSel || baseHover ? "#6b4206" : p ? (p.tier === 1 ? "#241a04" : "#1a1204") : "#000000";
+      const p = PRESENCE_BY_GEO.get(f.name);
+      const isSel = selected === f.name;
+      const isHover = hovered === f.name;
+      const color = isSel
+        ? STATE_COLORS.selected
+        : isHover
+          ? STATE_COLORS.hover
+          : p
+            ? p.tier === 1
+              ? STATE_COLORS.tier1
+              : STATE_COLORS.tier2
+            : STATE_COLORS.base;
       m.color.set(color);
-      m.emissive.set(em);
-      m.emissiveIntensity = baseSel || baseHover ? 1.1 : p ? 0.55 : 0.12;
+      m.emissive.set(isSel || isHover ? "#7a4a05" : p ? "#6b4306" : "#23262c");
+      m.emissiveIntensity = isSel || isHover ? 0.5 : p ? 0.22 : 0.08;
     });
   }, [features, mats, hovered, selected]);
 
@@ -170,13 +146,13 @@ function States({
     features.forEach((f, i) => {
       const g = refs.current[i];
       if (!g) return;
-      const presence = presenceByGeo.get(f.name);
+      const presence = PRESENCE_BY_GEO.get(f.name);
       const delay = i * 0.008 + (presence ? 0.02 : 0);
       const s = clamp01((p - delay) / 0.16);
       g.scale.y = Math.max(s, 0.0001);
       const isHover = hovered === f.name;
       const isSel = selected === f.name;
-      const targetY = (isSel ? 1.1 : isHover ? 0.8 : 0.02) * s;
+      const targetY = (isSel ? 1.05 : isHover ? 0.75 : 0.02) * s;
       g.position.y = damp(g.position.y, targetY, 8, delta);
     });
   });
@@ -184,7 +160,6 @@ function States({
   return (
     <group>
       {features.map((f, i) => {
-        const geo = geometries[i];
         const [cx, cy] = centroids[i];
         return (
           <group
@@ -194,7 +169,7 @@ function States({
             }}
           >
             <mesh
-              geometry={geo}
+              geometry={geometries[i]}
               material={mats[i]}
               onPointerOver={(e) => {
                 e.stopPropagation();
@@ -211,8 +186,8 @@ function States({
               }}
             />
             {hovered === f.name && (
-              <Html position={[cx, 1.9, cy]} center distanceFactor={26} zIndexRange={[5, 0]} style={{ pointerEvents: "none" }}>
-                <div className="whitespace-nowrap rounded-sm border border-accent/60 bg-ink/90 px-3 py-1.5 font-mono text-[11px] uppercase tracking-widest text-bone backdrop-blur">
+              <Html position={[cx, 1.8, cy]} center distanceFactor={26} zIndexRange={[5, 0]} style={{ pointerEvents: "none" }}>
+                <div className="whitespace-nowrap rounded-sm border border-[#d97706]/70 bg-[#fffaf2]/95 px-3 py-1.5 font-mono text-[11px] uppercase tracking-widest text-[#3d3a33] shadow-lg">
                   {f.name}
                 </div>
               </Html>
@@ -265,18 +240,23 @@ function Marker({
         }}
       >
         <sphereGeometry args={[0.22, 16, 16]} />
-        <meshStandardMaterial color={selected ? "#f0b43c" : "#ffd76a"} emissive="#b8780e" emissiveIntensity={selected ? 2 : 1.1} />
+        <meshStandardMaterial
+          color={selected ? "#c2410c" : "#d97706"}
+          emissive="#7c3e02"
+          emissiveIntensity={selected ? 1.6 : 1}
+          roughness={0.4}
+        />
       </mesh>
-      <mesh position={[0, 0.72, 0]}>
-        <coneGeometry args={[0.12, 0.5, 10]} />
-        <meshStandardMaterial color="#3a404c" metalness={0.6} roughness={0.4} />
+      <mesh position={[0, 0.68, 0]}>
+        <coneGeometry args={[0.11, 0.5, 10]} />
+        <meshStandardMaterial color="#4a4438" metalness={0.5} roughness={0.5} />
       </mesh>
       <mesh ref={ring} position={[0, 0.02, 0]} rotation={[Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.8, 0.86, 40]} />
-        <meshBasicMaterial color="#f0b43c" transparent opacity={0} side={THREE.DoubleSide} />
+        <meshBasicMaterial color="#c2410c" transparent opacity={0} side={THREE.DoubleSide} />
       </mesh>
-      <Html position={[0, 2.2, 0]} center distanceFactor={30} zIndexRange={[5, 0]} style={{ pointerEvents: "none" }}>
-        <div className="whitespace-nowrap font-mono text-[10px] uppercase tracking-widest text-bone/85 drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
+      <Html position={[0, 2.15, 0]} center distanceFactor={30} zIndexRange={[5, 0]} style={{ pointerEvents: "none" }}>
+        <div className="whitespace-nowrap font-mono text-[10px] uppercase tracking-widest text-[#3d3a33] drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)]">
           {name}
         </div>
       </Html>
@@ -284,36 +264,32 @@ function Marker({
   );
 }
 
-function RouteSystem({ features }: { features: Feature[] }) {
+function RouteSystem({ features }: { features: IndiaFeature[] }) {
   const routes = useRef<Array<{ line: any; group: THREE.Group } | null>>([]);
   const pulse = useRef<THREE.Mesh[]>([]);
 
   const data = useMemo(() => {
     if (!hub) return [];
-    const pts: { key: string; points: THREE.Vector3[]; to: [number, number] }[] = [];
-    // hub → known city markers
+    const pts: { key: string; points: THREE.Vector3[] }[] = [];
     for (const p of PRESENCE.slice(0, 2)) {
       for (const c of p.cities ?? []) {
         const [hx, hz] = project(hub.lon, hub.lat);
         const [cx, cz] = project(c.lon, c.lat);
-        const mid = new THREE.Vector3((hx + cx) / 2, 3.2, (hz + cz) / 2);
+        const mid = new THREE.Vector3((hx + cx) / 2, 3.1, (hz + cz) / 2);
         pts.push({
           key: `${p.geoName}-${c.name}`,
-          to: [cx, cz],
           points: [new THREE.Vector3(hx, 1, hz), mid, new THREE.Vector3(cx, 1, cz)],
         });
       }
     }
-    // hub → presence-state centroids (no invented city names)
     for (const f of features) {
-      const p = presenceByGeo.get(f.name);
+      const p = PRESENCE_BY_GEO.get(f.name);
       if (!p || p.geoName === "Bihar" || p.cities) continue;
-      const [cx, cz] = centroid(f);
+      const [cx, cz] = centroidOf(f);
       const [hx, hz] = project(hub.lon, hub.lat);
-      const mid = new THREE.Vector3((hx + cx) / 2, 4.5, (hz + cz) / 2);
+      const mid = new THREE.Vector3((hx + cx) / 2, 4.4, (hz + cz) / 2);
       pts.push({
         key: p.geoName,
-        to: [cx, cz],
         points: [new THREE.Vector3(hx, 1, hz), mid, new THREE.Vector3(cx, 1, cz)],
       });
     }
@@ -329,10 +305,10 @@ function RouteSystem({ features }: { features: Feature[] }) {
       item.group.visible = on > 0.001;
       if (item.line?.material) {
         item.line.material.dashOffset -= delta * 1.6;
-        item.line.material.opacity = on * 0.82;
+        item.line.material.opacity = on * 0.85;
       }
       const dot = pulse.current[i];
-      if (dot && on > 0.001) {
+      if (dot) {
         const t = (performance.now() / 2400 + i * 0.29) % 1;
         const curve = new THREE.CatmullRomCurve3(d.points);
         dot.position.copy(curve.getPointAt(t));
@@ -360,7 +336,7 @@ function RouteSystem({ features }: { features: Feature[] }) {
               if (routes.current[i]) routes.current[i]!.line = l;
             }}
             points={d.points}
-            color="#f0b43c"
+            color="#c2410c"
             lineWidth={1.2}
             dashed
             dashSize={0.5}
@@ -375,7 +351,7 @@ function RouteSystem({ features }: { features: Feature[] }) {
             visible={false}
           >
             <sphereGeometry args={[0.2, 12, 12]} />
-            <meshBasicMaterial color="#ffd76a" />
+            <meshBasicMaterial color="#b45309" />
           </mesh>
         </group>
       ))}
@@ -408,13 +384,13 @@ export function IndiaCanvas({
   onHover: (n: string | null) => void;
   onSelect: (n: string | null) => void;
 }) {
-  const [geo, setGeo] = useState<Feature[] | null>(null);
+  const [geo, setGeo] = useState<IndiaFeature[] | null>(null);
   useEffect(() => {
     let alive = true;
     fetch("/geojson/india.json")
       .then((r) => r.json())
       .then((d) => {
-        if (alive) setGeo(flatten(d));
+        if (alive) setGeo(flattenGeo(d));
       })
       .catch(() => {
         if (alive) setGeo([]);
@@ -426,7 +402,7 @@ export function IndiaCanvas({
 
   if (!geo) {
     return (
-      <div className="flex h-full w-full items-center justify-center font-mono text-[11px] uppercase tracking-widest2 text-fog">
+      <div className="flex h-full w-full items-center justify-center bg-[#e9edf3] font-mono text-[11px] uppercase tracking-widest2 text-[#8d867a]">
         Loading territory data…
       </div>
     );
@@ -435,34 +411,34 @@ export function IndiaCanvas({
   return (
     <Canvas
       dpr={[1, 1.6]}
-      gl={{ antialias: true, powerPreference: "high-performance" }}
+      gl={{ antialias: true, powerPreference: "high-performance", failIfMajorPerformanceCaveat: false }}
       camera={{ fov: 40, position: [0, 28, 33], near: 0.1, far: 200 }}
       onPointerMissed={() => onSelect(null)}
       style={{ width: "100%", height: "100%" }}
     >
-      <color attach="background" args={["#0a0b0d"]} />
-      <fog attach="fog" args={["#0a0b0d", 46, 110]} />
-      <ambientLight intensity={0.32} />
-      <hemisphereLight args={["#a9b6d4", "#08090b", 0.5]} />
-      <directionalLight position={[8, 20, 10]} intensity={2.2} color="#e9edf8" />
-      <directionalLight position={[-12, 8, -10]} intensity={0.55} color="#93a7dc" />
-      <pointLight position={[3, 10, 2]} intensity={28} color="#f0b43c" distance={40} />
+      <color attach="background" args={["#e9edf3"]} />
+      <fog attach="fog" args={["#e9edf3", 50, 115]} />
+      <ambientLight intensity={0.55} />
+      <hemisphereLight args={["#ffffff", "#cfc7b8", 0.7]} />
+      <directionalLight position={[8, 20, 10]} intensity={1.7} color="#fff8ec" />
+      <directionalLight position={[-12, 8, -10]} intensity={0.4} color="#aebcd6" />
+      <pointLight position={[3, 10, 2]} intensity={22} color="#d97706" distance={40} />
 
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.08, 0]}>
-        <circleGeometry args={[50, 64]} />
-        <meshStandardMaterial color="#0b0c0e" roughness={1} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.09, 0]}>
+        <circleGeometry args={[52, 64]} />
+        <meshStandardMaterial color="#dfe3ea" roughness={1} />
       </mesh>
       <Grid
-        position={[0, -0.05, 0]}
+        position={[0, -0.06, 0]}
         args={[90, 90]}
         cellSize={1.5}
         cellThickness={0.5}
-        cellColor="#1b1e24"
+        cellColor="#aeb6c6"
         sectionSize={7.5}
         sectionThickness={1}
-        sectionColor="#2f343d"
-        fadeDistance={60}
-        fadeStrength={2.5}
+        sectionColor="#8791a6"
+        fadeDistance={62}
+        fadeStrength={2.2}
         infiniteGrid
       />
 
@@ -470,14 +446,14 @@ export function IndiaCanvas({
       <RouteSystem features={geo} />
 
       {geo.flatMap((f) => {
-        const p = presenceByGeo.get(f.name);
+        const p = PRESENCE_BY_GEO.get(f.name);
         if (!p) return [];
         return (p.cities ?? []).map((c, i) => (
           <Marker key={`${p.geoName}-${c.name}`} name={c.name} geoName={p.geoName} lat={c.lat} lon={c.lon} index={i} onSelect={onSelect} selected={selected === p.geoName} />
         ));
       })}
 
-      <Sparkles count={50} scale={[34, 12, 30]} size={1.4} speed={0.14} opacity={0.3} color="#9fb3c8" position={[0, 6, 0]} />
+      <Sparkles count={46} scale={[34, 12, 30]} size={1.3} speed={0.14} opacity={0.4} color="#7f8aa0" position={[0, 6, 0]} />
       <MapCamera />
     </Canvas>
   );

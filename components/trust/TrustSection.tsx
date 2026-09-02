@@ -6,6 +6,8 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { TRUST_PILLARS } from "@/data/content";
 import { Eyebrow } from "@/components/ui/primitives";
+import { SceneBoundary } from "@/components/SceneBoundary";
+import { TrustFallback } from "@/components/trust/TrustFallback";
 import { useDeviceInfo } from "@/lib/utils";
 
 const TrustCanvas = dynamic(() => import("./TrustCanvas").then((m) => m.TrustCanvas), {
@@ -71,15 +73,14 @@ export function TrustSection() {
       <div className="container-site py-24 sm:py-32">
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
           <div className="relative min-h-[380px] order-2 lg:order-1 lg:min-h-[520px]">
-            {show3d ? (
-              <div className="h-full w-full border border-line/60 bg-[#0c0d10]">
-                <TrustCanvas />
-              </div>
-            ) : (
-              <div className="h-full w-full border border-line/60 bg-blueprint bg-blueprint-fade" />
-            )}
-            <div className="pointer-events-none absolute left-5 top-5 font-mono text-[10px] uppercase tracking-widest2 text-fog">
-              Quality standard · verified
+            <div className="h-full w-full overflow-hidden border border-line/70 bg-[#e6ebf2] shadow-card">
+              {show3d ? (
+                <SceneBoundary label="trust" fallback={<TrustFallback />}>
+                  <TrustCanvas />
+                </SceneBoundary>
+              ) : (
+                <TrustFallback />
+              )}
             </div>
           </div>
 

@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useState } from "react";
 import { SERVICES, type Service } from "@/data/content";
 import { SectionHeading } from "@/components/ui/primitives";
+import { SceneBoundary } from "@/components/SceneBoundary";
 import { useDeviceInfo, useNearViewport } from "@/lib/utils";
 
 const ServiceMiniCanvas = dynamic(() =>
@@ -82,7 +83,16 @@ function ServiceCard({ service, show3d }: { service: Service; show3d: boolean })
 
       <div className="relative h-56 w-full sm:h-60">
         {show3d ? (
-          <ServiceMiniCanvas variant={service.id} active={active} />
+          <SceneBoundary
+            label={`service-${service.id}`}
+            fallback={
+              <div className="flex h-full w-full items-center justify-center bg-blueprint bg-blueprint-fade">
+                <ServiceGlyph id={service.id} />
+              </div>
+            }
+          >
+            <ServiceMiniCanvas variant={service.id} active={active} />
+          </SceneBoundary>
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-blueprint bg-blueprint-fade">
             <ServiceGlyph id={service.id} />
@@ -107,7 +117,7 @@ function ServiceCard({ service, show3d }: { service: Service; show3d: boolean })
         </div>
       </div>
 
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,transparent_55%,rgba(240,180,60,0.06))] opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,transparent_55%,rgba(217,119,6,0.09))] opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
     </article>
   );
 }

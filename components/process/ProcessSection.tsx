@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { PROCESS } from "@/data/content";
+import { SceneBoundary } from "@/components/SceneBoundary";
+import { ProcessFallback } from "@/components/process/ProcessFallback";
 import { scrollState, useDeviceInfo, useReducedMotion } from "@/lib/utils";
 
 const ProcessCanvas = dynamic(() => import("./ProcessCanvas").then((m) => m.ProcessCanvas), {
@@ -40,17 +42,19 @@ export function ProcessSection() {
   const show3d = device.webgl && !device.mobile;
 
   return (
-    <section id="process" ref={sectionRef} className="relative h-screen overflow-hidden bg-[#0b0c0e]">
+    <section id="process" ref={sectionRef} className="relative h-screen overflow-hidden bg-[#e6ebf2]">
       <div className="absolute inset-0">
         {show3d ? (
-          <ProcessCanvas />
+          <SceneBoundary label="process" fallback={<ProcessFallback />}>
+            <ProcessCanvas />
+          </SceneBoundary>
         ) : (
-          <div className="h-full w-full bg-blueprint bg-blueprint-fade" />
+          <ProcessFallback />
         )}
       </div>
 
       {/* vignette */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(5,5,7,0.9)_100%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_35%,rgba(244,241,234,0.75)_100%)]" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-ink/90 to-transparent" />
 
       {/* header */}

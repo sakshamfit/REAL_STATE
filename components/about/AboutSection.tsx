@@ -6,6 +6,8 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { TIMELINE } from "@/data/content";
 import { Eyebrow } from "@/components/ui/primitives";
+import { SceneBoundary } from "@/components/SceneBoundary";
+import { SkylineFallback } from "@/components/about/SkylineFallback";
 import { scrollState, useDeviceInfo, useReducedMotion } from "@/lib/utils";
 
 const SkylineCanvas = dynamic(() => import("./SkylineCanvas").then((m) => m.SkylineCanvas), {
@@ -91,19 +93,21 @@ export function AboutSection() {
           </div>
 
           <div className="relative min-h-[420px] lg:col-span-7">
-            {show3d ? (
-              <div className="sticky top-24 h-[70vh] w-full border border-line/60 bg-[#0d0d10] lg:h-[78vh]">
-                <SkylineCanvas />
-                <div className="pointer-events-none absolute left-5 top-5 font-mono text-[10px] uppercase tracking-widest2 text-fog">
-                  East · North-East footprint
-                </div>
-                <div className="pointer-events-none absolute bottom-5 right-5 font-mono text-[10px] uppercase tracking-widest2 text-fog">
-                  BIHAR → ASSAM → PAN-INDIA
-                </div>
+            <div className="sticky top-24 h-[70vh] w-full overflow-hidden border border-line/70 bg-[#dfe6ef] shadow-card lg:h-[78vh]">
+              {show3d ? (
+                <SceneBoundary label="about-skyline" fallback={<SkylineFallback />}>
+                  <SkylineCanvas />
+                </SceneBoundary>
+              ) : (
+                <SkylineFallback />
+              )}
+              <div className="pointer-events-none absolute left-5 top-5 font-mono text-[10px] uppercase tracking-widest2 text-fog">
+                East · North-East footprint
               </div>
-            ) : (
-              <div className="sticky top-24 h-[60vh] w-full border border-line/60 bg-blueprint bg-blueprint-fade" />
-            )}
+              <div className="pointer-events-none absolute bottom-5 right-5 font-mono text-[10px] uppercase tracking-widest2 text-fog">
+                BIHAR → ASSAM → PAN-INDIA
+              </div>
+            </div>
           </div>
         </div>
       </div>

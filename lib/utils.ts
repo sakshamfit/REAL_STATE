@@ -43,7 +43,9 @@ export const scrollState = {
 };
 
 export function useDeviceInfo() {
-  const [dev, setDev] = useState({ mobile: false, webgl: true });
+  // Default to no-WebGL so a blocked/iframe context never crashes the first
+  // render; the effect verifies support on mount and enables 3D only then.
+  const [dev, setDev] = useState({ mobile: false, webgl: false });
   useEffect(() => {
     const update = () =>
       setDev({ mobile: isMobileDevice(), webgl: supportsWebGL() });

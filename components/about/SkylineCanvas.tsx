@@ -19,11 +19,15 @@ const TOWERS = [
 
 function Skyline() {
   const refs = useRef<(THREE.Mesh | null)[]>([]);
-  const geos = useMemo(() => TOWERS.map((t) => {
-    const g = new THREE.BoxGeometry(t.w, t.h, t.d);
-    g.translate(0, t.h / 2, 0);
-    return g;
-  }), []);
+  const geos = useMemo(
+    () =>
+      TOWERS.map((t) => {
+        const g = new THREE.BoxGeometry(t.w, t.h, t.d);
+        g.translate(0, t.h / 2, 0);
+        return g;
+      }),
+    []
+  );
   useFrame(() => {
     TOWERS.forEach((t, i) => {
       const mesh = refs.current[i];
@@ -44,13 +48,13 @@ function Skyline() {
           geometry={geos[i]}
         >
           <meshStandardMaterial
-            color={t.accent ? "#2e323b" : "#20232a"}
-            roughness={0.6}
-            metalness={0.35}
-            emissive={t.accent ? "#241a04" : "#000000"}
-            emissiveIntensity={t.accent ? 0.8 : 0}
+            color={t.accent ? "#3b4150" : "#2c3038"}
+            roughness={0.55}
+            metalness={0.4}
+            emissive={t.accent ? "#3a2404" : "#000000"}
+            emissiveIntensity={t.accent ? 0.9 : 0}
           />
-          <Edges color={t.accent ? "#f0b43c" : "#454c59"} />
+          <Edges color={t.accent ? "#c2410c" : "#6b7484"} />
         </mesh>
       ))}
     </group>
@@ -67,7 +71,7 @@ function Beacon() {
   return (
     <mesh ref={ref} position={[1.2, 24.8, 0]}>
       <sphereGeometry args={[0.24, 16, 16]} />
-      <meshStandardMaterial color="#ff6a4a" emissive="#ff6a4a" emissiveIntensity={0} />
+      <meshStandardMaterial color="#e2402c" emissive="#ff5a3c" emissiveIntensity={0} />
     </mesh>
   );
 }
@@ -90,28 +94,32 @@ export function SkylineCanvas() {
       camera={{ fov: 38, position: [0, 9, 30], near: 0.1, far: 120 }}
       style={{ width: "100%", height: "100%" }}
     >
-      <color attach="background" args={["#0d0d10"]} />
-      <fog attach="fog" args={["#0d0d10", 24, 70]} />
-      <ambientLight intensity={0.35} />
-      <hemisphereLight args={["#9fb2d8", "#08090b", 0.55]} />
-      <directionalLight position={[8, 18, 12]} intensity={2.1} color="#e8edfa" />
-      <directionalLight position={[-10, 6, -8]} intensity={0.5} color="#8ea3d8" />
+      <color attach="background" args={["#dfe6ef"]} />
+      <fog attach="fog" args={["#dfe6ef", 26, 74]} />
+      <ambientLight intensity={0.55} />
+      <hemisphereLight args={["#ffffff", "#c9c0b1", 0.7]} />
+      <directionalLight position={[8, 18, 12]} intensity={2} color="#fff6e8" />
+      <directionalLight position={[-10, 6, -8]} intensity={0.45} color="#aebcd6" />
 
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
+        <circleGeometry args={[40, 48]} />
+        <meshStandardMaterial color="#d8d4ca" roughness={1} />
+      </mesh>
       <Skyline />
       <Beacon />
       <CameraDrift />
-      <Sparkles count={40} scale={[26, 12, 14]} size={1.3} speed={0.18} opacity={0.3} color="#9fb3c8" />
+      <Sparkles count={36} scale={[26, 12, 14]} size={1.2} speed={0.16} opacity={0.4} color="#7f8aa0" />
 
       <Grid
         position={[0, 0.01, 0]}
         args={[60, 60]}
         cellSize={1.4}
-        cellThickness={0.5}
-        cellColor="#20232b"
+        cellThickness={0.55}
+        cellColor="#a6afc0"
         sectionSize={7}
         sectionThickness={1}
-        sectionColor="#3c414c"
-        fadeDistance={55}
+        sectionColor="#8590a4"
+        fadeDistance={56}
         fadeStrength={2}
         infiniteGrid
       />

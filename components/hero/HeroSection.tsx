@@ -6,7 +6,9 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { COMPANY } from "@/data/content";
 import { HERO_STAGES, heroStageIndex } from "@/data/hero-stages";
-import { scrollState, useReducedMotion } from "@/lib/utils";
+import { SceneBoundary } from "@/components/SceneBoundary";
+import { HeroBlueprint } from "@/components/hero/HeroBlueprint";
+import { scrollState, useDeviceInfo, useReducedMotion } from "@/lib/utils";
 
 const ConstructionCanvas = memo(
   dynamic(() => import("./ConstructionCanvas").then((m) => m.ConstructionCanvas), {
@@ -21,6 +23,8 @@ export function HeroSection() {
   const [stage, setStage] = useState(0);
   const [pct, setPct] = useState(0);
   const reduced = useReducedMotion();
+  const device = useDeviceInfo();
+  const show3d = device.webgl && !reduced;
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -75,26 +79,32 @@ export function HeroSection() {
   }, []);
 
   return (
-    <section ref={sectionRef} id="top" className="relative h-screen overflow-hidden bg-ink">
+    <section ref={sectionRef} id="top" className="relative h-screen overflow-hidden bg-[#e6ebf2]">
       <div className="absolute inset-0">
-        <ConstructionCanvas />
+        {show3d ? (
+          <SceneBoundary label="hero" fallback={<HeroBlueprint pct={pct} />}>
+            <ConstructionCanvas />
+          </SceneBoundary>
+        ) : (
+          <HeroBlueprint pct={pct} />
+        )}
       </div>
 
-      {/* vignette + scanline */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_42%,rgba(5,5,7,0.85)_100%)]" />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-ink/80 to-transparent" />
+      {/* vignette + top seam */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(244,241,234,0.9)_100%)]" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-ink/85 to-transparent" />
 
       {/* top-left coordinates */}
       <div className="pointer-events-none absolute left-5 top-24 font-mono text-[10px] leading-relaxed tracking-widest2 text-fog sm:left-8 sm:top-28 lg:left-14">
-        <div className="text-accent">RUDRA.EXE</div>
+        <div className="text-accentDim">RUDRA.EXE</div>
         <div>GRID {String(pct).padStart(3, "0")}.PHASE</div>
         <div>LAT 25.5941 · LON 85.1376</div>
       </div>
 
       {/* stage readout bottom-right */}
-      <div className="pointer-events-none absolute bottom-24 right-5 text-right sm:bottom-28 sm:right-8 lg:right-14">
+      <div className="pointer-events-none absolute bottom-24 right-5 rounded-lg border border-line/70 bg-panel/70 px-4 py-3 text-right backdrop-blur-md sm:bottom-28 sm:right-8 lg:right-14">
         <div className="font-mono text-[10px] uppercase tracking-widest2 text-fog">
-        STAGE {String(stage + 1).padStart(2, "0")} / 09
+          STAGE {String(stage + 1).padStart(2, "0")} / 09
         </div>
         <div className="mt-1 font-display text-xl font-600 uppercase tracking-wide text-bone sm:text-2xl">
           {HERO_STAGES[stage].label}
@@ -105,7 +115,7 @@ export function HeroSection() {
       </div>
 
       {/* progress rail bottom-left */}
-      <div className="pointer-events-none absolute bottom-24 left-5 flex items-center gap-4 sm:bottom-28 sm:left-8 lg:left-14">
+      <div className="pointer-events-none absolute bottom-24 left-5 flex items-center gap-4 rounded-lg border border-line/70 bg-panel/70 px-4 py-3 backdrop-blur-md sm:bottom-28 sm:left-8 lg:left-14">
         <div className="relative h-px w-36 overflow-hidden bg-line sm:w-56">
           <div className="absolute inset-y-0 left-0 bg-accent" style={{ width: `${pct * 100}%` }} />
         </div>
@@ -129,14 +139,14 @@ export function HeroSection() {
         <div data-hero-brand className="opacity-0">
           <div className="mb-6 flex items-center justify-center gap-4">
             <span className="hidden h-px w-16 bg-accent/70 sm:block" />
-            <span className="font-mono text-[10px] uppercase tracking-widest3 text-accent">
+            <span className="font-mono text-[10px] uppercase tracking-widest3 text-accentDim">
               Est. {COMPANY.founded} · Bihar, India
             </span>
             <span className="hidden h-px w-16 bg-accent/70 sm:block" />
           </div>
           <h1 className="h-display text-[clamp(2.6rem,8vw,7.2rem)]">
             RUDRA
-            <span className="block bg-gradient-to-r from-bone via-[#cfd2da] to-fog bg-clip-text text-transparent">
+            <span className="block bg-gradient-to-r from-[#26221c] via-[#4a443a] to-[#8d867a] bg-clip-text text-transparent">
               CONSTRUCTIONS
             </span>
             <span className="text-outline-accent block text-[clamp(1rem,2.4vw,1.9rem)] font-500 tracking-[0.5em]">

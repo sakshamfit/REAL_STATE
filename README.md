@@ -8,6 +8,12 @@ demonstrates the company's scale: a building assembles as you scroll, a miniatur
 construction site runs its five-phase process, and an interactive extruded **3D
 India map** closes the story.
 
+**Visual direction:** light architectural studio — warm ivory/concrete, soft
+blue daylight skies, graphite steel structures, amber-bronze accents, blueprint
+grids and subtle film grain. Every 3D scene has a matching premium SVG fallback
+(and the map has a real SVG India render) so the experience never breaks on
+devices or iframes without WebGL.
+
 ## Stack
 
 - **Next.js 15 (App Router) · React 19 · TypeScript**
@@ -77,10 +83,21 @@ npm run start
 npm run typecheck
 ```
 
+## Resilience (why it can't white-screen)
+
+1. **WebGL is verified before any 3D mounts** — `useDeviceInfo()` defaults to
+   no-WebGL; support is confirmed in an effect. If unsupported (or blocked by the
+   preview iframe), premium SVG fallbacks render instead.
+2. **Every 3D scene sits in a `SceneBoundary`** — a React error boundary that
+   catches any canvas/scene exception and swaps in the same premium fallback.
+3. **`app/error.tsx`** — a branded, on-brand recovery screen for anything else.
+4. **Dev telemetry** — caught errors POST to `/api/client-log` and are appended to
+   `client-errors.log` (git-ignored), so we can see exactly what failed.
+
 ## Performance & accessibility
 
 - Lazy-mounted canvases (IntersectionObserver) + `ssr: false` dynamic imports
-- Mobile fallback: hero + map stay 3D; services / process / trust / about use premium static fallbacks
+- Mobile fallback: SVG map + premium blueprint/illustration fallbacks per scene
 - WebGL detection before mounting 3D
 - `prefers-reduced-motion` disables Lenis, scrubbing and decorative animation
 - Capped device pixel ratios, no downloadable HDR/GLB assets, single low-res GeoJSON

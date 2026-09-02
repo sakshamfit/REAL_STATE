@@ -5,7 +5,9 @@ import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { PRESENCE, COMPANY, type Presence } from "@/data/content";
-import { scrollState, useReducedMotion } from "@/lib/utils";
+import { SceneBoundary } from "@/components/SceneBoundary";
+import { IndiaSvgMap } from "@/components/map/IndiaSvgMap";
+import { scrollState, useDeviceInfo, useReducedMotion } from "@/lib/utils";
 
 const IndiaCanvas = dynamic(() => import("./IndiaCanvas").then((m) => m.IndiaCanvas), {
   ssr: false,
@@ -20,6 +22,8 @@ export function MapSection() {
   const [hovered, setHovered] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>("Bihar");
   const reduced = useReducedMotion();
+  const device = useDeviceInfo();
+  const show3d = device.webgl && !device.mobile;
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -42,13 +46,20 @@ export function MapSection() {
   const presence: Presence | undefined = active ? byGeo.get(active) : undefined;
 
   return (
-    <section id="presence" ref={sectionRef} className="relative h-screen overflow-hidden bg-[#0a0b0d]">
+    <section id="presence" ref={sectionRef} className="relative h-screen overflow-hidden bg-[#e9edf3]">
       <div className="absolute inset-0">
-        <IndiaCanvas hovered={hovered} selected={selected} onHover={setHovered} onSelect={setSelected} />
+        {show3d ? (
+          <SceneBoundary label="india-map" fallback={<IndiaSvgMap hovered={hovered} selected={selected} />}>
+            <IndiaCanvas hovered={hovered} selected={selected} onHover={setHovered} onSelect={setSelected} />
+          </SceneBoundary>
+        ) : (
+          <IndiaSvgMap hovered={hovered} selected={selected} />
+        )}
       </div>
 
       <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-ink/90 to-transparent" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-ink/90 to-transparent" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(244,241,234,0.5)_100%)]" />
 
       {/* heading */}
       <div className="container-site pointer-events-none absolute left-0 right-0 top-20 z-20 sm:top-24">
