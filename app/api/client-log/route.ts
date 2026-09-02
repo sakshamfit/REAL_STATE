@@ -16,5 +16,5 @@ export async function POST(req: NextRequest) {
   } catch {
     /* logging must never fail the request */
   }
-  return new Response("ok", { status: 204 });
+  return new Response(null, { status: 204 });
 }
