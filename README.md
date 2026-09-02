@@ -8,11 +8,11 @@ demonstrates the company's scale: a building assembles as you scroll, a miniatur
 construction site runs its five-phase process, and an interactive extruded **3D
 India map** closes the story.
 
-**Visual direction:** light architectural studio — warm ivory/concrete, soft
-blue daylight skies, graphite steel structures, amber-bronze accents, blueprint
-grids and subtle film grain. Every 3D scene has a matching premium SVG fallback
-(and the map has a real SVG India render) so the experience never breaks on
-devices or iframes without WebGL.
+**Visual direction:** dark architectural studio — graphite / charcoal / concrete
+with warm bone-white type, amber metallic accents, blueprint lines, glass, steel,
+subtle particles and cinematic lighting. Every 3D scene has a matching premium
+dark fallback (and the map has a real SVG India render) so the experience never
+breaks on devices or iframes without WebGL.
 
 ## Stack
 

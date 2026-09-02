@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { PRESENCE_BY_GEO, flattenGeo, geoBounds, pathDFor, project, type IndiaFeature } from "@/lib/india-geo";
 
 /**
- * Light premium SVG India map — used when WebGL is unavailable or the 3D
- * scene fails. Same data source, same presence coloring, hover tooltips.
+ * Dark SVG India map — used only when WebGL is unavailable. Same data source,
+ * same presence coloring, hover tooltips.
  */
 export function IndiaSvgMap({ hovered, selected }: { hovered: string | null; selected: string | null }) {
   const [geo, setGeo] = useState<IndiaFeature[] | null>(null);
@@ -34,19 +34,19 @@ export function IndiaSvgMap({ hovered, selected }: { hovered: string | null; sel
 
   if (!geo) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-[#e9edf3] font-mono text-[11px] uppercase tracking-widest2 text-[#8d867a]">
+      <div className="flex h-full w-full items-center justify-center bg-ink font-mono text-[11px] uppercase tracking-widest2 text-fog">
         Loading territory data…
       </div>
     );
   }
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-[#e9edf3]">
-      <div className="absolute inset-0 bg-blueprint opacity-60" />
+    <div className="relative h-full w-full overflow-hidden bg-[#0a0b0d]">
+      <div className="absolute inset-0 bg-blueprint opacity-80" />
       <svg viewBox={viewBox} className="relative h-full w-full p-10" preserveAspectRatio="xMidYMid meet">
         <defs>
           <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="6" stdDeviation="8" floodColor="#4a3d20" floodOpacity="0.25" />
+            <feDropShadow dx="0" dy="6" stdDeviation="8" floodColor="#000000" floodOpacity="0.7" />
           </filter>
         </defs>
         {geo.map((f) => {
@@ -54,14 +54,14 @@ export function IndiaSvgMap({ hovered, selected }: { hovered: string | null; sel
           const isOn = hovered === f.name || selected === f.name;
           const fill = isOn
             ? selected === f.name
-              ? "#e39a1c"
-              : "#eab454"
+              ? "#3a3f47"
+              : "#4a505c"
             : presence
               ? presence.tier === 1
-                ? "#e0b765"
-                : "#d3c093"
-              : "#cdd3de";
-          const stroke = isOn ? "#a05f04" : "#aab2c1";
+                ? "#2c313c"
+                : "#23262e"
+              : "#171a20";
+          const stroke = isOn ? "#f0b43c" : "#39414e";
           return (
             <path
               key={f.name}
@@ -85,8 +85,8 @@ export function IndiaSvgMap({ hovered, selected }: { hovered: string | null; sel
             const [x, y] = project(c.lon, c.lat);
             return (
               <g key={c.name} transform={`translate(${x} ${y})`}>
-                <circle r="5" fill="#d97706" stroke="#fffaf2" strokeWidth="2" />
-                <text y="-12" textAnchor="middle" fontSize="11" fill="#3d3a33" fontFamily="ui-monospace, monospace" letterSpacing="1">
+                <circle r="5" fill="#f0b43c" stroke="#0a0a0c" strokeWidth="2" />
+                <text y="-12" textAnchor="middle" fontSize="11" fill="#e6e7ea" fontFamily="ui-monospace, monospace" letterSpacing="1">
                   {c.name}
                 </text>
               </g>
@@ -94,7 +94,7 @@ export function IndiaSvgMap({ hovered, selected }: { hovered: string | null; sel
           });
         })}
       </svg>
-      <div className="pointer-events-none absolute bottom-4 right-5 font-mono text-[10px] uppercase tracking-widest2 text-[#8d867a]">
+      <div className="pointer-events-none absolute bottom-4 right-5 font-mono text-[10px] uppercase tracking-widest2 text-fog">
         Static map view · presence by client records
       </div>
     </div>

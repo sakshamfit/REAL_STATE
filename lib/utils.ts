@@ -43,15 +43,19 @@ export const scrollState = {
 };
 
 export function useDeviceInfo() {
-  // Default to no-WebGL so a blocked/iframe context never crashes the first
-  // render; the effect verifies support on mount and enables 3D only then.
-  const [dev, setDev] = useState({ mobile: false, webgl: false });
+  // 3D-first like the original: attempt WebGL immediately. Canvas `fallback`
+  // + SceneBoundary catch any environment that can't create a context.
+  const [dev, setDev] = useState({ mobile: false, webgl: true });
   useEffect(() => {
     const update = () =>
       setDev({ mobile: isMobileDevice(), webgl: supportsWebGL() });
     update();
+    const t = window.setTimeout(update, 300);
     window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
+    return () => {
+      window.clearTimeout(t);
+      window.removeEventListener("resize", update);
+    };
   }, []);
   return dev;
 }

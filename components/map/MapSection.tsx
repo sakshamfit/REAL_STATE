@@ -46,7 +46,7 @@ export function MapSection() {
   const presence: Presence | undefined = active ? byGeo.get(active) : undefined;
 
   return (
-    <section id="presence" ref={sectionRef} className="relative h-screen overflow-hidden bg-[#e9edf3]">
+    <section id="presence" ref={sectionRef} className="relative h-screen overflow-hidden bg-[#0a0b0d]">
       <div className="absolute inset-0">
         {show3d ? (
           <SceneBoundary label="india-map" fallback={<IndiaSvgMap hovered={hovered} selected={selected} />}>
@@ -59,7 +59,7 @@ export function MapSection() {
 
       <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-ink/90 to-transparent" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-ink/90 to-transparent" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(244,241,234,0.5)_100%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_52%,rgba(5,5,7,0.55)_100%)]" />
 
       {/* heading */}
       <div className="container-site pointer-events-none absolute left-0 right-0 top-20 z-20 sm:top-24">

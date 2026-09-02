@@ -117,7 +117,7 @@ function ServiceCard({ service, show3d }: { service: Service; show3d: boolean })
         </div>
       </div>
 
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,transparent_55%,rgba(217,119,6,0.09))] opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,transparent_55%,rgba(240,180,60,0.06))] opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
     </article>
   );
 }

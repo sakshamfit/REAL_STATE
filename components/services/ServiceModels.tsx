@@ -19,7 +19,7 @@ export function ModelRig({ active, children }: { active: boolean; children: Reac
 const PLINTH = (
   <mesh position={[0, 0.07, 0]}>
     <cylinderGeometry args={[1.9, 2.1, 0.14, 40]} />
-    <meshStandardMaterial color="#d4cfc2" roughness={0.9} metalness={0.05} />
+    <meshStandardMaterial color="#14161a" roughness={0.9} metalness={0.1} />
   </mesh>
 );
 

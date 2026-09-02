@@ -49,7 +49,7 @@ function ColumnField() {
 
   return (
     <instancedMesh ref={ref} args={[undefined, undefined, COL_COUNT]} frustumCulled={false} geometry={colGeo}>
-      <meshStandardMaterial color="#3d434f" roughness={0.5} metalness={0.6} />
+      <meshStandardMaterial color="#23262d" roughness={0.55} metalness={0.6} />
     </instancedMesh>
   );
 }
@@ -67,8 +67,8 @@ function BuildingCore() {
   });
   return (
     <mesh ref={ref} geometry={coreGeo}>
-      <meshStandardMaterial color="#383e4a" roughness={0.45} metalness={0.55} />
-      <Edges color="#5d6678" />
+      <meshStandardMaterial color="#1b1e24" roughness={0.45} metalness={0.55} />
+      <Edges color="#3d4351" />
     </mesh>
   );
 }
@@ -97,8 +97,8 @@ function Slabs() {
           position={[0, j * FH + (j === 0 ? 0.4 : SLAB_T / 2), 0]}
         >
           <boxGeometry args={[SLAB_W, j === 0 ? 0.5 : SLAB_T, SLAB_D]} />
-          <meshStandardMaterial color={j === 0 ? "#b6b1a5" : "#c9c4b8"} roughness={0.8} metalness={0.1} />
-          <Edges color="#8b8478" />
+          <meshStandardMaterial color={j === 0 ? "#343a45" : "#41464f"} roughness={0.72} metalness={0.18} />
+          <Edges color="#6a7280" />
         </mesh>
       ))}
     </group>
@@ -111,11 +111,11 @@ function Glass() {
       Array.from({ length: FLOORS }).map(
         () =>
           new THREE.MeshStandardMaterial({
-            color: "#a9cee2",
+            color: "#9dc4d8",
             transparent: true,
-            opacity: 0.28,
-            roughness: 0.16,
-            metalness: 0.45,
+            opacity: 0.1,
+            roughness: 0.14,
+            metalness: 0.55,
             side: THREE.DoubleSide,
             depthWrite: false,
           })
@@ -137,7 +137,7 @@ function Glass() {
   useFrame(() => {
     for (let f = 0; f < FLOORS; f++) {
       const o = clamp01((scrollState.hero - (0.52 + f * 0.017)) / 0.1);
-      mats[f].opacity = 0.12 + o * 0.52;
+      mats[f].opacity = 0.08 + o * 0.44;
     }
   });
 
@@ -153,7 +153,7 @@ function Glass() {
   );
 }
 
-/** Warm interior lights that switch on as each floor completes. */
+/** Warm amber interior lights that switch on as each floor completes. */
 function WindowGlow() {
   const ref = useRef<THREE.InstancedMesh>(null!);
   const geo = useMemo(() => new THREE.BoxGeometry(0.52, 0.6, 0.06), []);
@@ -178,8 +178,7 @@ function WindowGlow() {
         mesh.setMatrixAt(f * WINDOWS_PER_FACE * 2 + WINDOWS_PER_FACE + i, dummy.matrix);
       }
     }
-    // seed colors dark
-    for (let i = 0; i < INSTANCES; i++) mesh.setColorAt(i, color.set("#4d5a68"));
+    for (let i = 0; i < INSTANCES; i++) mesh.setColorAt(i, color.set("#1c2933"));
     mesh.instanceMatrix.needsUpdate = true;
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
   }, [dummy, color]);
@@ -191,7 +190,7 @@ function WindowGlow() {
     lit.current = totalLit;
     for (let f = 0; f < FLOORS; f++) {
       const on = f < totalLit;
-      const c = on ? "#ffd182" : "#4d5a68";
+      const c = on ? "#ffcf70" : "#1c2933";
       for (let i = 0; i < WINDOWS_PER_FACE * 2; i++) {
         ref.current.setColorAt(f * WINDOWS_PER_FACE * 2 + i, color.set(c));
       }
@@ -218,17 +217,17 @@ function BuildSweep() {
     band.current.visible = p > 0.04 && p < 0.965;
     const fade = 1 - clamp01((p - 0.86) / 0.1);
     const pulse = 0.7 + 0.3 * Math.sin(clock.elapsedTime * 5);
-    (band.current.material as THREE.MeshBasicMaterial).opacity = fade * (0.32 + 0.2 * pulse);
+    (band.current.material as THREE.MeshBasicMaterial).opacity = fade * (0.3 + 0.18 * pulse);
     light.current.position.y = y + 1;
-    light.current.intensity = fade * (14 + 8 * pulse);
+    light.current.intensity = fade * (16 + 9 * pulse);
   });
   return (
     <group>
       <mesh ref={band} position={[0, 0, 0]}>
         <boxGeometry args={[SLAB_W + 0.7, 0.16, SLAB_D + 0.7]} />
-        <meshBasicMaterial color="#f59e0b" transparent opacity={0} toneMapped={false} />
+        <meshBasicMaterial color="#f0b43c" transparent opacity={0} toneMapped={false} />
       </mesh>
-      <pointLight ref={light} position={[0, 0, 0]} color="#f59e0b" distance={34} intensity={0} />
+      <pointLight ref={light} position={[0, 0, 0]} color="#f0b43c" distance={34} intensity={0} />
     </group>
   );
 }
@@ -246,17 +245,17 @@ function Rooftop() {
     <group>
       <mesh ref={mech} position={[0, TOTAL_H + 0.6, 0]}>
         <boxGeometry args={[2.6, 0.9, 1.8]} />
-        <meshStandardMaterial color="#5a6270" roughness={0.6} metalness={0.4} />
-        <Edges color="#8b95a8" />
+        <meshStandardMaterial color="#2c323c" roughness={0.6} metalness={0.4} />
+        <Edges color="#4d5666" />
       </mesh>
       <group ref={antenna} position={[0, TOTAL_H + 0.9, -0.4]}>
         <mesh position={[0, 1.1, 0]}>
           <cylinderGeometry args={[0.045, 0.045, 2.2, 8]} />
-          <meshStandardMaterial color="#6d7686" metalness={0.6} roughness={0.4} />
+          <meshStandardMaterial color="#454d5a" metalness={0.6} roughness={0.4} />
         </mesh>
         <mesh position={[0, 2.25, 0]}>
           <sphereGeometry args={[0.12, 12, 12]} />
-          <meshStandardMaterial color="#e2402c" emissive="#ff5a3c" emissiveIntensity={1.6} />
+          <meshStandardMaterial color="#ff5a3c" emissive="#ff5a3c" emissiveIntensity={1.8} />
         </mesh>
       </group>
     </group>
@@ -283,33 +282,33 @@ function Crane() {
   return (
     <group ref={rig} position={[-11.5, 0, -8.5]}>
       <mesh ref={mast} geometry={mastGeo}>
-        <meshStandardMaterial color="#4c5462" roughness={0.5} metalness={0.65} />
-        <Edges color="#8b95a8" />
+        <meshStandardMaterial color="#3a3f4a" roughness={0.5} metalness={0.65} />
+        <Edges color="#7c8598" />
       </mesh>
       <group position={[0, 26.2, 0]}>
         <mesh position={[5, 0, 0]}>
           <boxGeometry args={[17, 0.6, 0.6]} />
-          <meshStandardMaterial color="#5a6270" roughness={0.5} metalness={0.65} />
+          <meshStandardMaterial color="#454b58" roughness={0.5} metalness={0.65} />
         </mesh>
         <mesh position={[-3.6, -0.8, 0]}>
           <boxGeometry args={[3.4, 1.6, 1.4]} />
-          <meshStandardMaterial color="#414856" roughness={0.6} metalness={0.5} />
+          <meshStandardMaterial color="#2d3138" roughness={0.6} metalness={0.5} />
         </mesh>
         <mesh position={[-5.2, 0, 0]}>
           <boxGeometry args={[2.6, 0.5, 0.5]} />
-          <meshStandardMaterial color="#5a6270" roughness={0.5} metalness={0.65} />
+          <meshStandardMaterial color="#454b58" roughness={0.5} metalness={0.65} />
         </mesh>
         <mesh position={[13, 0, 0]}>
           <boxGeometry args={[0.35, 0.35, 0.35]} />
-          <meshStandardMaterial color="#d97706" emissive="#d97706" emissiveIntensity={0.8} />
+          <meshStandardMaterial color="#f0b43c" emissive="#f0b43c" emissiveIntensity={0.7} />
         </mesh>
         <mesh ref={hook} position={[13, -4, 0]}>
           <boxGeometry args={[0.28, 8, 0.28]} />
-          <meshStandardMaterial color="#6a7383" roughness={0.5} metalness={0.6} />
+          <meshStandardMaterial color="#5a616e" roughness={0.5} metalness={0.6} />
         </mesh>
         <mesh position={[13, -8.4, 0]}>
           <boxGeometry args={[1.1, 0.9, 0.9]} />
-          <meshStandardMaterial color="#d97706" emissive="#8a4d04" emissiveIntensity={0.5} />
+          <meshStandardMaterial color="#f0b43c" emissive="#8a5c10" emissiveIntensity={0.4} />
         </mesh>
       </group>
     </group>
@@ -328,7 +327,7 @@ function PlotOutline() {
       ],
     []
   );
-  return <Line points={pts} color="#c2410c" lineWidth={1.2} dashed dashSize={1.1} gapSize={0.7} transparent opacity={0.65} />;
+  return <Line points={pts} color="#f0b43c" lineWidth={1.2} dashed dashSize={1.1} gapSize={0.7} transparent opacity={0.75} />;
 }
 
 function Rig() {
@@ -352,32 +351,32 @@ function Rig() {
 export function ConstructionScene() {
   return (
     <>
-      <fog attach="fog" args={["#dce4ee", 34, 95]} />
+      <fog attach="fog" args={["#0a0a0c", 34, 92]} />
       <Rig />
-      <ambientLight intensity={0.55} />
-      <hemisphereLight args={["#ffffff", "#c9c0b1", 0.75]} />
-      <directionalLight position={[10, 22, 9]} intensity={2.1} color="#fff6e8" />
-      <directionalLight position={[-14, 10, -10]} intensity={0.6} color="#aebcd6" />
-      <spotLight position={[0, 42, -22]} angle={0.5} penumbra={1} intensity={0.7} color="#f59e0b" distance={95} />
+      <ambientLight intensity={0.22} />
+      <hemisphereLight args={["#aebcd6", "#0a0a0c", 0.5]} />
+      <directionalLight position={[10, 22, 9]} intensity={1.9} color="#e8ecff" />
+      <directionalLight position={[-14, 10, -10]} intensity={0.7} color="#9db4ff" />
+      <spotLight position={[0, 42, -20]} angle={0.5} penumbra={1} intensity={0.7} color="#f0b43c" distance={95} />
 
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
         <circleGeometry args={[70, 64]} />
-        <meshStandardMaterial color="#d8d4ca" roughness={1} metalness={0} />
+        <meshStandardMaterial color="#0b0c0f" roughness={1} metalness={0} />
       </mesh>
       <Grid
         position={[0, 0.01, 0]}
         args={[120, 120]}
         cellSize={1.2}
-        cellThickness={0.6}
-        cellColor="#a9b2c2"
+        cellThickness={0.55}
+        cellColor="#23262d"
         sectionSize={6}
-        sectionThickness={1.1}
-        sectionColor="#8590a4"
-        fadeDistance={70}
-        fadeStrength={2}
+        sectionThickness={1}
+        sectionColor="#3a3f47"
+        fadeDistance={68}
+        fadeStrength={2.2}
         infiniteGrid
       />
-      <ContactShadows position={[0, 0.02, 0]} opacity={0.34} scale={48} blur={2.4} far={42} color="#4a4436" />
+      <ContactShadows position={[0, 0.02, 0]} opacity={0.5} scale={48} blur={2.6} far={40} color="#000000" />
 
       <PlotOutline />
       <ColumnField />
@@ -389,7 +388,7 @@ export function ConstructionScene() {
       <Rooftop />
       <Crane />
 
-      <Sparkles count={80} scale={[46, 16, 46]} size={1.5} speed={0.2} opacity={0.45} color="#7f8aa0" position={[0, 8, 0]} />
+      <Sparkles count={80} scale={[46, 16, 46]} size={1.6} speed={0.22} opacity={0.35} color="#9fb3c8" position={[0, 8, 0]} />
     </>
   );
 }
@@ -404,7 +403,7 @@ export function ConstructionCanvas({ className = "" }: { className?: string }) {
       shadows={false}
       style={{ width: "100%", height: "100%" }}
     >
-      <color attach="background" args={["#dce4ee"]} />
+      <color attach="background" args={["#0a0a0c"]} />
       <ConstructionScene />
     </Canvas>
   );

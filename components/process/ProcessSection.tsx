@@ -42,7 +42,7 @@ export function ProcessSection() {
   const show3d = device.webgl && !device.mobile;
 
   return (
-    <section id="process" ref={sectionRef} className="relative h-screen overflow-hidden bg-[#e6ebf2]">
+    <section id="process" ref={sectionRef} className="relative h-screen overflow-hidden bg-[#0b0c0e]">
       <div className="absolute inset-0">
         {show3d ? (
           <SceneBoundary label="process" fallback={<ProcessFallback />}>
@@ -54,7 +54,7 @@ export function ProcessSection() {
       </div>
 
       {/* vignette */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_35%,rgba(244,241,234,0.75)_100%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(5,5,7,0.9)_100%)]" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-ink/90 to-transparent" />
 
       {/* header */}

@@ -50,7 +50,7 @@ export function ClientsSection() {
         className="pointer-events-none absolute inset-x-0 top-0 h-1/2 opacity-30"
         style={{
           background:
-            "linear-gradient(180deg, transparent 0%, rgba(96,112,145,0.16) 48%, rgba(96,112,145,0.22) 50%, rgba(96,112,145,0.16) 52%, transparent 100%)",
+            "linear-gradient(180deg, transparent 0%, rgba(139,147,169,0.10) 48%, rgba(139,147,169,0.16) 50%, rgba(139,147,169,0.10) 52%, transparent 100%)",
           transform: "perspective(600px) rotateX(28deg) scale(1.4)",
         }}
       />
@@ -58,7 +58,7 @@ export function ClientsSection() {
         className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 opacity-30"
         style={{
           background:
-            "linear-gradient(0deg, transparent 0%, rgba(96,112,145,0.16) 48%, rgba(96,112,145,0.22) 50%, rgba(96,112,145,0.16) 52%, transparent 100%)",
+            "linear-gradient(0deg, transparent 0%, rgba(139,147,169,0.10) 48%, rgba(139,147,169,0.16) 50%, rgba(139,147,169,0.10) 52%, transparent 100%)",
           transform: "perspective(600px) rotateX(-28deg) scale(1.4)",
         }}
       />

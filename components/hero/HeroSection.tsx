@@ -79,7 +79,7 @@ export function HeroSection() {
   }, []);
 
   return (
-    <section ref={sectionRef} id="top" className="relative h-screen overflow-hidden bg-[#e6ebf2]">
+    <section ref={sectionRef} id="top" className="relative h-screen overflow-hidden bg-ink">
       <div className="absolute inset-0">
         {show3d ? (
           <SceneBoundary label="hero" fallback={<HeroBlueprint pct={pct} />}>
@@ -91,8 +91,8 @@ export function HeroSection() {
       </div>
 
       {/* vignette + top seam */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(244,241,234,0.9)_100%)]" />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-ink/85 to-transparent" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_42%,rgba(5,5,7,0.85)_100%)]" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-ink/80 to-transparent" />
 
       {/* top-left coordinates */}
       <div className="pointer-events-none absolute left-5 top-24 font-mono text-[10px] leading-relaxed tracking-widest2 text-fog sm:left-8 sm:top-28 lg:left-14">

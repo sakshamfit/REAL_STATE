@@ -73,7 +73,7 @@ export function TrustSection() {
       <div className="container-site py-24 sm:py-32">
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
           <div className="relative min-h-[380px] order-2 lg:order-1 lg:min-h-[520px]">
-            <div className="h-full w-full overflow-hidden border border-line/70 bg-[#e6ebf2] shadow-card">
+            <div className="h-full w-full overflow-hidden border border-line/60 bg-[#0c0d10] shadow-card">
               {show3d ? (
                 <SceneBoundary label="trust" fallback={<TrustFallback />}>
                   <TrustCanvas />

@@ -93,7 +93,7 @@ export function AboutSection() {
           </div>
 
           <div className="relative min-h-[420px] lg:col-span-7">
-            <div className="sticky top-24 h-[70vh] w-full overflow-hidden border border-line/70 bg-[#dfe6ef] shadow-card lg:h-[78vh]">
+            <div className="sticky top-24 h-[70vh] w-full overflow-hidden border border-line/60 bg-[#0d0d10] shadow-card lg:h-[78vh]">
               {show3d ? (
                 <SceneBoundary label="about-skyline" fallback={<SkylineFallback />}>
                   <SkylineCanvas />

@@ -77,13 +77,14 @@ function buildGeometry(f: IndiaFeature): THREE.BufferGeometry {
 }
 
 const STATE_COLORS = {
-  base: "#c7cdd9",
-  tier2: "#d0bd8d",
-  tier1: "#e3bd6a",
-  hover: "#edc879",
-  selected: "#dd8f12",
-  edge: "#98a1b2",
+  base: "#171a20",
+  tier2: "#23262e",
+  tier1: "#2c313c",
+  hover: "#4a505c",
+  selected: "#3a3f47",
+  edge: "#39414e",
   edgeHot: "#8a5203",
+  glow: "#241a04",
 } as const;
 
 function States({
@@ -109,10 +110,10 @@ function States({
         const color = p ? (p.tier === 1 ? STATE_COLORS.tier1 : STATE_COLORS.tier2) : STATE_COLORS.base;
         return new THREE.MeshStandardMaterial({
           color,
-          roughness: 0.72,
-          metalness: 0.08,
-          emissive: p ? "#6b4306" : "#23262c",
-          emissiveIntensity: p ? 0.22 : 0.08,
+          roughness: 0.62,
+          metalness: 0.35,
+          emissive: STATE_COLORS.glow,
+          emissiveIntensity: p ? 0.55 : 0.12,
           polygonOffset: true,
           polygonOffsetFactor: -1,
         });
@@ -136,8 +137,8 @@ function States({
               : STATE_COLORS.tier2
             : STATE_COLORS.base;
       m.color.set(color);
-      m.emissive.set(isSel || isHover ? "#7a4a05" : p ? "#6b4306" : "#23262c");
-      m.emissiveIntensity = isSel || isHover ? 0.5 : p ? 0.22 : 0.08;
+      m.emissive.set(isSel || isHover ? "#6b4206" : STATE_COLORS.glow);
+      m.emissiveIntensity = isSel || isHover ? 1.1 : p ? 0.55 : 0.12;
     });
   }, [features, mats, hovered, selected]);
 
@@ -152,7 +153,7 @@ function States({
       g.scale.y = Math.max(s, 0.0001);
       const isHover = hovered === f.name;
       const isSel = selected === f.name;
-      const targetY = (isSel ? 1.05 : isHover ? 0.75 : 0.02) * s;
+      const targetY = (isSel ? 1.1 : isHover ? 0.8 : 0.02) * s;
       g.position.y = damp(g.position.y, targetY, 8, delta);
     });
   });
@@ -187,10 +188,10 @@ function States({
             />
             {hovered === f.name && (
               <Html position={[cx, 1.8, cy]} center distanceFactor={26} zIndexRange={[5, 0]} style={{ pointerEvents: "none" }}>
-                <div className="whitespace-nowrap rounded-sm border border-[#d97706]/70 bg-[#fffaf2]/95 px-3 py-1.5 text-center shadow-lg backdrop-blur">
-                  <div className="font-mono text-[11px] uppercase tracking-widest text-[#3d3a33]">{f.name}</div>
+                <div className="whitespace-nowrap rounded-sm border border-accent/60 bg-ink/90 px-3 py-1.5 text-center backdrop-blur">
+                  <div className="font-mono text-[11px] uppercase tracking-widest text-bone">{f.name}</div>
                   {PRESENCE_BY_GEO.has(f.name) && (
-                    <div className="mt-0.5 font-mono text-[8.5px] uppercase tracking-widest2 text-[#b45309]">
+                    <div className="mt-0.5 font-mono text-[8.5px] uppercase tracking-widest2 text-accent">
                       Projects / Presence
                     </div>
                   )}
@@ -246,22 +247,22 @@ function Marker({
       >
         <sphereGeometry args={[0.22, 16, 16]} />
         <meshStandardMaterial
-          color={selected ? "#c2410c" : "#d97706"}
-          emissive="#7c3e02"
-          emissiveIntensity={selected ? 1.6 : 1}
+          color={selected ? "#f0b43c" : "#ffd76a"}
+          emissive="#b8780e"
+          emissiveIntensity={selected ? 2 : 1.1}
           roughness={0.4}
         />
       </mesh>
       <mesh position={[0, 0.68, 0]}>
         <coneGeometry args={[0.11, 0.5, 10]} />
-        <meshStandardMaterial color="#4a4438" metalness={0.5} roughness={0.5} />
+        <meshStandardMaterial color="#3a404c" metalness={0.6} roughness={0.4} />
       </mesh>
       <mesh ref={ring} position={[0, 0.02, 0]} rotation={[Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.8, 0.86, 40]} />
-        <meshBasicMaterial color="#c2410c" transparent opacity={0} side={THREE.DoubleSide} />
+        <meshBasicMaterial color="#f0b43c" transparent opacity={0} side={THREE.DoubleSide} />
       </mesh>
       <Html position={[0, 2.15, 0]} center distanceFactor={30} zIndexRange={[5, 0]} style={{ pointerEvents: "none" }}>
-        <div className="whitespace-nowrap font-mono text-[10px] uppercase tracking-widest text-[#3d3a33] drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)]">
+        <div className="whitespace-nowrap font-mono text-[10px] uppercase tracking-widest text-bone/85 drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
           {name}
         </div>
       </Html>
@@ -313,7 +314,7 @@ function RouteSystem({ features, activeKey }: { features: IndiaFeature[]; active
       item.group.visible = on > 0.001;
       if (item.line?.material) {
         item.line.material.dashOffset -= delta * (active ? 2.6 : 1.6);
-        item.line.material.opacity = on * (active ? 1 : 0.8);
+        item.line.material.opacity = on * (active ? 1 : 0.82);
         item.line.material.linewidth = active ? 3.2 : 1.2;
       }
       const dot = pulse.current[i];
@@ -322,13 +323,7 @@ function RouteSystem({ features, activeKey }: { features: IndiaFeature[]; active
         const curve = new THREE.CatmullRomCurve3(d.points);
         dot.position.copy(curve.getPointAt(t));
         dot.visible = on > 0.4;
-        if (active) {
-          dot.scale.setScalar(1);
-          (dot.material as THREE.MeshBasicMaterial).color.set("#f59e0b");
-        } else {
-          dot.scale.setScalar(0.8);
-          (dot.material as THREE.MeshBasicMaterial).color.set("#b45309");
-        }
+        (dot.material as THREE.MeshBasicMaterial).color.set(active ? "#ffd76a" : "#f0b43c");
       }
     });
   });
@@ -352,7 +347,7 @@ function RouteSystem({ features, activeKey }: { features: IndiaFeature[]; active
               if (routes.current[i]) routes.current[i]!.line = l;
             }}
             points={d.points}
-            color="#c2410c"
+            color="#f0b43c"
             lineWidth={1.2}
             dashed
             dashSize={0.5}
@@ -367,7 +362,7 @@ function RouteSystem({ features, activeKey }: { features: IndiaFeature[]; active
             visible={false}
           >
             <sphereGeometry args={[0.2, 12, 12]} />
-            <meshBasicMaterial color="#b45309" />
+            <meshBasicMaterial color="#f0b43c" />
           </mesh>
         </group>
       ))}
@@ -418,7 +413,7 @@ export function IndiaCanvas({
 
   if (!geo) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-[#e9edf3] font-mono text-[11px] uppercase tracking-widest2 text-[#8d867a]">
+      <div className="flex h-full w-full items-center justify-center bg-ink font-mono text-[11px] uppercase tracking-widest2 text-fog">
         Loading territory data…
       </div>
     );
@@ -432,29 +427,29 @@ export function IndiaCanvas({
       onPointerMissed={() => onSelect(null)}
       style={{ width: "100%", height: "100%" }}
     >
-      <color attach="background" args={["#e9edf3"]} />
-      <fog attach="fog" args={["#e9edf3", 50, 115]} />
-      <ambientLight intensity={0.55} />
-      <hemisphereLight args={["#ffffff", "#cfc7b8", 0.7]} />
-      <directionalLight position={[8, 20, 10]} intensity={1.7} color="#fff8ec" />
-      <directionalLight position={[-12, 8, -10]} intensity={0.4} color="#aebcd6" />
-      <pointLight position={[3, 10, 2]} intensity={22} color="#d97706" distance={40} />
+      <color attach="background" args={["#0a0b0d"]} />
+      <fog attach="fog" args={["#0a0b0d", 46, 110]} />
+      <ambientLight intensity={0.32} />
+      <hemisphereLight args={["#a9b6d4", "#08090b", 0.5]} />
+      <directionalLight position={[8, 20, 10]} intensity={2.2} color="#e9edf8" />
+      <directionalLight position={[-12, 8, -10]} intensity={0.55} color="#93a7dc" />
+      <pointLight position={[3, 10, 2]} intensity={28} color="#f0b43c" distance={40} />
 
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.09, 0]}>
-        <circleGeometry args={[52, 64]} />
-        <meshStandardMaterial color="#dfe3ea" roughness={1} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.08, 0]}>
+        <circleGeometry args={[50, 64]} />
+        <meshStandardMaterial color="#0b0c0e" roughness={1} />
       </mesh>
       <Grid
-        position={[0, -0.06, 0]}
+        position={[0, -0.05, 0]}
         args={[90, 90]}
         cellSize={1.5}
         cellThickness={0.5}
-        cellColor="#aeb6c6"
+        cellColor="#1b1e24"
         sectionSize={7.5}
         sectionThickness={1}
-        sectionColor="#8791a6"
-        fadeDistance={62}
-        fadeStrength={2.2}
+        sectionColor="#2f343d"
+        fadeDistance={60}
+        fadeStrength={2.5}
         infiniteGrid
       />
 
@@ -469,7 +464,7 @@ export function IndiaCanvas({
         ));
       })}
 
-      <Sparkles count={46} scale={[34, 12, 30]} size={1.3} speed={0.14} opacity={0.4} color="#7f8aa0" position={[0, 6, 0]} />
+      <Sparkles count={50} scale={[34, 12, 30]} size={1.4} speed={0.14} opacity={0.3} color="#9fb3c8" position={[0, 6, 0]} />
       <MapCamera />
     </Canvas>
   );
