@@ -41,7 +41,7 @@ export default function Process() {
         <div className="absolute inset-0">
           <SceneCanvas camera={{ position: [0, 8.4, 12.5], fov: 42, far: 160 }}>
             <Studio keyPos={[7, 12, 9]} keyIntensity={2.4} rim={[-10, 5, -11]} envIntensity={0.55} />
-            <ProcessScene progress={display} />
+            <ProcessScene progress={display} active={active} />
           </SceneCanvas>
         </div>
 

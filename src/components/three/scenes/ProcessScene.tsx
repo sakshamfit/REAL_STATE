@@ -9,6 +9,7 @@ import * as THREE from "three";
 import { useMemo, useRef } from "react";
 import { process } from "@/lib/data/content";
 import { getConcreteTexture, getGridTexture, getGlowTexture } from "@/lib/three/materials";
+import { ItemLabel } from "@/components/three/ItemLabel";
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 const ease = (t: number) => t * t * (3 - 2 * t);
@@ -23,7 +24,13 @@ const CAMS: [number, number, number][] = [
   [-4.2, 5.2, 12.4],
 ];
 
-export default function ProcessScene({ progress }: { progress: number }) {
+export default function ProcessScene({
+  progress,
+  active,
+}: {
+  progress: number;
+  active?: number;
+}) {
   const root = useRef<THREE.Group>(null);
   const cam = useThree((s) => s.camera);
   const pos = useRef(new THREE.Vector3(...CAMS[0]));
@@ -68,6 +75,34 @@ export default function ProcessScene({ progress }: { progress: number }) {
   const helmet = useRef<THREE.Group>(null);
 
   const bpGeom = useMemo(() => new THREE.EdgesGeometry(new THREE.BoxGeometry(4, 4.4, 3)), []);
+
+  /**
+   * The five steps as standing objects: a colonnade of numbered pylons behind
+   * the site. Far enough back never to occlude the work, near enough to read,
+   * and each one lights as the camera frames its stage.
+   */
+  const markers = useRef<THREE.Group>(null);
+  const plates = useMemo(
+    () =>
+      process.map(
+        () =>
+          new THREE.MeshStandardMaterial({
+            color: "#d8a76a",
+            emissive: "#d8a76a",
+            emissiveIntensity: 0.35,
+            roughness: 0.4,
+            metalness: 0.5,
+          }),
+      ),
+    [],
+  );
+  const markerPos = useMemo(
+    () => process.map((_, i) => {
+      const off = i - (process.length - 1) / 2;
+      return [off * 4.4, 0, -8.2 - Math.abs(off) * 0.9] as [number, number, number];
+    }),
+    [],
+  );
 
   useFrame((state, delta) => {
     const g = root.current;
@@ -163,6 +198,21 @@ export default function ProcessScene({ progress }: { progress: number }) {
       helmet.current.rotation.y = t * 0.5;
       helmet.current.position.y = 1.05 + Math.sin(t * 1.2) * 0.05;
     }
+    // ---- step markers: the active stage burns brighter
+    const step = active ?? Math.min(process.length - 1, Math.floor(p * process.length * 0.999));
+    if (markers.current) {
+      markers.current.children.forEach((child, i) => {
+        const node = child as THREE.Group;
+        const on = i === step;
+        const cur = (node.userData.glow as number | undefined) ?? 0;
+        const next = cur + (on ? 1 : 0 - cur) * (1 - Math.exp(-5 * dt));
+        node.userData.glow = next;
+        const plate = plates[i];
+        if (plate) plate.emissiveIntensity = 0.3 + next * (1.5 + Math.sin(t * 2.4) * 0.2);
+        node.scale.y = 1 + next * 0.05;
+      });
+    }
+
     g.userData.checks?.forEach((o: THREE.Object3D, idx: number) => {
       const e = ease(clamp01(q * 1.8 - idx * 0.25));
       o.scale.setScalar(Math.max(0.001, e));
@@ -409,6 +459,56 @@ export default function ProcessScene({ progress }: { progress: number }) {
             <sprite scale={[1.2, 1.2, 1]}>
               <spriteMaterial map={getGlowTexture()} color="#8ee6a8" transparent opacity={0.3} depthWrite={false} />
             </sprite>
+          </group>
+        ))}
+      </group>
+
+      {/* ------------------------------------------- the five steps, standing */}
+      <group ref={markers}>
+        {process.map((step, i) => (
+          <group key={step.index} position={markerPos[i]}>
+            <mesh position={[0, 0.12, 0]} material={mats.dark} castShadow receiveShadow>
+              <cylinderGeometry args={[1.0, 1.1, 0.24, 24]} />
+            </mesh>
+            <mesh position={[0, 2.3, 0]} material={mats.steel} castShadow>
+              <boxGeometry args={[0.44, 4.2, 0.44]} />
+            </mesh>
+            {[1.2, 2.4, 3.6].map((y) => (
+              <mesh key={y} position={[0, y, 0]} material={mats.steelLight}>
+                <boxGeometry args={[0.56, 0.06, 0.56]} />
+              </mesh>
+            ))}
+            {/* index plate */}
+            <mesh position={[0, 4.6, 0.24]}>
+              <boxGeometry args={[0.94, 0.94, 0.07]} />
+              <primitive object={plates[i]} attach="material" />
+            </mesh>
+            <mesh position={[0, 4.6, 0.29]} material={mats.dark}>
+              <boxGeometry args={[0.7, 0.06, 0.02]} />
+            </mesh>
+            <mesh position={[0, 5.16, 0]} material={mats.steel}>
+              <boxGeometry args={[0.62, 0.1, 0.62]} />
+            </mesh>
+            <sprite position={[0, 4.6, 0.3]} scale={[2.6, 2.6, 1]}>
+              <spriteMaterial
+                map={getGlowTexture()}
+                color="#d8a76a"
+                transparent
+                opacity={0.18}
+                depthWrite={false}
+              />
+            </sprite>
+
+            <ItemLabel
+              position={[0, 6.1, 0]}
+              distanceFactor={16}
+              getOpacity={() => 0.35 + (((markers.current?.children[i]?.userData.glow as number) ?? 0) * 0.65)}
+            >
+              <div className="text-center">
+                <div className="tech text-[9px] tracking-[0.3em] text-accent">{step.index}</div>
+                <div className="display mt-1 text-[13px] text-chalk">{step.title}</div>
+              </div>
+            </ItemLabel>
           </group>
         ))}
       </group>

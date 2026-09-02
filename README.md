@@ -42,6 +42,31 @@ file is `public/data/india-states.geojson` (~400 KB, served statically).
    for detail, arcs running from the Bihar operations bases.
 8. **Let's build the future together** — dusk skyline, enquiry form, contacts.
 
+## The items are 3D
+
+Every item list on the page is rendered as real geometry inside its section's
+**existing** canvas — the page already runs eight canvases and browsers silently
+evict WebGL contexts beyond roughly four live ones, so items are added to the rig
+they belong to rather than given a canvas each (`useContextGate` enforces this).
+
+| Section | Items | What they became |
+| --- | --- | --- |
+| Services | 6 | already individual 3D scenes (`ServiceModel`) |
+| Trust | 4 | a distinct object per commitment — test cube under calipers, helmet and barrier, stamped document stack, tilted solar array — on plinths around the central helmet |
+| Clients | 10 | a monolith per client, alternating sides of the corridor, swinging to face the camera as it passes |
+| Process | 5 | a numbered colonnade of pylons standing behind the site, lighting as each stage is framed |
+| About | 4 | a different structure per milestone: corner stone → four-vertical frame → site network → tower |
+
+`src/components/three/ItemLabel.tsx` holds the shared pieces: `ItemLabel` (a drei
+`Html` plate pinned to an object, polled per frame so fades never re-render
+React, and hidden from compositing once faded out), `ItemPlinth`, and
+`SelectionBeam`.
+
+Trust is two-way: selecting a commitment in the copy flies the camera to its
+object, and hovering or clicking the object selects it back in the copy. The
+text always stays in the DOM, so it is still readable with WebGL unavailable or
+motion reduced.
+
 ## Motion language
 
 The motion follows the reference the client supplied (velaarmon.com):

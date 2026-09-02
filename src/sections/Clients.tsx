@@ -49,7 +49,7 @@ export default function Clients() {
             envIntensity={0.4}
             shadows={false}
           />
-          <ClientsScene progress={display} />
+          <ClientsScene progress={display} active={active} />
         </SceneCanvas>
 
         <div className="vignette pointer-events-none absolute inset-0 z-[5]" />
