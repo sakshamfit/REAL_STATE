@@ -6,6 +6,10 @@ import { runtime, useExperience } from '@/lib/store'
 import { CameraRig } from './CameraRig'
 import { Lighting } from './Lighting'
 import { Atmosphere } from './Atmosphere'
+import { Sky } from './Sky'
+import { RealWorld } from './RealWorld'
+import { WindSystem } from './WindSystem'
+import { EntranceGate } from './EntranceGate'
 import { HeroBuilding } from './chapters/HeroBuilding'
 import { ServicesWorlds } from './chapters/ServicesWorlds'
 import { ProcessModel } from './chapters/ProcessModel'
@@ -22,6 +26,10 @@ export function Scene({ quality }: { quality: QualitySettings }) {
       <CameraRig quality={quality} />
       <Lighting quality={quality} />
       <Atmosphere quality={quality} />
+      <Sky quality={quality} />
+      <RealWorld quality={quality} />
+      <WindSystem quality={quality} />
+      <EntranceGate quality={quality} />
 
       <HeroBuilding quality={quality} />
       <ServicesWorlds quality={quality} />

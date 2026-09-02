@@ -10,13 +10,13 @@
    ============================================================ */
 
 :root {
-  --black: #080909;
-  --charcoal: #111212;
-  --concrete: #a5a29a;
-  --white: #f2f0ea;
-  --muted: #777773;
-  --metal: #b8b4aa;
-  --accent: #b99a63;
+  --black: #101312;
+  --charcoal: #232624;
+  --concrete: #b5b0a4;
+  --white: #f6f1e7;
+  --muted: #848078;
+  --metal: #aaa79d;
+  --accent: #a88579;
 
   --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
   --font-body: 'Inter', system-ui, -apple-system, sans-serif;
@@ -195,7 +195,7 @@ button {
   max-width: 44ch;
   margin: clamp(20px, 2vw, 30px) 0 0;
   padding-left: 18px;
-  border-left: 1px solid rgba(185, 154, 99, 0.35);
+  border-left: 1px solid rgba(168, 133, 121, 0.35);
 }
 
 .index {
@@ -295,7 +295,7 @@ button {
 
 .block--right .note {
   border-left: 0;
-  border-right: 1px solid rgba(185, 154, 99, 0.35);
+  border-right: 1px solid rgba(168, 133, 121, 0.35);
   padding-left: 0;
   padding-right: 18px;
 }
@@ -365,7 +365,7 @@ button {
 }
 
 .nav--solid {
-  background: rgba(8, 9, 9, 0.65);
+  background: rgba(16, 19, 18, 0.65);
   backdrop-filter: blur(14px) saturate(120%);
   -webkit-backdrop-filter: blur(14px) saturate(120%);
   padding-top: clamp(14px, 1.6vw, 20px);
@@ -451,7 +451,7 @@ button {
   position: fixed;
   inset: 0;
   z-index: var(--z-menu);
-  background: rgba(8, 9, 9, 0.94);
+  background: rgba(16, 19, 18, 0.94);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   display: flex;
@@ -693,7 +693,7 @@ button {
   align-items: center;
   gap: 14px;
   padding: 12px 0;
-  border-bottom: 1px solid rgba(185, 154, 99, 0.5);
+  border-bottom: 1px solid rgba(168, 133, 121, 0.5);
   transition: color 0.4s var(--ease), border-color 0.4s var(--ease), gap 0.4s var(--ease);
 }
 
@@ -812,7 +812,7 @@ button {
   width: 6px;
   height: 6px;
   border: 1px solid var(--accent);
-  background: rgba(185, 154, 99, 0.35);
+  background: rgba(168, 133, 121, 0.35);
   transform: rotate(45deg);
   flex: none;
 }
@@ -908,7 +908,7 @@ button {
 .state-rail__item:hover,
 .state-rail__item:focus-visible {
   color: var(--white);
-  border-color: rgba(185, 154, 99, 0.6);
+  border-color: rgba(168, 133, 121, 0.6);
   outline: none;
 }
 
@@ -998,7 +998,7 @@ button {
   align-items: center;
   gap: 14px;
   padding-bottom: 10px;
-  border-bottom: 1px solid rgba(185, 154, 99, 0.55);
+  border-bottom: 1px solid rgba(168, 133, 121, 0.55);
   transition: gap 0.5s var(--ease), color 0.5s var(--ease);
 }
 
@@ -1091,8 +1091,8 @@ button {
   z-index: var(--z-overlay);
   pointer-events: none;
   background:
-    radial-gradient(120% 90% at 50% 45%, rgba(8, 9, 9, 0) 42%, rgba(8, 9, 9, 0.72) 100%),
-    linear-gradient(180deg, rgba(8, 9, 9, 0.55) 0%, rgba(8, 9, 9, 0) 22%, rgba(8, 9, 9, 0) 76%, rgba(8, 9, 9, 0.6) 100%);
+    radial-gradient(120% 90% at 50% 45%, rgba(16, 19, 18, 0) 42%, rgba(16, 19, 18, 0.72) 100%),
+    linear-gradient(180deg, rgba(16, 19, 18, 0.55) 0%, rgba(16, 19, 18, 0) 22%, rgba(16, 19, 18, 0) 76%, rgba(16, 19, 18, 0.6) 100%);
 }
 
 .grain {
@@ -1178,7 +1178,7 @@ button {
 .flat {
   min-height: 100vh;
   background:
-    radial-gradient(90% 60% at 50% 0%, rgba(185, 154, 99, 0.07), transparent 60%),
+    radial-gradient(90% 60% at 50% 0%, rgba(168, 133, 121, 0.07), transparent 60%),
     var(--black);
 }
 
@@ -1297,5 +1297,48 @@ button {
   .reveal {
     opacity: 1 !important;
     transform: none !important;
+  }
+}
+
+/* ============================================================
+   Environmental audio control
+   ============================================================ */
+
+.audio-control {
+  position: fixed;
+  bottom: clamp(22px, 4vw, 42px);
+  right: clamp(20px, 4vw, 48px);
+  z-index: var(--z-hud);
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--white);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: background 0.25s var(--ease), color 0.25s var(--ease), border-color 0.25s var(--ease);
+}
+
+.audio-control:hover,
+.audio-control:focus-visible {
+  background: rgba(255, 255, 255, 0.24);
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+.audio-control[data-muted='true'] {
+  color: rgba(246, 241, 231, 0.72);
+}
+
+.audio-control svg {
+  pointer-events: none;
+}
+
+@media (max-width: 720px) {
+  .audio-control {
+    bottom: 18px;
+    right: 18px;
   }
 }

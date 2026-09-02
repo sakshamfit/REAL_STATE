@@ -13,6 +13,8 @@ import { Hud } from '@/components/ui/Hud'
 import { MapOverlay } from '@/components/ui/MapOverlay'
 import { Overlays } from '@/components/ui/Overlays'
 import { FlatExperience } from '@/components/ui/FlatExperience'
+import { AudioControl } from '@/components/ui/AudioControl'
+import { preloadProductionAssets } from '@/lib/glb'
 
 const Experience = dynamic(() => import('@/components/experience/Experience'), { ssr: false })
 
@@ -29,6 +31,7 @@ export default function Page() {
     registerGsap()
     setTier(tier, reducedMotion)
     if (!webgl) setFlat(true)
+    if (webgl) preloadProductionAssets()
   }, [tier, reducedMotion, webgl, setTier, setFlat])
 
   useSmoothScroll(phase === 'entered')
@@ -52,12 +55,13 @@ export default function Page() {
           <Experience quality={quality} />
           <ScrollContent />
           <MapOverlay />
-          <Hud />
+            <Hud />
           <Overlays />
         </>
       )}
 
       <Navigation />
+      <AudioControl />
       <Preloader />
     </>
   )

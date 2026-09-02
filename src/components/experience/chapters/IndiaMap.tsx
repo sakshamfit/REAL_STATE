@@ -18,12 +18,12 @@ import { decalMaterial, emissiveMaterial, PALETTE, stateBaseMaterial } from '@/l
 import { latLngToXZ } from '@/lib/projection'
 import { useChapterVisibility } from '../hooks'
 
-const COLOR_BASE = new THREE.Color('#191b1c')
-const COLOR_PRESENCE = new THREE.Color('#24211c')
-const COLOR_ACTIVE = new THREE.Color('#3b3a35')
-const COLOR_BORDER = new THREE.Color('#8f8b83')
-const COLOR_BORDER_ACTIVE = new THREE.Color(PALETTE.accent)
-const COLOR_DIM = new THREE.Color('#0e1011')
+const COLOR_BASE = new THREE.Color('#666353')
+const COLOR_PRESENCE = new THREE.Color('#7c7661')
+const COLOR_ACTIVE = new THREE.Color('#aa9a7d')
+const COLOR_BORDER = new THREE.Color('#91887a')
+const COLOR_BORDER_ACTIVE = new THREE.Color('#c3b49a')
+const COLOR_DIM = new THREE.Color('#3e3a31')
 
 type StateAnim = {
   lift: number
@@ -216,10 +216,10 @@ export function IndiaMap({ quality }: { quality: QualitySettings }) {
       const material = entry.material
       const base = entry.presence ? COLOR_PRESENCE : COLOR_BASE
       material.color.copy(base).lerp(COLOR_ACTIVE, anim.glow).lerp(COLOR_DIM, anim.dim * 0.7)
-      material.emissive.set(PALETTE.accent)
-      material.emissiveIntensity = entry.presence ? 0.06 + anim.glow * 0.5 : anim.glow * 0.42
-      material.metalness = 0.38 + anim.glow * 0.3
-      material.roughness = 0.78 - anim.glow * 0.28
+      material.emissive.set('#d7c7aa')
+      material.emissiveIntensity = entry.presence ? 0.04 + anim.glow * 0.32 : anim.glow * 0.24
+      material.metalness = 0.14 + anim.glow * 0.18
+      material.roughness = 0.84 - anim.glow * 0.24
 
       const border = entry.border
       border.color.copy(COLOR_BORDER).lerp(COLOR_BORDER_ACTIVE, Math.max(anim.glow, isHovered ? 0.5 : 0))
@@ -356,15 +356,15 @@ function CityMarker({
 
   return (
     <group ref={group} position={[x, 0, z]}>
-      <mesh position={[0, 1.15, 0]} material={emissiveMaterial(PALETTE.accent, 1.6)}>
+      <mesh position={[0, 1.15, 0]} material={emissiveMaterial('#b9aa8e', 0.6)}>
         <cylinderGeometry args={[0.035, 0.035, 2.3, 6]} />
       </mesh>
-      <mesh position={[0, 2.42, 0]} material={emissiveMaterial(PALETTE.accent, 2.4)}>
+      <mesh position={[0, 2.42, 0]} material={emissiveMaterial('#cabb9d', 0.9)}>
         <octahedronGeometry args={[0.19, 0]} />
       </mesh>
       <mesh ref={ring} rotation-x={-Math.PI / 2} position={[0, 0.06, 0]}>
         <ringGeometry args={[0.42, 0.5, 40]} />
-        <meshBasicMaterial color={PALETTE.accent} transparent opacity={0.5} depthWrite={false} />
+        <meshBasicMaterial color="#c3b49a" transparent opacity={0.5} depthWrite={false} />
       </mesh>
       <Html transform position={[0, 3.1, 0]} distanceFactor={13} style={{ pointerEvents: 'none' }}>
         <span

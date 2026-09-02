@@ -30,7 +30,7 @@ export function CameraRig({ quality }: { quality: QualitySettings }) {
     const portraitBoost = aspect < 1 ? 1.24 : aspect < 1.4 ? 1.08 : 1
     camera.fov = Math.min(72, quality.fov * portraitBoost)
     camera.near = 0.1
-    camera.far = 420
+    camera.far = 1600
     camera.updateProjectionMatrix()
   }, [camera, quality.fov, size])
 

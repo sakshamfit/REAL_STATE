@@ -2,13 +2,22 @@ import * as THREE from 'three'
 import { concreteTextureSet, metalTextureSet, radialTexture } from './textures'
 
 export const PALETTE = {
-  black: '#080909',
-  charcoal: '#111212',
-  concrete: '#a5a29a',
-  white: '#f2f0ea',
-  muted: '#777773',
-  metal: '#b8b4aa',
-  accent: '#b99a63',
+  black: '#101312',
+  charcoal: '#232624',
+  concrete: '#b5b0a4',
+  white: '#f6f1e7',
+  muted: '#848078',
+  metal: '#aaa79d',
+  accent: '#a88579',
+  stone: '#a59a85',
+  render: '#e3d7c4',
+  foliage: '#5d774f',
+  foliageB: '#6f8757',
+  wood: '#8a6544',
+  terracotta: '#b36745',
+  asphalt: '#3b3d3d',
+  soil: '#6b5744',
+  mutedPaint: '#72857d',
 } as const
 
 const cache = new Map<string, THREE.Material>()
@@ -81,6 +90,172 @@ export function glassMaterial(tint = '#0e1416', opacity = 0.24) {
     })
     return material
   })
+}
+
+export type MaterialKey =
+  | 'concrete'
+  | 'darkConcrete'
+  | 'lightConcrete'
+  | 'stone'
+  | 'render'
+  | 'wood'
+  | 'metal'
+  | 'darkMetal'
+  | 'glass'
+  | 'asphalt'
+  | 'soil'
+  | 'foliage'
+  | 'foliageB'
+  | 'terracotta'
+  | 'mutedPaint'
+
+function physicalMaterial(
+  key: string,
+  color: string,
+  roughness: number,
+  metalness: number,
+  envMapIntensity = 0.55,
+) {
+  return memo(`physical-${key}`, () => {
+    const material = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(color),
+      roughness,
+      metalness,
+      envMapIntensity,
+    })
+    return material
+  })
+}
+
+export function renderMaterial(textureSize: 256 | 512 = 512) {
+  return memo(`render-${textureSize}`, () => {
+    const { map, normalMap, roughnessMap } = concreteTextureSet(textureSize, 2, 0.9)
+    const material = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(PALETTE.render),
+      map,
+      normalMap,
+      roughnessMap,
+      roughness: 0.76,
+      metalness: 0.02,
+      envMapIntensity: 0.45,
+    })
+    return material
+  })
+}
+
+export function stoneMaterial(textureSize: 256 | 512 = 512) {
+  return memo(`stone-${textureSize}`, () => {
+    const { map, normalMap, roughnessMap } = concreteTextureSet(textureSize, 1.6, 0.72)
+    const material = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(PALETTE.stone),
+      map,
+      normalMap,
+      roughnessMap,
+      roughness: 0.82,
+      metalness: 0.04,
+      envMapIntensity: 0.5,
+    })
+    return material
+  })
+}
+
+export function asphaltMaterial(textureSize: 256 | 512 = 256) {
+  return memo(`asphalt-${textureSize}`, () => {
+    const { map, normalMap, roughnessMap } = concreteTextureSet(textureSize, 1, 0.22)
+    const material = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(PALETTE.asphalt),
+      map,
+      normalMap,
+      roughnessMap,
+      roughness: 0.95,
+      metalness: 0.02,
+      envMapIntensity: 0.25,
+    })
+    return material
+  })
+}
+
+export function woodMaterial(textureSize: 256 | 512 = 256) {
+  return memo(`wood-${textureSize}`, () => {
+    const material = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(PALETTE.wood),
+      roughness: 0.68,
+      metalness: 0.02,
+      envMapIntensity: 0.4,
+    })
+    return material
+  })
+}
+
+export function foliageMaterial(color: string, textureSize: 256 | 512 = 256) {
+  return memo(`foliage-${color}-${textureSize}`, () => {
+    const material = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(color),
+      roughness: 0.82,
+      metalness: 0,
+      envMapIntensity: 0.25,
+    })
+    return material
+  })
+}
+
+export function terracottaMaterial(textureSize: 256 | 512 = 256) {
+  return memo(`terracotta-${textureSize}`, () =>
+    new THREE.MeshStandardMaterial({
+      color: new THREE.Color(PALETTE.terracotta),
+      roughness: 0.76,
+      metalness: 0.02,
+      envMapIntensity: 0.4,
+    }),
+  )
+}
+
+export function mutedPaintMaterial(textureSize: 256 | 512 = 256) {
+  return memo(`muted-paint-${textureSize}`, () =>
+    new THREE.MeshStandardMaterial({
+      color: new THREE.Color(PALETTE.mutedPaint),
+      roughness: 0.68,
+      metalness: 0.08,
+      envMapIntensity: 0.5,
+    }),
+  )
+}
+
+export function materialForKey(key: string, quality: { textureSize: 256 | 512; shade?: boolean }): THREE.Material {
+  switch (key) {
+    case 'render':
+      return renderMaterial(quality.textureSize)
+    case 'stone':
+      return stoneMaterial(quality.textureSize)
+    case 'concrete':
+      return concreteMaterial('mid', 1.6, quality.textureSize)
+    case 'darkConcrete':
+      return concreteMaterial('dark', 1.8, quality.textureSize)
+    case 'lightConcrete':
+      return concreteMaterial('light', 1.4, quality.textureSize)
+    case 'asphalt':
+      return asphaltMaterial(quality.textureSize)
+    case 'soil':
+      return physicalMaterial('soil', PALETTE.soil, 1, 0)
+    case 'wood':
+      return woodMaterial(quality.textureSize)
+    case 'metal':
+      return metalMaterial('brushed', 2, quality.textureSize)
+    case 'darkMetal':
+      return metalMaterial('dark', 2, quality.textureSize)
+    case 'glass':
+      return glassMaterial('#34535b', 0.34)
+    case 'foliage':
+      return foliageMaterial(PALETTE.foliage, quality.textureSize)
+    case 'foliageB':
+      return foliageMaterial(PALETTE.foliageB, quality.textureSize)
+    case 'terracotta':
+      return terracottaMaterial(quality.textureSize)
+    case 'mutedPaint':
+      return mutedPaintMaterial(quality.textureSize)
+    default:
+      return concreteMaterial('mid', 1, quality.textureSize)
+  }
 }
 
 export function emissiveMaterial(color: string, intensity = 1, opacity = 1) {

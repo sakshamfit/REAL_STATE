@@ -7,6 +7,14 @@ import { loadIndiaData } from '@/lib/map-data'
 import { useScrollLock, registerGsap } from '@/lib/scroll'
 import { company } from '@/data/company'
 
+function loaderStage(percent: number) {
+  if (percent < 14) return 'BUILDING THE WORLD'
+  if (percent < 46) return 'LOADING ARCHITECTURE'
+  if (percent < 92) return 'LOADING ENVIRONMENT'
+  if (percent < 100) return 'LOADING ATMOSPHERE'
+  return 'ENTERING'
+}
+
 export function Preloader() {
   const phase = useExperience((state) => state.phase)
   const setPhase = useExperience((state) => state.setPhase)
@@ -95,7 +103,7 @@ export function Preloader() {
       <p className="loader__mark">RUDRA</p>
       <p className="loader__sub">CONSTRUCTIONS &amp; SUPPLIERS</p>
 
-      <p className="loader__status">{ready ? 'EXPERIENCE READY' : 'LOADING EXPERIENCE'}</p>
+      <p className="loader__status">{ready ? 'EXPERIENCE READY' : loaderStage(percent)}</p>
       <p className="loader__percent">{String(Math.round(percent)).padStart(3, '0')}%</p>
       <div className="loader__track">
         <i style={{ transform: `scaleX(${percent / 100})` }} />
