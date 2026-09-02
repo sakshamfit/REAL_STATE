@@ -187,8 +187,13 @@ function States({
             />
             {hovered === f.name && (
               <Html position={[cx, 1.8, cy]} center distanceFactor={26} zIndexRange={[5, 0]} style={{ pointerEvents: "none" }}>
-                <div className="whitespace-nowrap rounded-sm border border-[#d97706]/70 bg-[#fffaf2]/95 px-3 py-1.5 font-mono text-[11px] uppercase tracking-widest text-[#3d3a33] shadow-lg">
-                  {f.name}
+                <div className="whitespace-nowrap rounded-sm border border-[#d97706]/70 bg-[#fffaf2]/95 px-3 py-1.5 text-center shadow-lg backdrop-blur">
+                  <div className="font-mono text-[11px] uppercase tracking-widest text-[#3d3a33]">{f.name}</div>
+                  {PRESENCE_BY_GEO.has(f.name) && (
+                    <div className="mt-0.5 font-mono text-[8.5px] uppercase tracking-widest2 text-[#b45309]">
+                      Projects / Presence
+                    </div>
+                  )}
                 </div>
               </Html>
             )}
@@ -264,13 +269,13 @@ function Marker({
   );
 }
 
-function RouteSystem({ features }: { features: IndiaFeature[] }) {
+function RouteSystem({ features, activeKey }: { features: IndiaFeature[]; activeKey: string | null }) {
   const routes = useRef<Array<{ line: any; group: THREE.Group } | null>>([]);
   const pulse = useRef<THREE.Mesh[]>([]);
 
   const data = useMemo(() => {
     if (!hub) return [];
-    const pts: { key: string; points: THREE.Vector3[] }[] = [];
+    const pts: { key: string; geoName: string; points: THREE.Vector3[] }[] = [];
     for (const p of PRESENCE.slice(0, 2)) {
       for (const c of p.cities ?? []) {
         const [hx, hz] = project(hub.lon, hub.lat);
@@ -278,6 +283,7 @@ function RouteSystem({ features }: { features: IndiaFeature[] }) {
         const mid = new THREE.Vector3((hx + cx) / 2, 3.1, (hz + cz) / 2);
         pts.push({
           key: `${p.geoName}-${c.name}`,
+          geoName: p.geoName,
           points: [new THREE.Vector3(hx, 1, hz), mid, new THREE.Vector3(cx, 1, cz)],
         });
       }
@@ -290,6 +296,7 @@ function RouteSystem({ features }: { features: IndiaFeature[] }) {
       const mid = new THREE.Vector3((hx + cx) / 2, 4.4, (hz + cz) / 2);
       pts.push({
         key: p.geoName,
+        geoName: p.geoName,
         points: [new THREE.Vector3(hx, 1, hz), mid, new THREE.Vector3(cx, 1, cz)],
       });
     }
@@ -302,17 +309,26 @@ function RouteSystem({ features }: { features: IndiaFeature[] }) {
     data.forEach((d, i) => {
       const item = routes.current[i];
       if (!item || !item.group) return;
+      const active = d.geoName === activeKey;
       item.group.visible = on > 0.001;
       if (item.line?.material) {
-        item.line.material.dashOffset -= delta * 1.6;
-        item.line.material.opacity = on * 0.85;
+        item.line.material.dashOffset -= delta * (active ? 2.6 : 1.6);
+        item.line.material.opacity = on * (active ? 1 : 0.8);
+        item.line.material.linewidth = active ? 3.2 : 1.2;
       }
       const dot = pulse.current[i];
       if (dot) {
-        const t = (performance.now() / 2400 + i * 0.29) % 1;
+        const t = (performance.now() / (active ? 1200 : 2400) + i * 0.29) % 1;
         const curve = new THREE.CatmullRomCurve3(d.points);
         dot.position.copy(curve.getPointAt(t));
         dot.visible = on > 0.4;
+        if (active) {
+          dot.scale.setScalar(1);
+          (dot.material as THREE.MeshBasicMaterial).color.set("#f59e0b");
+        } else {
+          dot.scale.setScalar(0.8);
+          (dot.material as THREE.MeshBasicMaterial).color.set("#b45309");
+        }
       }
     });
   });
@@ -443,7 +459,7 @@ export function IndiaCanvas({
       />
 
       <States features={geo} hovered={hovered} selected={selected} onHover={onHover} onSelect={onSelect} />
-      <RouteSystem features={geo} />
+      <RouteSystem features={geo} activeKey={hovered ?? selected} />
 
       {geo.flatMap((f) => {
         const p = PRESENCE_BY_GEO.get(f.name);

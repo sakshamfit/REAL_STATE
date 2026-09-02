@@ -137,6 +137,12 @@ export function HeroSection() {
       {/* final brand reveal */}
       <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center px-6 text-center">
         <div data-hero-brand className="opacity-0">
+          {/* Rudra mark */}
+          <div className="relative mx-auto mb-7 flex h-20 w-20 items-center justify-center sm:h-24 sm:w-24">
+            <span className="absolute inset-0 animate-spin-slow rounded-full border border-dashed border-accent/60" />
+            <span className="absolute inset-2 rounded-full border border-accent/30" />
+            <span className="font-display text-4xl font-700 text-accent sm:text-5xl">R</span>
+          </div>
           <div className="mb-6 flex items-center justify-center gap-4">
             <span className="hidden h-px w-16 bg-accent/70 sm:block" />
             <span className="font-mono text-[10px] uppercase tracking-widest3 text-accentDim">
