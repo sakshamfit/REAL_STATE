@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { process } from "@/lib/data/content";
+import SplitWords from "@/components/SplitWords";
 import { useSectionProgress } from "@/hooks/useSectionProgress";
 import SceneCanvas from "@/components/three/SceneCanvas";
 import Studio from "@/components/three/Studio";
@@ -52,7 +53,7 @@ export default function Process() {
             <Reveal>
               <div className="tech mb-4 text-[10px] text-accent">How we build</div>
               <h2 className="display max-w-2xl text-[clamp(1.7rem,4vw,3.1rem)] text-chalk">
-                Five steps from brief to handover
+                <SplitWords text="Five steps from brief to handover" step={70} />
               </h2>
             </Reveal>
           </div>

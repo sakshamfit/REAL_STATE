@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { company, heroStages } from "@/lib/data/content";
+import SplitWords from "@/components/SplitWords";
 import { useSectionProgress } from "@/hooks/useSectionProgress";
 import { useMotionPrefs } from "@/lib/motion";
 
@@ -101,8 +102,12 @@ export default function Hero() {
             </div>
 
             <h1 className="display text-[clamp(2.1rem,7.4vw,6.6rem)] text-chalk">
-              <span data-anim className="block">Rudra Constructions</span>
-              <span data-anim className="block text-concrete">&amp; Suppliers</span>
+              <span data-anim className="block">
+                <SplitWords text="Rudra Constructions" step={90} />
+              </span>
+              <span data-anim className="block text-concrete">
+                <SplitWords text="& Suppliers" step={90} start={180} />
+              </span>
             </h1>
 
             <p

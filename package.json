@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "test:scenes": "node tools/headless-scene.mjs",
     "test:render": "node tools/client-render.mjs",
     "test": "npm run test:render && npm run test:scenes"

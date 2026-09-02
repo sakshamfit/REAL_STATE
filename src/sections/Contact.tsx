@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import { company, cta, nav, services } from "@/lib/data/content";
+import SplitWords from "@/components/SplitWords";
 import { useMotionPrefs } from "@/lib/motion";
 import SceneCanvas from "@/components/three/SceneCanvas";
 import Studio from "@/components/three/Studio";
@@ -58,7 +59,9 @@ export default function Contact() {
           <div className="max-w-4xl">
             <Reveal>
               <div className="tech mb-6 text-[10px] text-accent">Final CTA</div>
-              <h2 className="display text-[clamp(2rem,6.4vw,5rem)] text-chalk">{cta.headline}</h2>
+              <h2 className="display text-[clamp(2rem,6.4vw,5rem)] text-chalk">
+                <SplitWords text={cta.headline} step={80} />
+              </h2>
               <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
                 {cta.lines.map((l, i) => (
                   <span key={l} className="flex items-center gap-6">
@@ -86,7 +89,7 @@ export default function Contact() {
         <Reveal>
           <div className="tech mb-5 text-[10px] text-accent">Start a project</div>
           <h3 className="display text-[clamp(1.6rem,3.4vw,2.6rem)] text-chalk">
-            Tell us what you want to build
+            <SplitWords text="Tell us what you want to build" step={70} />
           </h3>
           <p className="mt-5 max-w-lg text-sm leading-relaxed text-concrete">
             Send the brief and we will come back with feasibility, an indicative programme and the

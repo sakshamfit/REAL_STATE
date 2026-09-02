@@ -316,6 +316,31 @@ export const heroStages = [
   { at: 0.82, label: "Complete", note: "Handover-ready building" },
 ] as const;
 
+/**
+ * Chapter markers shown in the left rail while the page descends.
+ * `short` is the rail label; `id` must match a section id.
+ */
+export const chapters = [
+  { id: "hero", numeral: "I", short: "Descent" },
+  { id: "about", numeral: "II", short: "The company" },
+  { id: "services", numeral: "III", short: "Verticals" },
+  { id: "process", numeral: "IV", short: "Method" },
+  { id: "trust", numeral: "V", short: "Standards" },
+  { id: "clients", numeral: "VI", short: "Clients" },
+  { id: "presence", numeral: "VII", short: "India" },
+  { id: "contact", numeral: "VIII", short: "Enquiry" },
+] as const;
+
+/** Numbers shown in the About section, counted up on reveal. */
+export type Stat = { to: number; suffix: string; label: string; plain?: boolean };
+
+export const stats: Stat[] = [
+  { to: 2025, suffix: "", label: "Founded", plain: true },
+  { to: 6, suffix: "", label: "Working verticals" },
+  { to: 5, suffix: "-step", label: "Execution model" },
+  { to: 11, suffix: "", label: "States we work in" },
+];
+
 export const nav = [
   { id: "hero", label: "Home" },
   { id: "about", label: "About" },

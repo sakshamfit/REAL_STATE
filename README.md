@@ -42,6 +42,24 @@ file is `public/data/india-states.geojson` (~400 KB, served statically).
    for detail, arcs running from the Bihar operations bases.
 8. **Let's build the future together** — dusk skyline, enquiry form, contacts.
 
+## Motion language
+
+The motion follows the reference the client supplied (velaarmon.com):
+
+- **Intro loader** — "Composing the descent" counts to 100%, tracking real
+  readiness (`document` complete + webfonts settled) with a minimum duration and
+  a hard cap so it can neither flash by nor stall, then the plate lifts on a
+  clip-path wipe.
+- **Chapter rail** — a hairline reading-progress bar plus the current chapter in
+  roman numerals (I · Descent → VIII · Enquiry), crossfading as you descend.
+- **Word-mask headlines** — every heading is split per word, each word rising out
+  of an overflow-hidden mask on a stagger (`components/SplitWords.tsx`).
+- **Counters** — the About numbers count up once on reveal.
+- **Client marquee** — the client list runs as an infinite band, pausing on hover.
+
+All of it is disabled or collapsed to its end state under
+`prefers-reduced-motion`.
+
 ## Editing content
 
 Everything the client owns lives in **`src/lib/data/content.ts`**:

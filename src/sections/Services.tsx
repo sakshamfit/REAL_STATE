@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import { services, type Service } from "@/lib/data/content";
+import SplitWords from "@/components/SplitWords";
 import { useInView } from "@/hooks/useInView";
 import { useMotionPrefs } from "@/lib/motion";
 import SceneCanvas from "@/components/three/SceneCanvas";
@@ -21,7 +22,7 @@ export default function Services() {
           <Reveal>
             <div className="tech mb-5 text-[10px] text-accent">What we do</div>
             <h2 className="display max-w-3xl text-[clamp(1.9rem,4.6vw,3.6rem)] text-chalk">
-              Six verticals, one standard of work
+              <SplitWords text="Six verticals, one standard of work" step={70} />
             </h2>
           </Reveal>
           <Reveal delay={120}>

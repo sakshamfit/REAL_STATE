@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { clients } from "@/lib/data/content";
+import SplitWords from "@/components/SplitWords";
 import { useSectionProgress } from "@/hooks/useSectionProgress";
 import SceneCanvas from "@/components/three/SceneCanvas";
 import Studio from "@/components/three/Studio";
@@ -58,7 +59,10 @@ export default function Clients() {
             <Reveal>
               <div className="tech mb-4 text-[10px] text-accent">Trusted by</div>
               <h2 className="display text-[clamp(1.7rem,4vw,3rem)] text-chalk">
-                Government departments, foundations and institutions
+                <SplitWords
+                  text="Government departments, foundations and institutions"
+                  step={55}
+                />
               </h2>
             </Reveal>
           </div>
@@ -95,6 +99,21 @@ export default function Clients() {
               ))}
             </div>
           </div>
+        </div>
+      </div>
+      {/* client marquee — the same list, running as a band under the corridor */}
+      <div className="marquee-track relative overflow-hidden border-t border-line bg-ink py-6">
+        <div className="marquee" style={{ ["--marquee-duration" as string]: "52s" }}>
+          {[0, 1].map((pass) => (
+            <div key={pass} className="flex shrink-0 items-center" aria-hidden={pass === 1}>
+              {clients.map((c) => (
+                <span key={`${pass}-${c}`} className="flex items-center">
+                  <span className="tech whitespace-nowrap px-7 text-[11px] text-concrete">{c}</span>
+                  <span className="block h-1 w-1 rotate-45 bg-accent/60" />
+                </span>
+              ))}
+            </div>
+          ))}
         </div>
       </div>
     </section>

@@ -240,6 +240,30 @@ body {
   }
 }
 
+/* -------------------------------------------------------------- marquee */
+@keyframes marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.marquee {
+  position: relative;
+  display: flex;
+  width: max-content;
+  animation: marquee var(--marquee-duration, 46s) linear infinite;
+}
+.marquee-track:hover .marquee {
+  animation-play-state: paused;
+}
+.marquee-track {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+}
+
 /* ------------------------------------------------------------- scrollbars */
 ::-webkit-scrollbar {
   width: 10px;
@@ -288,7 +312,8 @@ body {
     opacity: 1 !important;
   }
   .pulse-ring,
-  .sweep::after {
+  .sweep::after,
+  .marquee {
     animation: none !important;
   }
 }

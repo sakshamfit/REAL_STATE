@@ -2,7 +2,9 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { company, timeline } from "@/lib/data/content";
+import { company, stats, timeline } from "@/lib/data/content";
+import SplitWords from "@/components/SplitWords";
+import Counter from "@/components/Counter";
 import { useSectionProgress } from "@/hooks/useSectionProgress";
 import { useMotionPrefs } from "@/lib/motion";
 import SceneCanvas from "@/components/three/SceneCanvas";
@@ -57,9 +59,7 @@ export default function About() {
               <Reveal>
                 <div className="tech mb-5 text-[10px] text-accent">About Rudra</div>
                 <h2 className="display text-[clamp(1.9rem,4.4vw,3.4rem)] text-chalk">
-                  From ground
-                  <br />
-                  to growth
+                  <SplitWords text="From ground to growth" step={80} />
                 </h2>
                 <p className="mt-6 max-w-lg text-sm leading-relaxed text-concrete md:text-[15px]">
                   Founded in {company.founded}, Rudra Constructions &amp; Suppliers was built to do one
@@ -68,6 +68,21 @@ export default function About() {
                   team.
                 </p>
               </Reveal>
+
+              <div className="mt-9 grid grid-cols-2 gap-px border border-line bg-line sm:grid-cols-4">
+                {stats.map((st) => (
+                  <div key={st.label} className="bg-ink2 px-4 py-4">
+                    <div className="display text-[clamp(1.2rem,2.4vw,1.7rem)] text-chalk">
+                      {st.plain ? (
+                        st.to
+                      ) : (
+                        <Counter to={st.to} suffix={st.suffix} />
+                      )}
+                    </div>
+                    <div className="tech mt-2 text-[8px] text-steel">{st.label}</div>
+                  </div>
+                ))}
+              </div>
 
               <div className="mt-10 space-y-1">
                 {timeline.map((item, i) => {

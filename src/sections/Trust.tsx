@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { trustPillars } from "@/lib/data/content";
+import SplitWords from "@/components/SplitWords";
 import { useMotionPrefs } from "@/lib/motion";
 import SceneCanvas from "@/components/three/SceneCanvas";
 import Studio from "@/components/three/Studio";
@@ -27,7 +28,7 @@ export default function Trust() {
           <Reveal>
             <div className="tech mb-5 text-[10px] text-accent">Quality · Safety · Compliance</div>
             <h2 className="display max-w-xl text-[clamp(1.9rem,4.4vw,3.4rem)] text-chalk">
-              The part of the building nobody sees — until it matters
+              <SplitWords text="The part of the building nobody sees — until it matters" step={55} />
             </h2>
             <p className="mt-6 max-w-lg text-sm leading-relaxed text-concrete md:text-[15px]">
               Every Rudra site runs on the same four commitments. They are inspected, recorded and

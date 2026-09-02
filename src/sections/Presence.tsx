@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useMemo, useRef, useState } from "react";
 import { presence, projects, tierLabel, type PresenceTier } from "@/lib/data/content";
+import SplitWords from "@/components/SplitWords";
 import { useInView } from "@/hooks/useInView";
 import { useMotionPrefs } from "@/lib/motion";
 import SceneCanvas from "@/components/three/SceneCanvas";
@@ -79,7 +80,7 @@ export default function Presence() {
             <Reveal>
               <div className="tech mb-4 text-[10px] text-accent">Where we are</div>
               <h2 className="display text-[clamp(1.8rem,4.6vw,3.6rem)] text-chalk">
-                Our presence across India
+                <SplitWords text="Our presence across India" step={80} />
               </h2>
               <p className="mt-4 max-w-md text-sm leading-relaxed text-concrete">
                 Hover a state for a readout. Click to open its detail — glowing routes run from our
