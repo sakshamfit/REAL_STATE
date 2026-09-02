@@ -55,6 +55,7 @@ function ServiceCard({
   const [hover, setHover] = useState(false);
   const seenRef = useRef(false);
   if (inView) seenRef.current = true;
+  // the canvas itself is additionally gated by the shared WebGL context budget
   const mounted = seenRef.current;
   const anim = useRef(0);
   const [animState, setAnimState] = useState(0);

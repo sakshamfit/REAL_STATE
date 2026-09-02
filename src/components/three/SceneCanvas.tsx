@@ -1,9 +1,10 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import { AdaptiveDpr } from "@react-three/drei";
 import { useEffect, useState, type ReactNode } from "react";
 import { useMotionPrefs } from "@/lib/motion";
+import { useContextGate } from "@/hooks/useWebGLBudget";
+import SceneErrorBoundary from "@/components/three/SceneErrorBoundary";
 
 /**
  * Shared canvas host:
@@ -30,6 +31,7 @@ export default function SceneCanvas({
 }) {
   const { webgl, dpr, shadows, tier, lite } = useMotionPrefs();
   const [mounted, setMounted] = useState(false);
+  const { ref: gateRef, active: hasSlot } = useContextGate<HTMLDivElement>();
 
   useEffect(() => {
     // defer one task so the canvas never mounts during the first paint pass
@@ -40,7 +42,9 @@ export default function SceneCanvas({
   if (!mounted || !webgl) return null;
 
   return (
-    <div className={`canvas-frame ${className}`}>
+    <div ref={gateRef} className={`canvas-frame ${className}`}>
+      {hasSlot && (
+      <SceneErrorBoundary>
       <Canvas
         dpr={dpr}
         shadows={shadowsFromPrefs ? shadows : false}
@@ -55,9 +59,10 @@ export default function SceneCanvas({
         }}
         onCreated={() => onCreated?.()}
       >
-        <AdaptiveDpr pixelated={false} />
         {children}
       </Canvas>
+      </SceneErrorBoundary>
+      )}
     </div>
   );
 }

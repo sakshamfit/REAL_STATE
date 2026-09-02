@@ -101,10 +101,30 @@ presence tier.
 ```bash
 npm run dev            # dev server
 npm run build          # production build (includes typecheck)
+npm run start          # serve the production build
 npm run typecheck      # tsc --noEmit
 npm run lint           # eslint
+npm test               # both test suites below
+npm run test:render    # client-render smoke test (happy-dom)
 npm run test:scenes    # headless verification of every 3D scene
 ```
+
+### Previewing behind a proxy
+
+`next dev` blocks cross-origin requests to its own dev resources by default.
+When the site is previewed through a proxied host, `/_next/hmr` is refused, the
+dev client never connects, and the page shows its HTML but never executes a
+chunk — an endless loading screen with no error anywhere. `next.config.ts`
+therefore sets `allowedDevOrigins`. For a stable preview prefer
+`npm run build && npm run start`: it has no dev channel to block and ships
+1.66 MB of JS instead of 7.7 MB.
+
+### `npm run test:render`
+
+`tools/client-render.mjs` renders every section with real React — to a string
+first, then hydrated into happy-dom with effects running. It fails on a
+render-phase throw, a client crash, or a section that produces no readable text.
+happy-dom has no WebGL, so this doubles as a test of the no-3D fallback path.
 
 ### `npm run test:scenes`
 

@@ -60,7 +60,12 @@ export default function Hero() {
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60);
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    // failsafe: if the canvas never reports ready, stop covering the page
+    const failsafe = window.setTimeout(() => setReady(true), 4000);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.clearTimeout(failsafe);
+    };
   }, []);
 
   const copyOpacity = useMemo(() => 1 - clamp01((display - 0.03) / 0.13), [display]);
@@ -76,7 +81,10 @@ export default function Hero() {
   return (
     <section id="hero" ref={ref} style={style} className="relative">
       <div className="sticky top-0 h-screen w-full overflow-hidden">
-        <HeroScene progress={display} density={density} onReady={() => setReady(true)} />
+        {/* 3D layer — kept separate so a failed context cannot take the copy with it */}
+        <div className="absolute inset-0">
+          <HeroScene progress={display} density={density} onReady={() => setReady(true)} />
+        </div>
 
         {/* ---------------------------------------------------- copy layer */}
         <div

@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test:scenes": "node tools/headless-scene.mjs"
+    "test:scenes": "node tools/headless-scene.mjs",
+    "test:render": "node tools/client-render.mjs",
+    "test": "npm run test:render && npm run test:scenes"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",
@@ -29,6 +31,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.4",
+    "happy-dom": "^20.13.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   },

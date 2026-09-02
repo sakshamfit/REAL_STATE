@@ -260,6 +260,8 @@ body {
 .canvas-frame {
   position: absolute;
   inset: 0;
+  background:
+    radial-gradient(120% 90% at 50% 8%, #14181d 0%, #0a0c0f 55%, #06070a 100%);
 }
 .canvas-frame canvas {
   display: block;

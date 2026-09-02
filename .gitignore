@@ -43,3 +43,7 @@ next-env.d.ts
 # headless verification harness output
 /.headless-build/
 /.headless-tsconfig.json
+
+# client-render smoke test output
+/.smoke-build/
+/.smoke-tsconfig.json
