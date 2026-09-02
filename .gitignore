@@ -1,0 +1,13 @@
+node_modules
+.next
+out
+build
+dist
+.env*.local
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store
+npm-debug.log*
+
+# raw source topologies (regenerate with `npm run data:india`)
+data/raw
