@@ -23,6 +23,7 @@ npm run dev          # http://localhost:3000
 npm run build && npm start   # production
 npm run typecheck            # tsc --noEmit
 npm run data:india           # rebuild public/data/india-states.json from TopoJSON
+npm run assets:build         # full GLB generate → optimize → inspect + QA report
 npx tsx scripts/check-world.ts   # camera continuity + collision report
 ```
 
@@ -42,9 +43,11 @@ Requires Node 18.18+. No environment variables, no backend, no external services
 | Data | India state boundaries (TopoJSON → optimised GeoJSON), verified company data |
 
 Everything visual is generated in code: geometry, textures (canvas noise → albedo /
-roughness / normal maps), lighting and the environment map. There are **no image,
-GLB or HDR assets** to download, which is why the whole experience is a 148 kB
-first load plus a lazily fetched 86 kB map.
+roughness / normal maps), lighting and the environment map. The primary
+architectural assets are valid GLB files generated through
+`scripts/glb/` (`npm run assets:build`), then remapped at runtime to the shared
+PBR material library. The full pipeline is documented in
+[`docs/3d/ASSET_PIPELINE.md`](./docs/3d/ASSET_PIPELINE.md).
 
 ---
 

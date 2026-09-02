@@ -17,7 +17,7 @@ export default function Experience({ quality }: { quality: QualitySettings }) {
       <Canvas
         dpr={quality.dpr}
         shadows={quality.shadows}
-        camera={{ position: [0, 1, 18], fov: quality.fov, near: 0.1, far: 420 }}
+        camera={{ position: [0, 1, 18], fov: quality.fov, near: 0.1, far: 1600 }}
         gl={{
           antialias: quality.tier === 'high',
           powerPreference: 'high-performance',
@@ -27,8 +27,8 @@ export default function Experience({ quality }: { quality: QualitySettings }) {
         }}
         onCreated={({ gl }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping
-          gl.toneMappingExposure = 1.05
-          gl.setClearColor(new THREE.Color('#080909'), 1)
+          gl.toneMappingExposure = 1.12
+          gl.setClearColor(new THREE.Color('#a9c0cb'), 1)
         }}
         onPointerMissed={() => {
           const state = useExperience.getState()
