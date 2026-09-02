@@ -20,12 +20,17 @@ export default function Hero() {
   const copyRef = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
 
-  // smooth the scroll value so the build sequence never stutters
+  // Opening beat: before the visitor scrolls, the site surveys itself.
+  // Scroll takes over the moment it passes the auto-played progress.
+  const INTRO = 0.09;
   useEffect(() => {
     let raf = 0;
-    const target = () => clamp01((progress - 0.04) / 0.92);
+    const start = performance.now();
     const tick = () => {
-      const t = target();
+      const elapsed = (performance.now() - start) / 1000;
+      const auto = reducedMotion ? INTRO : clamp01((elapsed - 1.1) / 2.6) * INTRO;
+      const scrolledTo = clamp01((progress - 0.04) / 0.92);
+      const t = Math.max(auto, scrolledTo);
       smooth.current += (t - smooth.current) * (reducedMotion ? 1 : 0.12);
       if (Math.abs(t - smooth.current) < 0.0004) smooth.current = t;
       setDisplay(smooth.current);
