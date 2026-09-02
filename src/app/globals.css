@@ -1,0 +1,292 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------- tokens */
+:root {
+  --ink: #07080a;
+  --ink-2: #0b0d10;
+  --panel: #101317;
+  --panel-2: #15191e;
+  --concrete: #8d959e;
+  --concrete-dim: #5b636c;
+  --line: rgba(255, 255, 255, 0.09);
+  --line-strong: rgba(255, 255, 255, 0.18);
+  --white: #f5f7f8;
+  --accent: #d8a76a;
+  --accent-soft: rgba(216, 167, 106, 0.16);
+  --cyan: #74d3d8;
+  --nav-h: 72px;
+}
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-ink2: var(--ink-2);
+  --color-panel: var(--panel);
+  --color-panel2: var(--panel-2);
+  --color-concrete: var(--concrete);
+  --color-steel: var(--concrete-dim);
+  --color-chalk: var(--white);
+  --color-accent: var(--accent);
+  --color-cyan: var(--cyan);
+  --color-line: var(--line);
+  --font-sans: var(--font-display);
+  --font-mono: var(--font-tech);
+}
+
+* {
+  border-color: var(--line);
+}
+
+html {
+  background: var(--ink);
+  color-scheme: dark;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--ink);
+  color: var(--white);
+  font-family: var(--font-display);
+  font-feature-settings: "ss01", "cv01";
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--accent);
+  color: #0b0b0c;
+}
+
+/* ------------------------------------------------------------- typography */
+.display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 0.94;
+  text-transform: uppercase;
+}
+
+.tech {
+  font-family: var(--font-tech);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.rule {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--line-strong) 18%, var(--line-strong) 82%, transparent);
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+/* -------------------------------------------------------------- surfaces */
+.panel {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01)),
+    var(--panel);
+  border: 1px solid var(--line);
+}
+
+.hair {
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--line) 0 1px,
+    transparent 1px 56px
+  );
+}
+
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.16;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='160' height='160' filter='url(%23n)' opacity='0.55'/></svg>");
+}
+
+.vignette {
+  background: radial-gradient(120% 80% at 50% 40%, transparent 40%, rgba(0, 0, 0, 0.72) 100%);
+}
+
+/* ------------------------------------------------------------------ links */
+.link-underline {
+  position: relative;
+}
+.link-underline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  height: 1px;
+  width: 100%;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.link-underline:hover::after,
+.link-underline[data-active="true"]::after {
+  transform: scaleX(1);
+}
+
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.95rem 1.5rem;
+  border: 1px solid var(--line-strong);
+  color: var(--white);
+  overflow: hidden;
+  transition: color 0.35s ease, border-color 0.35s ease;
+}
+.btn > span {
+  position: relative;
+  z-index: 1;
+}
+.btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  transform: translateY(101%);
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.btn:hover {
+  color: #101010;
+  border-color: var(--accent);
+}
+.btn:hover::before {
+  transform: translateY(0);
+}
+.btn-solid {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #12100c;
+}
+.btn-solid::before {
+  background: #fff;
+}
+.btn-solid:hover {
+  color: #12100c;
+}
+
+/* ---------------------------------------------------------------- reveals */
+.reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1), transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+.reveal[data-shown="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+.line-mask {
+  display: block;
+  overflow: hidden;
+}
+.line-mask > span {
+  display: block;
+  transform: translateY(105%);
+  transition: transform 1s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+[data-shown="true"] .line-mask > span,
+.line-mask[data-shown="true"] > span {
+  transform: none;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.75;
+  }
+  100% {
+    transform: scale(2.1);
+    opacity: 0;
+  }
+}
+.pulse-ring {
+  animation: pulse-ring 2.6s ease-out infinite;
+}
+
+@keyframes sweep {
+  0% {
+    transform: translateX(-110%);
+  }
+  100% {
+    transform: translateX(210%);
+  }
+}
+.sweep::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.09), transparent);
+  animation: sweep 3.4s linear infinite;
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -8px, 0);
+  }
+}
+
+/* ------------------------------------------------------------- scrollbars */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #08090b;
+}
+::-webkit-scrollbar-thumb {
+  background: #23272c;
+  border: 2px solid #08090b;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #34393f;
+}
+
+/* -------------------------------------------------------------- canvas ui */
+.canvas-frame {
+  position: absolute;
+  inset: 0;
+}
+.canvas-frame canvas {
+  display: block;
+  touch-action: pan-y;
+}
+
+.map-label {
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* ----------------------------------------------------------- accessibility */
+:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .line-mask > span {
+    transition-duration: 0.01ms !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
+  .pulse-ring,
+  .sweep::after {
+    animation: none !important;
+  }
+}
