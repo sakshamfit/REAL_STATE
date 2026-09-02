@@ -6,6 +6,7 @@ import { useExperience } from '@/lib/store'
 import { loadIndiaData } from '@/lib/map-data'
 import { useScrollLock, registerGsap } from '@/lib/scroll'
 import { company } from '@/data/company'
+import { loadProductionAssets } from '@/lib/asset-loader'
 
 function loaderStage(percent: number) {
   if (percent < 14) return 'BUILDING THE WORLD'
@@ -44,7 +45,7 @@ export function Preloader() {
       })
 
     const run = async () => {
-      advance(14, 0.7)
+      advance(8, 0.5)
       if (document.fonts?.ready) {
         try {
           await document.fonts.ready
@@ -53,7 +54,12 @@ export function Preloader() {
         }
       }
       if (cancelled) return
-      advance(46, 1.1)
+      advance(12, 0.4)
+
+      // Real 0..1 progress from streaming the priority GLBs (never fake bytes)
+      const assetProgress = await loadProductionAssets()
+      if (cancelled) return
+      advance(18 + assetProgress * 68, 1.1)
 
       try {
         await loadIndiaData()
@@ -62,7 +68,7 @@ export function Preloader() {
         /* the map falls back gracefully */
       }
       if (cancelled) return
-      advance(92, 1.3)
+      advance(94, 1.2)
 
       // let the first frames of the world compile before we hand over control
       await new Promise((resolve) => setTimeout(resolve, 520))

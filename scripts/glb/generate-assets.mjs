@@ -187,36 +187,65 @@ async function generateHeroBuilding() {
       b.box(0.4, 31, 0.5, { x, y: baseY + 20.2, z: z0 + 0.16 }, 'stone')
     }
 
-    // Floor slabs
+    // Floor slabs + window bands + mullions
     for (let f = 0; f < 10; f++) {
       const y = baseY + 5.8 + f * 3.02
       b.box(width + 1.0, 0.28, depth + 0.8, { x: 0, y, z: z0 + depth / 2 }, 'concrete')
-      // window band
-      b.box(width * 0.78, 1.35, depth + 0.12, { x: 0, y: y + 1.36, z: z0 + depth / 2 }, 'glass')
+      b.box(width * 0.82, 1.6, depth + 0.12, { x: 0, y: y + 1.48, z: z0 + depth / 2 }, 'glass')
+      // window sills + head
+      b.box(width * 0.84, 0.12, depth + 0.18, { x: 0, y: y + 0.68, z: z0 + depth / 2 }, 'stone')
+      b.box(width * 0.84, 0.12, depth + 0.18, { x: 0, y: y + 2.26, z: z0 + depth / 2 }, 'stone')
+      // vertical mullions
+      for (let m = -3; m <= 3; m++) {
+        b.box(0.1, 1.5, depth + 0.16, { x: m * 2.1, y: y + 1.48, z: z0 + depth / 2 }, 'metal')
+      }
     }
 
-    // Balconies on the south/road side
+    // Balconies on the south/road side — slab, railing, planter
     for (let f = 0; f < 9; f++) {
       const y = baseY + 6.9 + f * 3.02
       const side = 6.2
-      b.box(5.4, 0.24, 1.7, { x: side, y, z: z0 + depth + 0.72 }, 'stone')
-      b.box(5.4, 1.0, 0.14, { x: side, y: y + 0.65, z: z0 + depth + 1.48 }, 'metal')
+      b.box(5.4, 0.24, 1.9, { x: side, y, z: z0 + depth + 0.82 }, 'stone')
+      b.box(5.4, 0.12, 0.12, { x: side, y: y + 0.58, z: z0 + depth + 1.7 }, 'metal')
+      b.box(5.4, 0.12, 0.12, { x: side, y: y + 0.62, z: z0 + depth + 0.38 }, 'metal')
+      for (let r = -2; r <= 2; r++) {
+        b.box(0.08, 0.66, 0.08, { x: side + r * 1.2, y: y + 0.34, z: z0 + depth + 1.7 }, 'metal')
+      }
+      b.box(1.4, 0.4, 0.5, { x: side + 1.7, y: y + 0.32, z: z0 + depth + 1.2 }, 'foliage')
     }
 
-    // Roof terrace + parapet + plant room
+    // Ground floor doors / glazing / entrance columns
+    b.box(width * 0.52, 3.5, 0.9, { x: 0, y: baseY + 1.75, z: z0 + depth + 0.1 }, 'glass')
+    b.box(1.7, 3.1, 0.2, { x: -1.9, y: baseY + 1.55, z: z0 + depth + 0.28 }, 'darkMetal')
+    b.box(1.7, 3.1, 0.2, { x: 1.9, y: baseY + 1.55, z: z0 + depth + 0.28 }, 'darkMetal')
+    b.box(0.42, 4.0, 0.42, { x: -3.8, y: baseY + 2, z: z0 + depth + 1.6 }, 'stone')
+    b.box(0.42, 4.0, 0.42, { x: 3.8, y: baseY + 2, z: z0 + depth + 1.6 }, 'stone')
+
+    // Facade service boxes / vents — imperfect real detail
+    for (let f = 0; f < 10; f += 2) {
+      const y = baseY + 6.4 + f * 3.02
+      b.box(0.7, 0.7, 0.28, { x: -7.2, y, z: z0 + 0.08 }, 'metal')
+      b.box(0.5, 0.5, 0.18, { x: 7.3, y: y + 1.6, z: z0 + 0.04 }, 'darkMetal')
+    }
+
+    // Roof terrace + parapet + plant room + solar + water tanks
     b.box(width + 1.4, 0.5, depth + 1.2, { x: 0, y: baseY + 36.1, z: z0 + depth / 2 }, 'stone')
     for (const x of [-width / 2 - 0.3, width / 2 + 0.3]) {
       for (const z of [z0 - 0.2, z0 + depth + 0.2]) {
-        b.box(0.3, 1.1, 0.3, { x, y: baseY + 36.85, z }, 'concrete')
+        b.box(0.3, 1.2, 0.3, { x, y: baseY + 36.95, z }, 'concrete')
+        b.box(0.3, 1.2, 0.3, { x, y: baseY + 36.95, z }, 'concrete')
       }
     }
     b.box(7, 3.4, 6, { x: -4.6, y: baseY + 38.2, z: z0 + 3.4 }, 'paintMuted')
     b.box(2.4, 2.8, 2.4, { x: 4.4, y: baseY + 37.9, z: z0 + 4.6 }, 'metal')
+    b.box(3.4, 0.22, 2.2, { x: 5.6, y: baseY + 36.7, z: z0 + 2.4, rx: -0.18 }, 'darkMetal')
+    b.cylinder(0.7, 0.7, 1.6, 12, { x: -6.8, y: baseY + 36.75, z: z0 + 2.2 }, 'metal')
 
     // Entrance canopy + steps
-    b.box(width * 0.46, 0.5, 3.6, { x: 0, y: baseY + 4.2, z: z0 + depth + 1.7 }, 'stone')
+    b.box(width * 0.46, 0.5, 3.8, { x: 0, y: baseY + 4.2, z: z0 + depth + 1.8 }, 'stone')
     b.box(width * 0.46, 0.2, 0.8, { x: 0, y: 0.1, z: z0 + depth + 0.4 }, 'stone')
     b.box(width * 0.46, 0.18, 0.8, { x: 0, y: 0.32, z: z0 + depth + 0.5 }, 'stone')
+    b.box(width * 0.46, 0.18, 0.8, { x: 0, y: 0.54, z: z0 + depth + 0.6 }, 'stone')
   })
 }
 
@@ -248,15 +277,24 @@ async function generateEntranceGate() {
 }
 
 async function generateTreeA() {
-  // Neem / rain tree style: trunk + layered irregular canopy.
+  // Neem / rain tree style: trunk, main branches, layered irregular canopy.
   await writeAsset('tree-a', (b) => {
     b.cylinder(0.16, 0.3, 4.2, 8, { x: 0, y: 2.1, z: 0, ry: 0.12 }, 'wood')
+    for (const [x, y, z, rot] of [
+      [0.8, 3.5, 0.2, -0.8],
+      [-0.7, 3.8, 0.1, 0.85],
+      [0.1, 4.1, -0.5, 0.2],
+    ]) {
+      b.cylinder(0.08, 0.14, 1.7, 6, { x, y, z, rz: rot }, 'wood')
+    }
     const blobs = [
       [0, 5.0, 0, 1.5, 'foliage'],
       [1.0, 5.7, 0.4, 1.15, 'foliageB'],
       [-1.0, 5.5, 0.1, 1.05, 'foliage'],
       [0.2, 6.6, -0.4, 1.2, 'foliage'],
       [0.8, 6.8, 0.3, 0.95, 'foliageB'],
+      [-0.6, 6.9, 0.4, 0.8, 'foliage'],
+      [1.7, 6.3, -0.3, 0.78, 'foliageB'],
     ]
     for (const [x, y, z, r, mat] of blobs) {
       b.sphere(r, { x, y, z, sx: 1.35, sy: 0.95, sz: 1.3, ry: x * 0.3 }, mat)
@@ -265,12 +303,31 @@ async function generateTreeA() {
 }
 
 async function generateTreeB() {
-  // Palm / shisham style: slightly different canopy profile for variety.
+  // Palm / shisham style: twisted trunk, branch spurs, wider loose canopy.
   await writeAsset('tree-b', (b) => {
-    b.cylinder(0.12, 0.32, 5.0, 8, { x: 0, y: 2.5, z: 0, ry: 0.2 }, 'wood')
+    b.cylinder(0.12, 0.32, 5.0, 8, { x: 0, y: 2.5, z: 0, ry: 0.2, rz: 0.06 }, 'wood')
+    b.cylinder(0.07, 0.12, 1.5, 6, { x: 1.1, y: 3.4, z: 0.2, rz: -0.7 }, 'wood')
+    b.cylinder(0.07, 0.12, 1.4, 6, { x: -1.0, y: 3.8, z: -0.1, rz: 0.7 }, 'wood')
     b.sphere(1.75, { x: 0, y: 5.5, z: 0, sx: 1.3, sy: 1.0, sz: 1.4 }, 'foliageB')
     b.sphere(1.25, { x: 1.4, y: 6.2, z: 0.2 }, 'foliage')
     b.sphere(1.05, { x: -1.2, y: 5.9, z: -0.2 }, 'foliage')
+    b.sphere(0.85, { x: 0.7, y: 7.0, z: -0.3 }, 'foliageB')
+    b.sphere(0.72, { x: -0.6, y: 7.1, z: 0.3 }, 'foliage')
+  })
+}
+
+async function generateBush() {
+  // Compound shrub — irregular clusters, sits on the ground.
+  await writeAsset('bush', (b) => {
+    const clumps = [
+      [0, 0.5, 0, 0.62, 'foliage'],
+      [0.44, 0.35, 0.18, 0.45, 'foliageB'],
+      [-0.38, 0.38, -0.12, 0.42, 'foliage'],
+      [0.12, 0.72, -0.2, 0.4, 'foliageB'],
+    ]
+    for (const [x, y, z, r, mat] of clumps) {
+      b.sphere(r, { x, y, z, sx: 1.25, sy: 0.9, sz: 1.2 }, mat)
+    }
   })
 }
 
@@ -349,6 +406,7 @@ async function main() {
     generateEntranceGate(),
     generateTreeA(),
     generateTreeB(),
+    generateBush(),
     generateCarA(),
     generateCrane(),
     generateBoundaryWall(),

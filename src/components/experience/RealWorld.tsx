@@ -1,6 +1,7 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
+import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import type { QualitySettings } from '@/lib/quality'
 import { AssetModel } from '@/lib/glb'
@@ -16,9 +17,10 @@ import { InstancedBoxes, type Item } from './primitives'
  * registered in `src/data/assets.ts`.
  */
 export function RealWorld({ quality }: { quality: QualitySettings }) {
+  const treeRefs = useRef<(THREE.Object3D | null)[]>([])
   const treePositions = useMemo(() => {
     const count = Math.max(6, Math.round(14 * Math.max(0.35, quality.density)))
-    const positions: { x: number; z: number; kind: 'tree-a' | 'tree-b'; scale: number }[] = []
+    const positions: { x: number; z: number; kind: 'tree-a' | 'tree-b'; scale: number; seed: number }[] = []
     for (let i = 0; i < count; i++) {
       const z = -8 - i * (38 / Math.max(1, count))
       positions.push({
@@ -26,16 +28,37 @@ export function RealWorld({ quality }: { quality: QualitySettings }) {
         z,
         kind: i % 3 === 0 ? 'tree-b' : 'tree-a',
         scale: 0.82 + Math.random() * 0.4,
+        seed: i * 1.91 + 0.4,
       })
     }
     return positions
   }, [quality.density])
+
+  useFrame((state) => {
+    const t = state.clock.elapsedTime
+    for (let i = 0; i < treeRefs.current.length; i++) {
+      const object = treeRefs.current[i]
+      if (!object) continue
+      const seed = treePositions[i]?.seed ?? i
+      object.rotation.z = Math.sin(t * 0.42 + seed) * 0.006 + Math.sin(t * 0.27 + seed * 2) * 0.003
+      object.rotation.x = Math.cos(t * 0.35 + seed * 1.3) * 0.004
+    }
+  })
 
   const streetLights = useMemo(() => {
     const count = Math.max(4, Math.round(6 * Math.max(0.5, quality.density)))
     return Array.from({ length: count }, (_, i) => ({
       x: 5.6,
       z: -12 - i * 70,
+    }))
+  }, [quality.density])
+
+  const bushes = useMemo(() => {
+    const count = Math.max(4, Math.round(9 * Math.max(0.4, quality.density)))
+    return Array.from({ length: count }, (_, i) => ({
+      x: (i % 2 === 0 ? -1 : 1) * (4.6 + Math.random() * 1.2),
+      z: -4 - i * 24,
+      scale: 0.7 + Math.random() * 0.7,
     }))
   }, [quality.density])
 
@@ -63,6 +86,22 @@ export function RealWorld({ quality }: { quality: QualitySettings }) {
           position={[tree.x, 0, tree.z]}
           scale={[tree.scale, tree.scale, tree.scale]}
           rotation={[0, (index * 0.71) % (Math.PI * 2), 0]}
+          quality={quality}
+          lod="auto"
+          onObject={(object) => {
+            treeRefs.current[index] = object
+          }}
+        />
+      ))}
+
+      {/* bushes / shrubs */}
+      {bushes.map((bush, index) => (
+        <AssetModel
+          key={`bush-${index}`}
+          id="bush"
+          position={[bush.x, 0, bush.z]}
+          scale={[bush.scale, bush.scale, bush.scale]}
+          rotation={[0, (index * 0.9) % (Math.PI * 2), 0]}
           quality={quality}
           lod="auto"
         />

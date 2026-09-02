@@ -14,7 +14,7 @@ import { useIndiaFeatures } from '@/lib/use-india'
 import { isPresenceState, locationsForState, stateId } from '@/data/presence'
 import type { PresenceLocation } from '@/data/presence'
 import type { QualitySettings } from '@/lib/quality'
-import { decalMaterial, emissiveMaterial, PALETTE, stateBaseMaterial } from '@/lib/materials'
+import { decalMaterial, emissiveMaterial, stateBaseMaterial } from '@/lib/materials'
 import { latLngToXZ } from '@/lib/projection'
 import { useChapterVisibility } from '../hooks'
 
@@ -245,7 +245,7 @@ export function IndiaMap({ quality }: { quality: QualitySettings }) {
         <primitive object={decalMaterial('#000000', 0.75)} attach="material" />
       </mesh>
       <lineSegments geometry={rings} position={[0, -0.02, 0]}>
-        <lineBasicMaterial color={PALETTE.accent} transparent opacity={0.16} depthWrite={false} />
+        <lineBasicMaterial color={"#b9ab93"} transparent opacity={0.16} depthWrite={false} />
       </lineSegments>
 
       {states.map((entry, index) => (
@@ -304,7 +304,7 @@ export function IndiaMap({ quality }: { quality: QualitySettings }) {
               fontSize: '11px',
               fontWeight: 500,
               letterSpacing: '0.36em',
-              color: PALETTE.accent,
+              color: "#b9ab93",
               textTransform: 'uppercase',
               whiteSpace: 'nowrap',
             }}
@@ -373,7 +373,7 @@ function CityMarker({
             fontSize: '10px',
             fontWeight: 500,
             letterSpacing: '0.32em',
-            color: PALETTE.white,
+            color: "#f6f1e7",
             textTransform: 'uppercase',
             whiteSpace: 'nowrap',
           }}

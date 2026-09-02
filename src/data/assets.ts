@@ -112,6 +112,21 @@ export const ASSETS: AssetEntry[] = [
     },
   },
   {
+    id: 'bush',
+    path: '/assets/glb/bush.glb',
+    category: 'vegetation',
+    priority: 2,
+    scale: [1, 1, 1],
+    scene: ['environment', 'hero', 'approach'],
+    lod: ['high', 'medium', 'low'],
+    preload: true,
+    cullDistance: 160,
+    materialMap: {
+      foliage: 'foliage',
+      foliageB: 'foliageB',
+    },
+  },
+  {
     id: 'car-a',
     path: '/assets/glb/car-a.glb',
     category: 'vehicle',

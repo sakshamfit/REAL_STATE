@@ -59,6 +59,8 @@ export type AssetModelProps = {
   lodDistance?: number
   /** called after the GLB loads and materials are applied */
   onLoaded?: () => void
+  /** gives the cloned scene object so callers can animate / attach to it */
+  onObject?: (object: Object3D) => void
   fallback?: ReactNode
 }
 
@@ -77,6 +79,7 @@ export function AssetModel({
   lod,
   lodDistance,
   onLoaded,
+  onObject,
   fallback,
 }: AssetModelProps) {
   const asset = assetById.get(id)
@@ -96,6 +99,7 @@ export function AssetModel({
         lod={lod}
         lodDistance={lodDistance}
         onLoaded={onLoaded}
+        onObject={onObject}
       />
     </AssetErrorBoundary>
   )
@@ -113,6 +117,7 @@ function AssetModelInner({
   lod = 'high',
   lodDistance,
   onLoaded,
+  onObject,
 }: AssetModelInnerProps) {
   const gltf = useGLTF(asset.path)
   const clone = useMemo(() => gltf.scene.clone(true), [gltf])
@@ -139,11 +144,12 @@ function AssetModelInner({
 
   useEffect(() => {
     applyAssetMaterials(clone, asset, quality)
+    onObject?.(clone)
     if (!fired.current) {
       fired.current = true
       onLoaded?.()
     }
-  }, [clone, asset, quality, onLoaded])
+  }, [clone, asset, quality, onObject, onLoaded])
 
   if (lod === 'auto' && !near) return null
 
