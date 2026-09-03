@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import type { QualitySettings } from '@/lib/quality'
@@ -18,6 +18,7 @@ import {
 } from '@/lib/layout'
 import { GroundPatch } from './GroundPatch'
 import { ContactRings } from './Vegetation'
+import { plinthMaterial } from '@/lib/materials'
 
 /**
  * The road corridor's furniture.
@@ -36,6 +37,51 @@ const toInstances = (items: Placed[]): InstanceItem[] =>
     scale: [item.scale ?? 1, item.scaleY ?? item.scale ?? 1, item.scale ?? 1],
   }))
 
+/**
+ * The plinth course under the compound wall.
+ *
+ * A rendered wall that meets bare soil looks pasted on. Real boundary walls
+ * stand on a slightly wider plinth that stays damp, collects dirt and throws
+ * the shadow line that tells you the wall is actually standing in the ground.
+ */
+function WallPlinths({ quality }: { quality: QualitySettings }) {
+  const ref = useRef<THREE.InstancedMesh>(null)
+  const dummy = useMemo(() => new THREE.Object3D(), [])
+  const segments = useMemo(() => boundaryWalls(), [])
+  const geometry = useMemo(() => new THREE.BoxGeometry(12, 0.34, 0.62), [])
+  const material = useMemo(() => plinthMaterial(quality.textureSize), [quality.textureSize])
+
+  useEffect(() => {
+    const mesh = ref.current
+    if (!mesh) return
+    segments.forEach((segment, index) => {
+      dummy.position.set(segment.x, (segment.y ?? 0) + 0.17, segment.z)
+      dummy.rotation.set(0, segment.rotation, 0)
+      dummy.scale.set(segment.scale ?? 1, 1, 1)
+      dummy.updateMatrix()
+      mesh.setMatrixAt(index, dummy.matrix)
+    })
+    mesh.instanceMatrix.needsUpdate = true
+    mesh.computeBoundingSphere()
+  }, [segments, dummy])
+
+  useEffect(
+    () => () => {
+      geometry.dispose()
+    },
+    [geometry],
+  )
+
+  return (
+    <instancedMesh
+      ref={ref}
+      args={[geometry, material, Math.max(1, segments.length)]}
+      castShadow={quality.tier !== 'low'}
+      receiveShadow
+    />
+  )
+}
+
 export function RealWorld({ quality }: { quality: QualitySettings }) {
   const walls = useMemo(() => toInstances(boundaryWalls()), [])
   const lights = useMemo(() => toInstances(streetLights(quality.tier === 'low' ? 92 : 46)), [quality.tier])
@@ -48,6 +94,7 @@ export function RealWorld({ quality }: { quality: QualitySettings }) {
   return (
     <group>
       <InstancedAsset id="street-light" items={lights} quality={quality} castShadow={quality.tier === 'high'} />
+      <WallPlinths quality={quality} />
       <InstancedAsset id="boundary-wall" items={walls} quality={quality} castShadow={quality.tier !== 'low'} />
       <InstancedAsset id="barrier" items={barriers} quality={quality} />
       {/* dust shadow / drips under the parked vehicles so they touch the ground */}

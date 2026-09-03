@@ -935,8 +935,18 @@ async function generateFlora() {
     ['tree-d', 'd', 53, { leafMaterial: 'leafB' }],
   ]
   for (const [name, species, seed, options] of variants) {
+    // LOD 1 — the default tree line asset
     await writeAsset(name, (b) => {
-      buildTree(b, { species, seed, ...options })
+      buildTree(b, { species, seed, lod: 1, ...options })
+    })
+    // LOD 0 — hero distance: three-bladed leaf clusters give the crown real
+    // volume, which is the difference between a tree and a billboard up close.
+    await writeAsset(`${name}-close`, (b) => {
+      buildTree(b, { species, seed, lod: 0, ...options })
+    })
+    // LOD 2 — the far tree line: fewer, larger blades, leaner skeleton
+    await writeAsset(`${name}-far`, (b) => {
+      buildTree(b, { species, seed, lod: 2, ...options })
     })
   }
   await writeAsset('bush', (b) => {

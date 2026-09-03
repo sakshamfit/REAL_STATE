@@ -26,9 +26,17 @@
 | shrub-dry.glb | 29.1 kB | 584 | 1,204 | 2 | 2 | 0 | 2 | ✅ | ✅ | ✅ | -0.65, -0.08, -0.88 → 0.94, 1.43, 0.69 |
 | solar-panel.glb | 35.6 kB | 828 | 1,422 | 3 | 3 | 0 | 3 | ✅ | ✅ | ✅ | -3.51, 0.00, -4.30 → 5.32, 2.16, 4.30 |
 | street-light.glb | 11.1 kB | 240 | 301 | 5 | 5 | 0 | 5 | ✅ | ✅ | ✅ | -0.80, 0.00, -0.31 → 2.79, 7.70, 0.31 |
-| tree-a.glb | 209.5 kB | 6,078 | 8,795 | 2 | 2 | 0 | 2 | ✅ | ✅ | ✅ | -10.96, -0.02, -14.82 → 9.72, 20.09, 8.91 |
+| tree-a-close.glb | 342.0 kB | 9,326 | 14,603 | 2 | 2 | 0 | 2 | ✅ | ✅ | ✅ | -10.91, -0.02, -14.95 → 9.80, 19.79, 8.71 |
+| tree-a-far.glb | 94.6 kB | 3,400 | 3,716 | 2 | 2 | 0 | 2 | ✅ | ✅ | ✅ | -10.78, -0.02, -14.79 → 9.57, 19.70, 8.59 |
+| tree-a.glb | 173.7 kB | 5,482 | 7,141 | 2 | 2 | 0 | 2 | ✅ | ✅ | ✅ | -10.89, -0.02, -14.82 → 9.72, 20.36, 9.09 |
+| tree-b-close.glb | 162.4 kB | 4,248 | 6,931 | 2 | 2 | 0 | 2 | ✅ | ✅ | ✅ | -9.57, -0.01, -7.40 → 6.86, 21.87, 6.41 |
+| tree-b-far.glb | 64.5 kB | 1,892 | 2,628 | 2 | 2 | 0 | 2 | ✅ | ✅ | ✅ | -9.58, -0.01, -7.54 → 6.95, 21.87, 6.43 |
 | tree-b.glb | 102.1 kB | 2,854 | 4,263 | 2 | 2 | 0 | 2 | ✅ | ✅ | ✅ | -8.93, -0.01, -7.17 → 7.01, 21.63, 6.38 |
-| tree-c.glb | 220.0 kB | 6,636 | 9,163 | 2 | 2 | 0 | 2 | ✅ | ✅ | ✅ | -10.26, -0.02, -9.32 → 9.44, 13.68, 5.68 |
+| tree-c-close.glb | 375.5 kB | 10,428 | 15,987 | 2 | 2 | 0 | 2 | ✅ | ✅ | ✅ | -10.67, -0.02, -9.26 → 9.75, 13.37, 5.67 |
+| tree-c-far.glb | 97.5 kB | 3,720 | 3,768 | 2 | 2 | 0 | 2 | ✅ | ✅ | ✅ | -10.78, -0.02, -9.17 → 9.40, 13.38, 5.75 |
+| tree-c.glb | 193.3 kB | 6,180 | 7,937 | 2 | 2 | 0 | 2 | ✅ | ✅ | ✅ | -10.03, -0.02, -9.22 → 9.33, 13.68, 5.64 |
+| tree-d-close.glb | 289.1 kB | 7,296 | 12,503 | 2 | 2 | 0 | 2 | ✅ | ✅ | ✅ | -5.13, -0.00, -4.65 → 5.35, 9.27, 4.02 |
+| tree-d-far.glb | 72.8 kB | 2,450 | 2,885 | 2 | 2 | 0 | 2 | ✅ | ✅ | ✅ | -5.28, -0.00, -4.33 → 5.26, 9.29, 3.76 |
 | tree-d.glb | 184.4 kB | 4,938 | 7,851 | 2 | 2 | 0 | 2 | ✅ | ✅ | ✅ | -5.46, -0.00, -4.23 → 5.26, 9.21, 3.66 |
 | truck-a.glb | 113.1 kB | 3,994 | 4,130 | 12 | 11 | 0 | 12 | ✅ | ✅ | ✅ | -2.41, 0.00, -1.03 → 2.41, 2.17, 1.03 |
 | warehouse.glb | 267.6 kB | 7,004 | 11,314 | 6 | 6 | 0 | 6 | ✅ | ✅ | ✅ | -24.25, -0.00, -19.25 → 24.25, 15.09, 22.65 |
@@ -57,9 +65,17 @@
 - [x] shrub-dry.glb — size OK, polycount OK, normals OK, UVs OK, finite OK
 - [x] solar-panel.glb — size OK, polycount OK, normals OK, UVs OK, finite OK
 - [x] street-light.glb — size OK, polycount OK, normals OK, UVs OK, finite OK
+- [x] tree-a-close.glb — size OK, polycount OK, normals OK, UVs OK, finite OK
+- [x] tree-a-far.glb — size OK, polycount OK, normals OK, UVs OK, finite OK
 - [x] tree-a.glb — size OK, polycount OK, normals OK, UVs OK, finite OK
+- [x] tree-b-close.glb — size OK, polycount OK, normals OK, UVs OK, finite OK
+- [x] tree-b-far.glb — size OK, polycount OK, normals OK, UVs OK, finite OK
 - [x] tree-b.glb — size OK, polycount OK, normals OK, UVs OK, finite OK
+- [x] tree-c-close.glb — size OK, polycount OK, normals OK, UVs OK, finite OK
+- [x] tree-c-far.glb — size OK, polycount OK, normals OK, UVs OK, finite OK
 - [x] tree-c.glb — size OK, polycount OK, normals OK, UVs OK, finite OK
+- [x] tree-d-close.glb — size OK, polycount OK, normals OK, UVs OK, finite OK
+- [x] tree-d-far.glb — size OK, polycount OK, normals OK, UVs OK, finite OK
 - [x] tree-d.glb — size OK, polycount OK, normals OK, UVs OK, finite OK
 - [x] truck-a.glb — size OK, polycount OK, normals OK, UVs OK, finite OK
 - [x] warehouse.glb — size OK, polycount OK, normals OK, UVs OK, finite OK

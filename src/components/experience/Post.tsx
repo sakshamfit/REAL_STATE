@@ -1,0 +1,66 @@
+'use client'
+
+import { useEffect } from 'react'
+import { useThree } from '@react-three/fiber'
+import { EffectComposer, N8AO, ToneMapping } from '@react-three/postprocessing'
+import { ToneMappingMode } from 'postprocessing'
+import type { QualitySettings } from '@/lib/quality'
+
+/**
+ * Post — restrained tone mapping and ambient occlusion.
+ *
+ * The objective of the AO pass is not dramatic dark outlines; it is that
+ * objects read as *embedded* in the ground instead of standing on it. Anything
+ * stronger than this starts to look like a video game: a dark halo around every
+ * silhouette, black corners in the building reveals, dirty contact edges on the
+ * road.
+ *
+ * Deliberately conservative:
+ *  · warm dust-coloured occlusion, never pure black;
+ *  · moderate radius with a soft distance falloff, so distant geometry gets
+ *    almost none and near-field contact gets most of it;
+ *  · half resolution on the mid tier with depth-aware upsampling, so the
+ *    upsample cannot bleed occlusion across silhouettes;
+ *  · disabled on the low tier, where the contact decals carry grounding.
+ *
+ * `EffectComposer` forces `gl.toneMapping = NoToneMapping` while mounted (three
+ * skips in-material tone mapping when rendering to a target), so the ACES
+ * operator is re-applied here as an effect. Exposure still comes from
+ * `gl.toneMappingExposure`, which three uploads as a common uniform.
+ */
+
+const AO_COLOR = '#17140f'
+
+export function Post({ quality }: { quality: QualitySettings }) {
+  const gl = useThree((state) => state.gl)
+
+  useEffect(() => {
+    gl.toneMappingExposure = 1.0
+    return () => {
+      gl.toneMappingExposure = 1.0
+    }
+  }, [gl])
+
+  if (quality.tier === 'low') return null
+
+  const high = quality.tier === 'high'
+
+  return (
+    <EffectComposer multisampling={high ? 4 : 0} enableNormalPass={false}>
+      <N8AO
+        aoRadius={high ? 1.4 : 1.15}
+        distanceFalloff={0.72}
+        intensity={high ? 1.15 : 1.0}
+        quality={high ? 'medium' : 'low'}
+        aoSamples={high ? 16 : 8}
+        denoiseSamples={high ? 4 : 2}
+        denoiseRadius={12}
+        color={AO_COLOR}
+        halfRes={!high}
+        depthAwareUpsampling
+        screenSpaceRadius
+      />
+      <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
+    </EffectComposer>
+  )
+}

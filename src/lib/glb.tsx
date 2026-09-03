@@ -216,12 +216,20 @@ export function InstancedAsset({
   quality,
   castShadow = true,
   receiveShadow = true,
+  capacity,
 }: {
   id: string
   items: InstanceItem[]
   quality: QualitySettings
   castShadow?: boolean
   receiveShadow?: boolean
+  /**
+   * Fixed instance capacity. When the visible set changes (distance LOD) the
+   * mesh would otherwise be rebuilt at the new size every time a member moves
+   * between levels; allocating once and drawing `items.length` of it keeps
+   * those transitions free.
+   */
+  capacity?: number
 }) {
   const asset = assetById.get(id)
   const gltf = useGLTF(asset?.path ?? '/assets/glb/tree-a.glb')
@@ -282,6 +290,7 @@ export function InstancedAsset({
           geometry={group.geometry}
           material={materialForKey(group.key, { textureSize: quality.textureSize })}
           items={items}
+          capacity={capacity ?? Math.max(1, items.length)}
           dummy={dummy}
           castShadow={castShadow}
           receiveShadow={receiveShadow}
@@ -295,6 +304,7 @@ function InstancedPart({
   geometry,
   material,
   items,
+  capacity,
   dummy,
   castShadow,
   receiveShadow,
@@ -302,6 +312,7 @@ function InstancedPart({
   geometry: THREE.BufferGeometry
   material: THREE.Material
   items: InstanceItem[]
+  capacity: number
   dummy: THREE.Object3D
   castShadow: boolean
   receiveShadow: boolean
@@ -328,7 +339,7 @@ function InstancedPart({
   return (
     <instancedMesh
       ref={ref}
-      args={[geometry, material, Math.max(1, items.length)]}
+      args={[geometry, material, capacity]}
       castShadow={castShadow}
       receiveShadow={receiveShadow}
       frustumCulled={false}

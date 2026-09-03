@@ -419,8 +419,24 @@ async function main() {
 
     const camera = { position: [pos.x, pos.y, pos.z], look: [look.x, look.y, look.z], fov: 42 }
     const triangles = renderer.build().length
+    // Draw calls: one per distinct material bucket per instance, which is what
+    // `InstancedAsset` produces (geometry merged per material key). Prims share
+    // a material name once MATERIAL_KEY has collapsed them, so a Set is right.
+    let drawCalls = 0
+    const perAsset = new Map()
+    for (const instance of near) {
+      const materials = new Set(instance.prims.map((prim) => prim.material))
+      drawCalls += materials.size
+      // the app draws one instanced mesh per asset per material bucket, not
+      // one per instance — this is the number the browser actually issues
+      const bucket = perAsset.get(instance.label) ?? new Set()
+      materials.forEach((material) => bucket.add(material))
+      perAsset.set(instance.label, bucket)
+    }
+    let instanced = 0
+    for (const bucket of perAsset.values()) instanced += bucket.size
     console.log(
-      `\n=== ${shot.id} (${shot.label})  cam ${pos.x.toFixed(0)},${pos.y.toFixed(0)},${pos.z.toFixed(0)} → look ${look.x.toFixed(0)},${look.y.toFixed(0)},${look.z.toFixed(0)}  ${triangles.toLocaleString()} tris / ${near.length} instances`,
+      `\n=== ${shot.id} (${shot.label})  cam ${pos.x.toFixed(0)},${pos.y.toFixed(0)},${pos.z.toFixed(0)} → look ${look.x.toFixed(0)},${look.y.toFixed(0)},${look.z.toFixed(0)}  ${triangles.toLocaleString()} tris / ${near.length} instances / ~${instanced} draw calls (instanced) / ${drawCalls} if drawn per-instance`,
     )
     if (process.env.HIST === '1') {
       renderer.render(camera)

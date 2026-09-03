@@ -190,8 +190,11 @@ export function buildTerrain({ width, length, centerZ, cell }: TerrainOptions) {
     target.normals[i3] = n.x
     target.normals[i3 + 1] = n.y
     target.normals[i3 + 2] = n.z
-    target.uvs[i2] = u / 4
-    target.uvs[i2 + 1] = vv / 4
+    // 8 m per tile: a 4 m tile repeated across a kilometre of site reads as
+    // wallpaper. The fine detail that used to live in the tile is carried by
+    // the per-vertex weathering below, which never repeats.
+    target.uvs[i2] = u / 8
+    target.uvs[i2 + 1] = vv / 8
     target.colors[i3] = c.r
     target.colors[i3 + 1] = c.g
     target.colors[i3 + 2] = c.b
@@ -218,12 +221,30 @@ export function buildTerrain({ width, length, centerZ, cell }: TerrainOptions) {
       const cover = groundCover(cx, cz)
       const moisture = fbm2(cx * 0.05, cz * 0.05, 101, 3)
 
+      // three scales of weathering: broad ground drift (~80 m), site-scale
+      // patches (~20 m) and the moisture map (~12 m). A tiled texture cannot
+      // carry any of this, and without it the site reads as one repeated map.
+      const drift = fbm2(cx * 0.013, cz * 0.013, 901, 3)
+      const mottle = fbm2(cx * 0.05, cz * 0.05, 911, 2)
+
+      // traffic compacts and darkens the ground either side of the corridor
+      const corridor = Math.max(0, 1 - Math.abs(cx) / (CORRIDOR_HALF_WIDTH + 12))
+      const compacted = corridor * corridor * (0.1 + fbm2(cx * 0.09, cz * 0.02, 921, 2) * 0.08)
+      // wheel ruts: elongated streaks running with the road
+      const rutBand = Math.max(0, 1 - Math.abs(Math.abs(cx) - 9.5) / 3.2)
+      const rut = rutBand * (fbm2(cx * 0.6, cz * 0.02, 931, 2) - 0.45) * 0.3
+
       // soil tint: damp near the road, dusty further out
-      const dust = 0.82 + fbm2(cx * 0.08, cz * 0.08, 131, 2) * 0.36
+      const dust = Math.min(1.12, Math.max(0.55, 0.82 + mottle * 0.3 + (drift - 0.5) * 0.26 - compacted - Math.max(0, rut)))
       soilTint.setRGB(dust, dust * (0.93 + moisture * 0.1), dust * 0.86)
       // grass tint: dry patches vary the hue
       const dryness = Math.min(1, Math.max(0, (fbm2(cx * 0.04, cz * 0.04, 151, 3) - 0.35) * 2))
-      grassTint.setRGB(0.72 + dryness * 0.5, 0.86, 0.62 + (1 - dryness) * 0.2)
+      const grassDrift = 0.86 + (drift - 0.5) * 0.22
+      grassTint.setRGB(
+        (0.72 + dryness * 0.5) * (grassDrift - compacted * 0.5),
+        0.86 * grassDrift,
+        (0.62 + (1 - dryness) * 0.2) * (grassDrift - compacted * 0.4),
+      )
 
       // wound (a, c, b) / (b, c, d) so the face normal is +Y — the ground must
       // be visible from above with a front-side material

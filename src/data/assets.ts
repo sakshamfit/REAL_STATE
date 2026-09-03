@@ -109,6 +109,34 @@ export const ASSETS: AssetEntry[] = [
     cullDistance: 300,
     materialMap: { wood: 'wood', leaf: 'leaf', leafB: 'leafB', leafDry: 'leafDry' },
   })),
+  // Distance levels for the same four species. The silhouette and the bounding
+  // box match the level-1 asset so a swap never reads as a pop: level 0 spends
+  // triangles on leaf volume for trees you walk up to, level 2 spends them on
+  // the outline you see across the site.
+  ...(
+    [
+      ['tree-a-close', 'Neem-type broadleaf, hero detail'],
+      ['tree-b-close', 'Eucalyptus-type tall slim, hero detail'],
+      ['tree-c-close', 'Rain-tree wide canopy, hero detail'],
+      ['tree-d-close', 'Small ornamental, hero detail'],
+      ['tree-a-far', 'Neem-type broadleaf, distant'],
+      ['tree-b-far', 'Eucalyptus-type tall slim, distant'],
+      ['tree-c-far', 'Rain-tree wide canopy, distant'],
+      ['tree-d-far', 'Small ornamental, distant'],
+    ] as const
+  ).map(([id]) => ({
+    id,
+    path: `/assets/glb/${id}.glb`,
+    category: 'vegetation' as const,
+    priority: 3 as const,
+    scale: [1, 1, 1] as [number, number, number],
+    scene: ['environment', 'hero', 'approach', 'india'],
+    lod: ['high', 'medium', 'low'] as ('high' | 'medium' | 'low')[],
+    // only fetched once a tree actually enters that distance band
+    preload: false,
+    cullDistance: 300,
+    materialMap: { wood: 'wood', leaf: 'leaf', leafB: 'leafB', leafDry: 'leafDry' },
+  })),
   {
     id: 'entrance-gate-leaf',
     path: '/assets/glb/entrance-gate-leaf.glb',

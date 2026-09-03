@@ -29,8 +29,11 @@ export function CameraRig({ quality }: { quality: QualitySettings }) {
     const aspect = size.width / Math.max(1, size.height)
     const portraitBoost = aspect < 1 ? 1.24 : aspect < 1.4 ? 1.08 : 1
     camera.fov = Math.min(72, quality.fov * portraitBoost)
-    camera.near = 0.1
-    camera.far = 1600
+    // near 0.1 throws away most of the depth range: at 200 m the buffer
+    // resolves ~24 mm, which is coarser than the 15 mm the road overlays sit
+    // at, so they z-fight. 0.5 buys a 5× improvement for no visible clipping.
+    camera.near = 0.5
+    camera.far = 2400
     camera.updateProjectionMatrix()
   }, [camera, quality.fov, size])
 

@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import type { QualitySettings } from '@/lib/quality'
 import { InstancedAsset, type InstanceItem } from '@/lib/glb'
@@ -77,6 +77,109 @@ export function ContactRings({ items, radius, opacity }: { items: Placed[]; radi
   )
 }
 
+/**
+ * Distance levels for the tree line, in metres from the camera.
+ *
+ * The four species are generated three times: level 0 (three-bladed leaf
+ * clusters — real volume, for trees you can walk up to), level 1 (single
+ * cupped cards, the working horse) and level 2 (fewer, larger blades and a
+ * leaner branch skeleton for the far boundary). Every level shares the same
+ * skeleton and the same bounding box, so the swap is invisible; what changes
+ * is where the triangles are spent.
+ */
+const TREE_LOD_BANDS: Record<string, [number, number]> = {
+  high: [52, 135],
+  mid: [36, 100],
+  low: [0, 55],
+}
+
+function bandsForTier(tier: QualitySettings['tier']): [number, number] {
+  return TREE_LOD_BANDS[tier] ?? TREE_LOD_BANDS.mid
+}
+
+/**
+ * Splits one species into its three distance levels.
+ *
+ * Re-binned at most twice a second and only when a tree actually crosses a
+ * boundary — a per-frame sort of the whole tree line would cost more than it
+ * saves. Hysteresis keeps a specimen parked on the boundary from flickering
+ * between levels.
+ */
+function TreeLod({ id, items, quality }: { id: string; items: Placed[]; quality: QualitySettings }) {
+  const camera = useThree((state) => state.camera)
+  const [near, far] = bandsForTier(quality.tier)
+  const capacity = items.length
+  const [buckets, setBuckets] = useState(() => ({ close: [] as Placed[], mid: items, distant: [] as Placed[] }))
+  const state = useRef({ x: Number.NaN, z: Number.NaN, key: '', band: new Map<Placed, number>(), elapsed: 0 })
+
+  useFrame((_, delta) => {
+    state.current.elapsed += delta
+    if (state.current.elapsed < 0.5) return
+    state.current.elapsed = 0
+    const position = camera.position
+    if (Math.abs(position.x - state.current.x) < 1.5 && Math.abs(position.z - state.current.z) < 1.5) return
+    state.current.x = position.x
+    state.current.z = position.z
+
+    const close: Placed[] = []
+    const mid: Placed[] = []
+    const distant: Placed[] = []
+    const band = state.current.band
+    for (const item of items) {
+      const dx = item.x - position.x
+      const dz = item.z - position.z
+      const distance = Math.sqrt(dx * dx + dz * dz)
+      // 4 m of slack in the direction the tree is already committed to: a
+      // specimen sitting on a boundary must not flip level every time the
+      // camera breathes
+      const previous = band.get(item) ?? 1
+      const nearEdge = previous === 0 ? near + 4 : near
+      const farEdge = previous === 2 ? far - 4 : far
+      const level = nearEdge > 0 && distance < nearEdge ? 0 : distance < farEdge ? 1 : 2
+      band.set(item, level)
+      if (level === 0) close.push(item)
+      else if (level === 1) mid.push(item)
+      else distant.push(item)
+    }
+    const key = `${close.length}/${mid.length}/${distant.length}`
+    if (key === state.current.key) return
+    state.current.key = key
+    setBuckets({ close, mid, distant })
+  })
+
+  useEffect(() => {
+    // tier change: re-bin from scratch on the next tick
+    state.current.key = ''
+    state.current.band.clear()
+    state.current.elapsed = 1
+  }, [quality.tier])
+
+  const showClose = quality.tier !== 'low'
+  return (
+    <group>
+      {showClose && buckets.close.length > 0 && (
+        <InstancedAsset
+          id={`${id}-close`}
+          items={toInstances(buckets.close)}
+          capacity={capacity}
+          quality={quality}
+        />
+      )}
+      {buckets.mid.length > 0 && (
+        <InstancedAsset id={id} items={toInstances(buckets.mid)} capacity={capacity} quality={quality} />
+      )}
+      {buckets.distant.length > 0 && (
+        <InstancedAsset
+          id={`${id}-far`}
+          items={toInstances(buckets.distant)}
+          capacity={capacity}
+          quality={quality}
+        />
+      )}
+    </group>
+  )
+}
+
 export function Vegetation({ quality }: { quality: QualitySettings }) {
   const treeGroups = useMemo(() => trees(quality.tier), [quality.tier])
   const shrubGroups = useMemo(() => shrubs(quality.tier), [quality.tier])
@@ -86,7 +189,7 @@ export function Vegetation({ quality }: { quality: QualitySettings }) {
       {treeGroups.map((group) => (
         <group key={group.id}>
           <ContactRings items={group.items} radius={4.2} opacity={0.34} />
-          <InstancedAsset id={group.id} items={toInstances(group.items)} quality={quality} />
+          <TreeLod id={group.id} items={group.items} quality={quality} />
         </group>
       ))}
       {shrubGroups.map((group) => (

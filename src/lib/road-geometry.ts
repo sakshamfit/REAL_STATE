@@ -13,7 +13,7 @@
  */
 
 import * as THREE from 'three'
-import { prng } from './terrain'
+import { fbm2, prng } from './terrain'
 
 export const Z_START = 60
 export const Z_END = -960
@@ -50,14 +50,23 @@ type RibbonOptions = {
   height: (x: number, z: number) => number
   /** metres per texture tile */
   tile?: number
+  /**
+   * Large-scale tint, evaluated per vertex in metres.
+   *
+   * This is what stops the surface reading as one repeated texture: the tile
+   * repeats every few metres, this varies over tens of metres and never
+   * repeats, so the eye reads weathering rather than wallpaper.
+   */
+  tint?: (x: number, z: number) => [number, number, number]
 }
 
-export function buildRibbon({ xs, from, to, step, height, tile = 4 }: RibbonOptions) {
+export function buildRibbon({ xs, from, to, step, height, tile = 4, tint }: RibbonOptions) {
   const nz = Math.max(1, Math.ceil(Math.abs(to - from) / step))
   const nx = xs.length
   const vertexCount = (nz + 1) * nx
   const positions = new Float32Array(vertexCount * 3)
   const uvs = new Float32Array(vertexCount * 2)
+  const colors = new Float32Array(vertexCount * 3)
   const indices: number[] = []
 
   for (let iz = 0; iz <= nz; iz++) {
@@ -70,6 +79,10 @@ export function buildRibbon({ xs, from, to, step, height, tile = 4 }: RibbonOpti
       positions[i * 3 + 2] = z
       uvs[i * 2] = x / tile
       uvs[i * 2 + 1] = z / tile
+      const c = tint ? tint(x, z) : [1, 1, 1]
+      colors[i * 3] = c[0]
+      colors[i * 3 + 1] = c[1]
+      colors[i * 3 + 2] = c[2]
     }
   }
   // z decreases as iz grows, so (a, b, c) / (b, d, c) is the +Y winding — the
@@ -87,6 +100,7 @@ export function buildRibbon({ xs, from, to, step, height, tile = 4 }: RibbonOpti
   const geometry = new THREE.BufferGeometry()
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
   geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2))
+  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
   geometry.setIndex(indices)
   geometry.computeVertexNormals()
   geometry.computeBoundingSphere()
@@ -97,15 +111,18 @@ export function buildRibbon({ xs, from, to, step, height, tile = 4 }: RibbonOpti
 export function mergeGeometries(list: THREE.BufferGeometry[]): THREE.BufferGeometry {
   const positions: number[] = []
   const uvs: number[] = []
+  const colors: number[] = []
   const indices: number[] = []
   let offset = 0
   for (const geometry of list) {
     const pos = geometry.getAttribute('position')
     const uv = geometry.getAttribute('uv')
+    const tint = geometry.getAttribute('color') as THREE.BufferAttribute | undefined
     const index = geometry.getIndex()
     for (let i = 0; i < pos.count; i++) {
       positions.push(pos.getX(i), pos.getY(i), pos.getZ(i))
       uvs.push(uv.getX(i), uv.getY(i))
+      colors.push(tint ? tint.getX(i) : 1, tint ? tint.getY(i) : 1, tint ? tint.getZ(i) : 1)
     }
     if (index) for (let i = 0; i < index.count; i++) indices.push(offset + index.getX(i))
     else for (let i = 0; i < pos.count; i++) indices.push(offset + i)
@@ -114,16 +131,151 @@ export function mergeGeometries(list: THREE.BufferGeometry[]): THREE.BufferGeome
   const merged = new THREE.BufferGeometry()
   merged.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
   merged.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2))
+  merged.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
   merged.setIndex(indices)
   merged.computeVertexNormals()
   merged.computeBoundingSphere()
   return merged
 }
 
-const ASPHALT_TILE = 4
-const GRAVEL_TILE = 3
-const SOIL_TILE = 6
+// Tile sizes are in metres. Small tiles read as wallpaper over a 1 km road, so
+// the fine maps stretch further and the variation that would have lived inside
+// a tile now lives in the vertex tint below.
+/**
+ * Irregular spill along a road edge.
+ *
+ * A real verge never meets the carriageway on a mathematical line: soil creeps
+ * onto the shoulder, gravel gets kicked out onto the asphalt, dust fills the
+ * joint. These are small, jagged, randomly-sized patches laid along the length
+ * so the boundary dissolves instead of reading as a painted stripe.
+ */
+function buildSpill({
+  side,
+  from,
+  to,
+  count,
+  inner,
+  outer,
+  tint,
+  seed,
+}: {
+  side: -1 | 1
+  from: number
+  to: number
+  count: number
+  /** x range the patch can cover, measured from the carriageway edge */
+  inner: number
+  outer: number
+  tint: (x: number, z: number) => [number, number, number]
+  seed: number
+}): THREE.BufferGeometry[] {
+  const random = prng(seed)
+  const out: THREE.BufferGeometry[] = []
+  for (let i = 0; i < count; i++) {
+    const z = from - random() * Math.abs(to - from)
+    const length = 0.9 + random() * 3.6
+    const z0 = z
+    const z1 = z - length
+    const startX = HALF + inner + random() * 0.5
+    const endX = HALF + inner + 0.4 + random() * (outer - inner)
+    // width wanders along the patch instead of being a clean rectangle
+    const w0 = 0.35 + random() * 0.9
+    const w1 = 0.35 + random() * 0.9
+    const wMid = 0.6 + random() * 1.2
+
+    const rings: [number, number][] = [
+      [startX, z0],
+      [startX + w0, z0 - length * 0.25],
+      [startX + wMid, z0 - length * 0.55],
+      [startX + w1, z1],
+      [startX + w1 * 0.4, z1 - length * 0.1],
+      [startX - 0.15, z1 - length * 0.05],
+    ]
+
+    const positions: number[] = []
+    const uvs: number[] = []
+    const colors: number[] = []
+    const indices: number[] = []
+    const centre = rings.reduce((acc, p) => ({ x: acc.x + p[0] / rings.length, z: acc.z + p[1] / rings.length }), {
+      x: 0,
+      z: 0,
+    })
+    rings.forEach(([x, z], index) => {
+      const wx = side * x
+      // sit on whichever surface the patch is creeping across, lifted clear of
+      // it — the lift has to beat depth-buffer precision at 200 m
+      const base =
+        x > HALF
+          ? carriagewayHeight(HALF, z) - 0.06 - Math.pow(Math.abs(x - HALF) / SHOULDER, 1.4) * 0.14
+          : carriagewayHeight(x, z)
+      positions.push(wx, base + 0.02, z)
+      uvs.push(wx / 3, z / 3)
+      const c = tint(wx, z)
+      colors.push(c[0], c[1], c[2])
+      if (index > 1) indices.push(0, index - 1, index)
+    })
+    void centre
+    const geometry = new THREE.BufferGeometry()
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2))
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
+    geometry.setIndex(indices)
+    geometry.computeVertexNormals()
+    out.push(geometry)
+  }
+  return out
+}
+
+const ASPHALT_TILE = 6.5
+const GRAVEL_TILE = 5
+const SOIL_TILE = 9
 const PAINT_TILE = 3
+
+/**
+ * Macro weathering for the carriageway.
+ *
+ * Three things a real Indian road shows that a tiled texture cannot: pours
+ * from different days (broad tonal drift along the length), traffic polishing
+ * the wheel paths darker, and dust drifted in from the verge lightening the
+ * outer edges — all irregular, none of it repeating.
+ */
+function asphaltTint(x: number, z: number): [number, number, number] {
+  const pour = fbm2(z * 0.009, x * 0.05, 601, 3) // ~110 m wavelength
+  const age = fbm2(z * 0.022 + 11, x * 0.08, 631, 2) // ~45 m
+  let v = 0.9 + pour * 0.2 + (age - 0.5) * 0.12
+
+  // wheel paths: two soft bands, worn darker where the tyres run
+  const near = Math.min(Math.abs(Math.abs(x) - 1.35), Math.abs(Math.abs(x) - 1.15))
+  const polished = Math.max(0, 1 - near / 1.5)
+  v -= polished * 0.07
+
+  // dust drifted in from either verge, strongest at the outer edge
+  const edge = Math.max(0, Math.abs(x) - (HALF - 1.1)) / 1.1
+  v += edge * (0.05 + fbm2(z * 0.05, x * 0.5, 661, 2) * 0.07)
+
+  // faint patchy bleaching where the surface is drying out
+  v += (fbm2(z * 0.07, x * 0.2, 691, 2) - 0.5) * 0.05
+
+  const g = v * 0.995
+  const b = v * 0.985
+  return [Math.max(0.7, Math.min(1.15, v)), Math.max(0.7, Math.min(1.15, g)), Math.max(0.7, Math.min(1.15, b))]
+}
+
+/** Shoulders vary between fresh gravel and bare compacted earth. */
+function gravelTint(x: number, z: number): [number, number, number] {
+  const drift = fbm2(z * 0.012, x * 0.1, 701, 3)
+  const sparse = fbm2(z * 0.035 + 5, x * 0.2, 711, 2)
+  const v = 0.88 + drift * 0.2 + (sparse - 0.5) * 0.1
+  return [v, v * 0.985, v * 0.95]
+}
+
+/** Verge soil: damp hollows, dust crust, the odd bleached patch. */
+function soilTint(x: number, z: number): [number, number, number] {
+  const mottle = fbm2(z * 0.014, x * 0.06, 721, 3)
+  const crust = fbm2(z * 0.06, x * 0.3, 731, 2)
+  const v = 0.86 + mottle * 0.22 + (crust - 0.5) * 0.08
+  return [v, v * 0.97, v * 0.9]
+}
 
 export function buildRoadParts(step: number, tier: 'low' | 'mid' | 'high' = 'high'): RoadPart[] {
   const parts: RoadPart[] = []
@@ -141,6 +293,7 @@ export function buildRoadParts(step: number, tier: 'low' | 'mid' | 'high' = 'hig
       step,
       height: carriagewayHeight,
       tile: ASPHALT_TILE,
+      tint: asphaltTint,
     }),
   })
 
@@ -156,6 +309,7 @@ export function buildRoadParts(step: number, tier: 'low' | 'mid' | 'high' = 'hig
         height: (x, z) =>
           carriagewayHeight(side * HALF, z) - 0.06 - Math.pow(Math.abs(x - side * HALF) / SHOULDER, 1.4) * 0.14,
         tile: GRAVEL_TILE,
+        tint: gravelTint,
       }),
     })
     // unmetalled verge that blends the shoulder into the terrain
@@ -174,6 +328,7 @@ export function buildRoadParts(step: number, tier: 'low' | 'mid' | 'high' = 'hig
           return carriagewayHeight(side * HALF, z) - 0.2 - t * 0.34 + Math.sin(z * 0.03 + (side < 0 ? 0 : 2)) * 0.06
         },
         tile: SOIL_TILE,
+        tint: soilTint,
       }),
     })
   }
@@ -217,6 +372,45 @@ export function buildRoadParts(step: number, tier: 'low' | 'mid' | 'high' = 'hig
     )
   }
   parts.push({ key: 'paint', geometry: mergeGeometries(dashes), opacity: 0.9 })
+
+  /* ------------------------------------------- verge creep and edge spill */
+  if (tier !== 'low') {
+    const creepCount = tier === 'high' ? 46 : 22
+    for (const side of [-1, 1] as const) {
+      // soil creeping off the verge onto the gravel shoulder
+      parts.push({
+        key: 'soil',
+        geometry: mergeGeometries(
+          buildSpill({
+            side,
+            from: Z_START,
+            to: Z_END,
+            count: creepCount,
+            inner: SHOULDER * 0.45,
+            outer: SHOULDER + VERGE * 0.6,
+            tint: soilTint,
+            seed: side < 0 ? 811 : 821,
+          }),
+        ),
+      })
+      // gravel and dust kicked out onto the carriageway edge
+      parts.push({
+        key: 'gravel',
+        geometry: mergeGeometries(
+          buildSpill({
+            side,
+            from: Z_START,
+            to: Z_END,
+            count: Math.round(creepCount * 0.7),
+            inner: -1.5,
+            outer: 0.2,
+            tint: gravelTint,
+            seed: side < 0 ? 831 : 841,
+          }),
+        ),
+      })
+    }
+  }
 
   /* ---------------------------------------------------- patches, film, wear */
   const patchRandom = prng(41)

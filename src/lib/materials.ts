@@ -205,9 +205,9 @@ export function roadPartMaterial(
 ): THREE.MeshStandardMaterial {
   switch (part.key) {
     case 'gravel':
-      return gravelMaterial(size)
+      return roadGravelMaterial(size)
     case 'soil':
-      return soilMaterial(size, true)
+      return roadSoilMaterial(size)
     case 'paint':
       return roadPaintMaterial(size, part.opacity ?? 1)
     case 'patch':
@@ -221,7 +221,7 @@ export function roadPartMaterial(
     case 'hole':
       return plain('road-hole', { color: 0x232323, roughness: 1, metalness: 0 })
     default:
-      return asphaltMaterial(size)
+      return roadAsphaltMaterial(size)
   }
 }
 
@@ -281,6 +281,57 @@ export function asphaltMaterial(size: 256 | 512 = 512) {
     metalness: 0.03,
     envMapIntensity: 0.28,
     normalScale: 0.8,
+  })
+}
+
+/** Damp, dirt-stained plinth course under the boundary wall. */
+export function plinthMaterial(size: 256 | 512 = 256) {
+  return fromSurface('plinth', 'concreteDark', size, {
+    color: 0x7d766a,
+    roughness: 0.98,
+    metalness: 0.03,
+    envMapIntensity: 0.3,
+    normalScale: 0.9,
+  })
+}
+
+/**
+ * Road surfaces carry a per-vertex macro tint: broad tonal drift along the
+ * length, polished wheel paths and dust drifted in from the verge (see
+ * `road-geometry.ts`). The tint is what keeps a 1 km road from reading as one
+ * repeated texture, so these three are separate from the shared materials used
+ * by patches that have no colour attribute.
+ */
+export function roadAsphaltMaterial(size: 256 | 512 = 512) {
+  return fromSurface('road-asphalt', 'asphalt', size, {
+    color: 0x55565a,
+    roughness: 0.92,
+    metalness: 0.03,
+    envMapIntensity: 0.28,
+    normalScale: 0.8,
+    vertexColors: true,
+  })
+}
+
+export function roadGravelMaterial(size: 256 | 512 = 256) {
+  return fromSurface('road-gravel', 'gravel', size, {
+    color: 0xffffff,
+    roughness: 1,
+    metalness: 0,
+    envMapIntensity: 0.2,
+    normalScale: 1.1,
+    vertexColors: true,
+  })
+}
+
+export function roadSoilMaterial(size: 256 | 512 = 256) {
+  return fromSurface('road-soil', 'soilDry', size, {
+    color: 0xffffff,
+    roughness: 1,
+    metalness: 0,
+    envMapIntensity: 0.25,
+    normalScale: 1,
+    vertexColors: true,
   })
 }
 

@@ -133,6 +133,23 @@ export function buildTree(b, options = {}) {
   const height = species.height * (options.heightScale ?? 1)
   const trunkRadius = species.trunkRadius * (options.heightScale ?? 1)
 
+  /**
+   * 0 — hero / close: every leaf is a three-bladed cluster, so the crown has
+   *     volume and never reads as a flat card.
+   * 1 — medium: single cupped cards (the working horse of the tree line).
+   * 2 — distant: fewer, larger blades and a leaner branch skeleton; the
+   *     silhouette is what matters at that range.
+   */
+  const lod = options.lod ?? 1
+  const blades = lod === 0 ? 3 : 1
+  const leafScale = lod === 2 ? 1.32 : lod === 0 ? 0.94 : 1
+  const leafDensity = lod === 0 ? 0.55 : lod === 2 ? 0.55 : 1
+  const maxLeaves = options.maxLeaves ?? (lod === 0 ? 700 : lod === 2 ? 340 : 1100)
+  // radial tube detail only. The number of samples along a branch is part of
+  // the growth walk, so changing it between LODs would give each level a
+  // different skeleton — and trees would visibly change shape as you move.
+  const branchDetail = lod === 0 ? 2 : lod === 2 ? -2 : 0
+
   /* --------------------------------------------------------------- trunk */
   const leanDir = random() * Math.PI * 2
   const trunkSamples = 11
@@ -158,7 +175,7 @@ export function buildTree(b, options = {}) {
   }
 
   b.tube(trunkPoints, trunkRadiusAt, {}, barkMaterial, {
-    segments: 10,
+    segments: Math.max(5, 10 + branchDetail * 2),
     noise: 0.11,
     noiseScale: 9,
     seed: seed * 3 + 1,
@@ -212,7 +229,7 @@ export function buildTree(b, options = {}) {
 
     const radiusAt = (t) => radius * (1 - t * 0.72) * (1 + Math.sin(t * 7 + depth) * 0.05)
     b.tube(points, radiusAt, {}, barkMaterial, {
-      segments: depth === 0 ? 8 : depth === 1 ? 6 : depth === 2 ? 5 : 4,
+      segments: Math.max(3, (depth === 0 ? 8 : depth === 1 ? 6 : depth === 2 ? 5 : 4) + branchDetail),
       noise: 0.14,
       noiseScale: 6 + depth * 3,
       seed: seed * 31 + depth * 97 + points.length,
@@ -309,7 +326,7 @@ export function buildTree(b, options = {}) {
   // leaves grow on the outside of the crown, so cards face roughly outwards
   const crownCentre = V(0, height * 0.62, 0)
   const pushCluster = (point, dir, scale) => {
-    const count = Math.max(2, Math.round(species.leavesPerCluster * (0.7 + random() * 0.7) * scale))
+    const count = Math.max(2, Math.round(species.leavesPerCluster * (0.7 + random() * 0.7) * scale * leafDensity))
     const clusterOffset = new THREE.Vector3(
       (random() - 0.5) * species.leafSize * 2.2,
       (random() - 0.5) * species.leafSize * 1.6,
@@ -317,7 +334,7 @@ export function buildTree(b, options = {}) {
     )
     const centre = point.clone().add(clusterOffset)
     for (let i = 0; i < count; i++) {
-      const size = species.leafSize * (0.62 + random() * 0.7)
+      const size = species.leafSize * leafScale * (0.62 + random() * 0.7)
       const delta = point.clone().sub(crownCentre)
       const outward = delta.lengthSq() < 1e-6 ? V(0, 1, 0) : delta.normalize()
       const axis = outward
@@ -346,29 +363,57 @@ export function buildTree(b, options = {}) {
   for (const lp of leafPoints) {
     if (random() < species.clusterStep * leafBudget) pushCluster(lp.point, lp.dir, lp.scale)
   }
-  // hard cap so a dense species cannot blow the triangle budget
-  const maxLeaves = options.maxLeaves ?? 1100
-  while (leaves.length > maxLeaves) leaves.splice(Math.floor(random() * leaves.length), 1)
+  // Hard cap so a dense species cannot blow the triangle budget. Leaves are
+  // dropped on a stride, not at random: the list is in branch-walk order, so a
+  // stride thins every part of the crown evenly and keeps the silhouette (and
+  // therefore the bounding box) the same across LODs. Random removal eats the
+  // outer clusters first and the tree shrinks every time its LOD changes.
+  if (leaves.length > maxLeaves) {
+    const stride = Math.ceil(leaves.length / maxLeaves)
+    const kept = []
+    for (let i = 0; i < leaves.length; i += stride) kept.push(leaves[i])
+    leaves.length = 0
+    leaves.push(...kept)
+  }
 
   for (const leaf of leaves) {
     const { c, u, v } = leaf
-    const n = new THREE.Vector3().crossVectors(u, v).normalize()
-    // gently cupped card: the outer edge bends away from the cluster normal
-    const bend = n.clone().multiplyScalar(leaf.c.length() * 0.0004)
-    const a = c.clone().addScaledVector(u, -1).addScaledVector(v, -0.5)
-    const bb = c.clone().addScaledVector(u, 1).addScaledVector(v, -0.5)
-    const cc = c
-      .clone()
-      .addScaledVector(u, 1)
-      .addScaledVector(v, 0.5)
-      .add(bend)
-    const dd = c
-      .clone()
-      .addScaledVector(u, -1)
-      .addScaledVector(v, 0.5)
-      .add(bend)
     const [u0, v0] = leaf.quad
-    b.quad(a, bb, cc, dd, [u0, v0, u0 + 0.5, v0, u0 + 0.5, v0 + 0.5, u0, v0 + 0.5], {}, leafMaterial)
+    const n = new THREE.Vector3().crossVectors(u, v).normalize()
+
+    const emit = (spin, along) => {
+      // rotate the blade inside its own plane, then push it along the cluster
+      // axis so a single leaf position becomes a small volume
+      const uLen = u.length() || 1
+      const vLen = v.length() || 1
+      const uh = u.clone().multiplyScalar(1 / uLen)
+      const vh = v.clone().multiplyScalar(1 / vLen)
+      const cos = Math.cos(spin)
+      const sin = Math.sin(spin)
+      // rotate the blade pair inside their own plane (also used for the
+      // single-blade path with spin = 0, which is the identity)
+      const ru = uh.multiplyScalar(cos).addScaledVector(vh, sin).multiplyScalar(uLen)
+      const rv = uh.clone().multiplyScalar(-sin).addScaledVector(vh, cos).multiplyScalar(vLen)
+      const centre = c.clone().addScaledVector(n, along)
+      const bend = n.clone().multiplyScalar(centre.length() * 0.0004)
+      const a = centre.clone().addScaledVector(ru, -1).addScaledVector(rv, -0.5)
+      const bb = centre.clone().addScaledVector(ru, 1).addScaledVector(rv, -0.5)
+      const cc = centre.clone().addScaledVector(ru, 1).addScaledVector(rv, 0.5).add(bend)
+      const dd = centre.clone().addScaledVector(ru, -1).addScaledVector(rv, 0.5).add(bend)
+      b.quad(a, bb, cc, dd, [u0, v0, u0 + 0.5, v0, u0 + 0.5, v0 + 0.5, u0, v0 + 0.5], {}, leafMaterial)
+    }
+
+    if (blades === 1) {
+      emit(0, 0)
+      continue
+    }
+    // three blades at 120°, staggered along the axis: from any viewing angle
+    // at least two are edge-on, which is what makes the cluster read as a
+    // volume instead of a rectangle
+    const spread = species.leafSize * 0.42
+    emit(0, 0)
+    emit(2.094, spread)
+    emit(4.188, -spread * 0.7)
   }
 
   return { leafCount: leaves.length }
