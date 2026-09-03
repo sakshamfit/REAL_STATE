@@ -274,13 +274,77 @@ the 9 the brief asks for. Behind it: six identical bays × twelve identical
 floors, cars without shutlines or interiors, and the warehouse / shed /
 scaffolding generators, which are the least detailed in the set at 7.7–7.8.
 
+---
+
+## V9 — the assets, not the lighting
+
+V8 closed the daylight and foliage gaps. What was left was the thing the report
+had been naming for two passes: **every building is axis-aligned boxes with
+mathematically perfect 90° edges.** V9 rebuilds the generators. Full detail in
+**[PHOTOREALISM_V9_REPORT.md](PHOTOREALISM_V9_REPORT.md)**.
+
+**A chamfered architectural primitive now exists.** `chamferBox()` takes width,
+height, depth, bevel width, bevel segments and per-face material assignment. It
+projects each vertex of a six-face grid onto the chamfered hull, resolves
+edge-strip ownership by axis index so no strip is emitted twice, and flat-shades
+every crease — smoothing across a face-to-bevel crease is what makes a chamfered
+box look like a rounded one. Bevels run 12–24 mm: invisible as shape,
+unmistakable as a highlight.
+
+It is applied to everything the camera can get near — podium, columns, steps,
+canopy, slab and balcony edges, parapets and copings, piers, floor bands, fins,
+cores — and withheld from the 168 window sills and the rear elevation's chajjas,
+where the arris cannot be resolved. A chamfered box costs 52 triangles against a
+plain box's 12, and that ratio is why the rule exists.
+
+**Windows are now built outward-in:** wall → reveal → frame → glass → occupancy →
+interior. The frame is a bevelled extruded ring standing 8 mm proud of the
+reveal. Occupancy is dealt from a seeded deck — curtain, blind, half-open
+shutter, security grille, blocked-up opening, clear — so no floor comes out
+all-curtains or all-clear, and every opening gets its own sill projection.
+
+**Cars had a defect a validity check could not find.** Their door shutlines were
+placed at `width/2 − 12 mm`, but the flank of a bevelled extrusion sits 26 mm
+further out than that: every shutline on every car was buried inside the
+bodywork. They are now on the surface, and each door gets four lines. The cabin
+is filled — with 58 % glass, an empty car lets you see the road through it — and
+car paint went from `metalness 0.35` to 0, because on a metalness workflow that
+setting is a large part of why painted surfaces read as plastic.
+
+**Scaffolding, the weakest asset in the set, is now tube-and-fitting**: three
+tube gauges, couplers at every node, sole boards, planks laid individually, and
+a working lift with guard rail, intermediate rail and toe board. Warehouse and
+shed got sheet laps, gutters that reach downpipes that reach pads, and a dock
+that explains itself. The bridge got a girder soffit, bearings, wing walls and
+transition slabs. Trees got vertical bark ridges, branch collars, epicormic
+shoots, crown asymmetry and a fifth species.
+
+### What this does to the scores
+
+| Axis | V8 | V9 | Why |
+| --- | ---: | ---: | --- |
+| Geometry | 8.5–9 | **8.8–9** | chamfers, real window depth, couplers, bearings, roof plant |
+| Repetition | 8.5 | **8.8** | per-opening occupancy, a fifth tree species, mismatched cladding |
+| Materials | 9.0 | 9.0 | unchanged, except car paint metalness which was plain wrong |
+| Surface detail | 8.8 | 8.8 | unchanged — still procedural, still not scanned |
+
+Hero: **8.8** (was 8.8 in the gate's own terms, and 8.2 in the anti-AI
+scorecard). Major 8.6–8.8. Secondary 8.6–8.7.
+
+**Why not 9.2.** Chamfers fix the *edge*, which is what the brief named. They do
+not fix the *plan*. The hero tower still has no setback, no change of section,
+no modelled transition where the podium becomes the tower — with a chamfered
+pier at each corner and a cornice over the top two floors it now has an
+articulated silhouette, but it is still one mass. Getting to 9.2 means modelling
+the mass, not bevelling its edges.
+
 ### Hero sequence
 
 | Shot | Geom | Mat | Surf | Foli | Light | Shad | Ground | Scale | Atmos | Cam | Comp | Rep | Anim | Audio | **Total** | Target |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| ground (opening) | 8.5 | 9 | 8.8 | 8.8 | 9 | 9 | 9 | 9 | 8.5 | 8.5 | 9 | 8.5 | 8.5 | 9 | **8.8** | 9.0 |
-| build (orbit) | 9 | 9 | 8.8 | 8.8 | 9 | 9 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 9 | **8.8** | 9.0 |
-| company (approach) | 9 | 9 | 8.8 | 8.8 | 9 | 9 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 9 | **8.8** | 9.0 |
+| ground (opening) | 8.8 | 9 | 8.8 | 8.8 | 9 | 9 | 9 | 9 | 8.5 | 8.5 | 9 | 8.8 | 8.5 | 9 | **8.8** | 9.0 |
+| build (orbit) | 9 | 9 | 8.8 | 8.8 | 9 | 9 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8.8 | 8.5 | 9 | **8.8** | 9.0 |
+| company (approach) | 9 | 9 | 8.8 | 8.8 | 9 | 9 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8.8 | 8.5 | 9 | **8.8** | 9.0 |
 
 Lighting and shadows move from 8.5 to 9.0 — a 52° sun with a measured 2.4:1
 sun-to-shade ratio, shadowed concrete at 0.62 sRGB, no crushed pixels and no

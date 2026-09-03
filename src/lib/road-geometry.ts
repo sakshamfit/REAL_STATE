@@ -345,24 +345,45 @@ export function buildRoadParts(step: number, tier: 'low' | 'mid' | 'high' = 'hig
   }
 
   /* ---------------------------------------------------------------- markings */
-  // edge lines — continuous but worn
+  /**
+   * Markings are laid in short segments, each with its own centre offset and
+   * width.
+   *
+   * A stripe drawn as one ribbon from horizon to horizon has two mathematically
+   * straight edges, and a straight edge is the one thing road paint never has:
+   * it is applied by a machine guided by a walking man, it gets scuffed by
+   * traffic within a week, and it wears away in flakes along the sides. The
+   * wobble is 20-odd millimetres over a 6 m segment — invisible as a shape,
+   * and the difference between paint and a vector line.
+   */
+  const paintRandom = prng(1901)
   const edgeLines: THREE.BufferGeometry[] = []
+  const SEG = 6
   for (const side of [-1, 1]) {
-    const x = side * (HALF - 0.42)
-    edgeLines.push(
-      buildRibbon({
-        xs: [x - 0.075, x + 0.075],
-        from: Z_START,
-        to: Z_END,
-        step: 24,
-        height: (xx, z) => carriagewayHeight(xx, z) + 0.006,
-        tile: PAINT_TILE,
-      }),
-    )
+    const base = side * (HALF - 0.42)
+    for (let z = Z_START; z > Z_END; z -= SEG) {
+      const to = Math.max(Z_END, z - SEG)
+      // occasional stretch where the line has gone altogether
+      if (paintRandom() < 0.05) continue
+      const drift = (paintRandom() - 0.5) * 0.05
+      const half = 0.062 + paintRandom() * 0.03
+      const cx = base + drift
+      edgeLines.push(
+        buildRibbon({
+          xs: [cx - half, cx + half],
+          from: z,
+          to,
+          step: 24,
+          height: (xx, zz) => carriagewayHeight(xx, zz) + 0.006,
+          tile: PAINT_TILE,
+        }),
+      )
+    }
   }
   parts.push({ key: 'paint', geometry: mergeGeometries(edgeLines) })
 
-  // centre line — broken, and the paint is missing in stretches
+  // centre line — broken, and the paint is missing in stretches. Each dash is
+  // also laid slightly off centre, the way a machine-laid line actually runs.
   const random = prng(19)
   const dashes: THREE.BufferGeometry[] = []
   const dashLength = 3
@@ -371,9 +392,11 @@ export function buildRoadParts(step: number, tier: 'low' | 'mid' | 'high' = 'hig
     if (random() < 0.12) continue
     const from = z
     const to = Math.max(Z_END, z - dashLength * (0.8 + random() * 0.5))
+    const drift = (random() - 0.5) * 0.05
+    const half = 0.062 + random() * 0.026
     dashes.push(
       buildRibbon({
-        xs: [-0.075, 0.075],
+        xs: [drift - half, drift + half],
         from,
         to,
         step: 6,

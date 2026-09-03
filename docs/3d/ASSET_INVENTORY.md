@@ -109,3 +109,39 @@ coarser than the stones it was meant to show.
 | gravel shoulder | 2.8 m | 5.5 mm/texel |
 | soil verge | 5.0 m | 9.8 mm/texel |
 | terrain | 4.5 m | 8.8 mm/texel |
+
+## V9 asset register
+
+Source for every row: procedural, `scripts/glb/generate-assets.mjs` (deterministic per seed).
+Textures are not baked into the GLBs — the runtime material library applies procedural PBR
+maps through the registry in `src/data/assets.ts`, so all assets share one texel-density rule.
+Trees are the only assets with distance levels: `-close` is LOD 0, the plain file LOD 1, `-far` LOD 2.
+
+| Asset | Dimensions (m) | Tris | GLB | LOD | Anti-AI | Target | Met |
+| --- | --- | ---: | ---: | :--: | ---: | ---: | :--: |
+| bridge.glb | 72.01×24.75×19.00 | 7,540 | 390 kB | — | 8.6 | 8.7 | ✗ |
+| car-a.glb | 4.74×2.07×2.05 | 4,260 | 120 kB | — | 8.6 | 8.8 | ✗ |
+| car-b.glb | 4.94×2.14×2.16 | 4,344 | 124 kB | — | 8.6 | 8.8 | ✗ |
+| car-c.glb | 4.04×2.08×1.97 | 4,224 | 119 kB | — | 8.6 | 8.8 | ✗ |
+| construction-shed.glb | 10.20×4.10×8.00 | 3,816 | 166 kB | — | 8.4 | 8.5 | ✗ |
+| crane.glb | 35.81×41.16×7.20 | 5,180 | 153 kB | — | 8.7 | 8.7 | ✓ |
+| hero-building.glb | 25.20×47.02×22.93 | 55,840 | 2690 kB | — | 8.8 | 9.2 | ✗ |
+| residential-building.glb | 25.10×23.40×18.18 | 28,884 | 1399 kB | — | 8.6 | 8.7 | ✗ |
+| scaffolding.glb | 12.00×12.34×1.45 | 6,028 | 188 kB | — | 8.5 | 8.5 | ✓ |
+| solar-panel.glb | 8.87×2.16×8.60 | 3,644 | 195 kB | — | 8.7 | 8.7 | ✓ |
+| tree-a.glb | 19.55×20.04×23.93 | 6,994 | 276 kB | 0/1/2 | 8.7 | 8.8 | ✗ |
+| tree-b.glb | 16.30×21.74×12.82 | 3,976 | 177 kB | 0/1/2 | 8.7 | 8.8 | ✗ |
+| tree-c.glb | 19.86×13.53×15.41 | 8,920 | 374 kB | 0/1/2 | 8.7 | 8.8 | ✗ |
+| tree-d.glb | 10.98×9.35×7.93 | 6,966 | 322 kB | 0/1/2 | 8.7 | 8.8 | ✗ |
+| tree-e.glb | 22.60×14.67×13.56 | 7,374 | 304 kB | 0/1/2 | 8.7 | 8.8 | ✗ |
+| truck-a.glb | 4.82×2.17×2.08 | 4,418 | 129 kB | — | 8.6 | 8.8 | ✗ |
+| warehouse.glb | 48.50×15.09×41.90 | 12,044 | 523 kB | — | 8.4 | 8.5 | ✗ |
+
+Unscored this pass (small props, not on the V9 target list): `barrier.glb`, `boundary-wall.glb`, `bush.glb`, `cement-bags.glb`, `entrance-gate-leaf.glb`, `entrance-gate.glb`, `excavator.glb`, `grass-tuft.glb`, `material-stack.glb`, `rebar-stack.glb`, `shrub-dry.glb`, `street-light.glb`, `tree-a-close.glb`, `tree-a-far.glb`, `tree-b-close.glb`, `tree-b-far.glb`, `tree-c-close.glb`, `tree-c-far.glb`, `tree-d-close.glb`, `tree-d-far.glb`, `tree-e-close.glb`, `tree-e-far.glb`.
+
+**Cost.** All 41 GLBs total 11 MB, against 8.5 MB before V9. The hero is 2.69 MB
+(was 1.17 MB) — 55,840 triangles against 25,548. That is the price of the chamfers, the
+window frames and the occupancy variation, and it was paid deliberately: the brief ranks
+hero quality above everything else and forbids using performance as a reason for an
+obviously low-quality hero asset. Assets stream by priority and trees are LOD-gated, so
+the hero and gate arrive first; the distant tree line never fetches `-close`.

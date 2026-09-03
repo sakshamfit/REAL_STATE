@@ -74,6 +74,38 @@ export const SPECIES = {
     deadBranches: 2,
     canopyDepth: 2,
   },
+  /**
+   * Mature roadside specimen — tamarind / banyan character. The oldest and
+   * thickest tree in the set: a short bole that forks low into a few heavy
+   * limbs, a crown wider than it is tall, and weeping outer growth. It exists
+   * because four species instanced across a site still leaves the eye pairing
+   * them up, and a fifth with a genuinely different mass breaks that.
+   */
+  e: {
+    height: 10.2,
+    trunkRadius: 0.42,
+    trunkCurve: 0.17,
+    lean: 0.09,
+    firstBranch: 0.24,
+    levels: 4,
+    children: [3, 3, 3, 3],
+    // Branch length is what sets the crown's final width, and it compounds
+    // over four orders: the first numbers below put this tree at 40 m across,
+    // wider than the building it stands beside. Shortened until the grown
+    // crown lands near 20 m.
+    lengthRatio: [0.66, 0.64, 0.6, 0.56],
+    spread: [0.98, 1.0, 0.96, 0.9],
+    upBias: [0.2, 0.1, 0.02, -0.04],
+    droop: [0.06, 0.16, 0.28, 0.4],
+    radiusPower: 2.0,
+    leafSize: 0.52,
+    leavesPerCluster: 9,
+    clusterStep: 0.86,
+    deadBranches: 3,
+    canopyDepth: 3,
+    barkRidges: 0.22,
+    ridgeCount: 13,
+  },
   /** Small ornamental / karanj — compact dense crown, used near buildings. */
   d: {
     height: 4.8,
@@ -179,8 +211,11 @@ export function buildTree(b, options = {}) {
 
   b.tube(trunkPoints, trunkRadiusAt, {}, barkMaterial, {
     segments: Math.max(5, 10 + branchDetail * 2),
-    noise: 0.11,
+    noise: 0.09,
     noiseScale: 9,
+    // vertical bark fissures, 11 around a mature trunk, strongest at the base
+    ridges: species.barkRidges ?? 0.16,
+    ridgeCount: species.ridgeCount ?? 11,
     seed: seed * 3 + 1,
     uvScale: 1.2,
     twist: 0.5,
@@ -292,6 +327,19 @@ export function buildTree(b, options = {}) {
       random,
     )
     const length = height * species.lengthRatio[0] * (0.85 + random() * 0.35)
+    /**
+     * Branch collar. Where a limb leaves a trunk the wood swells — a branch
+     * simply intersecting a cylinder reads as two tubes pushed together, and
+     * the joint is the first thing you look at on a bare winter tree.
+     */
+    const collarR = trunkRadius * 0.46
+    b.tube(
+      [base.clone().addScaledVector(dir, -collarR * 0.6), base.clone().addScaledVector(dir, collarR * 1.1)],
+      (t) => collarR * (1.25 - Math.abs(t - 0.35) * 0.9),
+      {},
+      barkMaterial,
+      { segments: 6, noise: 0.2, noiseScale: 6, seed: seed * 13 + i, uvScale: 0.7 },
+    )
     grow(base, dir, length, trunkRadius * 0.62, 0, GOLDEN * i)
   }
 
@@ -342,7 +390,7 @@ export function buildTree(b, options = {}) {
     // A shoot for the cluster to hang on. Foliage cards floating in mid-air is
     // one of the strongest tells there is: real leaves grow on twigs. Only the
     // close level pays for them, and only where the shoot is long enough to see.
-    if (lod === 0 && clusterOffset.length() > species.leafSize * 0.35 && clusterIndex % 3 === 0) {
+    if (lod === 0 && clusterOffset.length() > species.leafSize * 0.35 && clusterIndex % 2 === 0) {
       const length = clusterOffset.length()
       const mid = point.clone().addScaledVector(clusterOffset, 0.55).add(V(0, -length * 0.12, 0))
       b.tube(
@@ -381,10 +429,45 @@ export function buildTree(b, options = {}) {
     }
   }
 
+  /**
+   * Crown asymmetry. A crown built by a symmetric rule is a sphere with
+   * leaves on it. Real crowns lean away from the prevailing wind or towards a
+   * gap in the canopy, so one side is thinner than the other; the sparse side
+   * is chosen per tree from the seed and costs nothing.
+   */
+  const sparseDir = V(Math.cos(seed * 2.3), (random() - 0.5) * 0.5, Math.sin(seed * 2.3)).normalize()
+  const sparseAmount = 0.34 + random() * 0.3
+
   for (const tip of tips) pushCluster(tip.point, tip.dir, 1)
   const leafBudget = options.leafBudget ?? 1
   for (const lp of leafPoints) {
-    if (random() < species.clusterStep * leafBudget) pushCluster(lp.point, lp.dir, lp.scale)
+    const lean = lp.point.clone().sub(crownCentre).normalize().dot(sparseDir)
+    const thin = 1 - Math.max(0, lean) * sparseAmount
+    if (random() < species.clusterStep * leafBudget * thin) pushCluster(lp.point, lp.dir, lp.scale)
+  }
+
+  /**
+   * Epicormic shoots. A few twigs growing straight out of the lower trunk is
+   * one of the cheapest signs that a tree is a living thing rather than a
+   * model: they appear where the tree has been damaged or suddenly given light.
+   */
+  if (lod !== 2) {
+    const shoots = 2 + Math.floor(random() * 3)
+    for (let i = 0; i < shoots; i++) {
+      const t = 0.18 + random() * 0.3
+      const base = trunkPoints[Math.min(trunkSamples - 2, Math.floor(trunkSamples * t))].clone()
+      const a = random() * Math.PI * 2
+      const out = 0.18 + random() * 0.26
+      const tip = base.clone().add(V(Math.cos(a) * out, 0.16 + random() * 0.3, Math.sin(a) * out))
+      b.tube(
+        [base, base.clone().lerp(tip, 0.6).add(V(0, 0.04, 0)), tip],
+        (tt) => Math.max(0.007, trunkRadius * 0.11 * (1 - tt * 0.6)),
+        {},
+        barkMaterial,
+        { segments: 4, noise: 0.22, noiseScale: 6, seed: seed * 91 + i, uvScale: 0.5 },
+      )
+      pushCluster(tip, V(Math.cos(a), 0.3, Math.sin(a)).normalize(), 0.55)
+    }
   }
   // Hard cap so a dense species cannot blow the triangle budget. Leaves are
   // dropped on a stride, not at random: the list is in branch-walk order, so a
@@ -419,8 +502,10 @@ export function buildTree(b, options = {}) {
     // fold along the midrib and a slight twist: a leaf is not a plane, and a
     // plane that only ever catches one light direction is what gives foliage
     // away. Two creases turn a billboard into a surface.
-    const foldDepth = vLen * 0.55
-    const twist = (random() * 0.5 + 0.22) * (random() < 0.5 ? -1 : 1)
+    // curvature varies leaf to leaf: some nearly flat, some tightly cupped,
+    // otherwise the crown is a field of identical stamped shapes
+    const foldDepth = vLen * (0.34 + random() * 0.42)
+    const twist = (random() * 0.62 + 0.16) * (random() < 0.5 ? -1 : 1)
 
     const emit = (spin, along) => {
       const cos = Math.cos(spin)

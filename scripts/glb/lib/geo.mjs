@@ -104,11 +104,23 @@ export function tube(points, radius, opts = {}) {
     const r = radiusAt(i / Math.max(1, points.length - 1), i)
     if (i > 0) lengthSoFar += points[i].distanceTo(points[i - 1])
     const twist = (opts.twist ?? 0) * (i / Math.max(1, points.length - 1))
+    // Bark is fissured *vertically*: the ridges run up the trunk and stay put,
+    // which is why a trunk does not read as a lumpy cylinder. The existing
+    // `noise` term wanders with the ring index, so it gives bumps; `ridges`
+    // adds a coherent angular term that is constant along the length and fades
+    // towards the tip, the way bark smooths out on young growth.
+    const ridgeAmp = (opts.ridges ?? 0) * (opts.ridgeFade === false ? 1 : 1 - i / Math.max(1, points.length - 1) * 0.55)
+    const ridgeCount = opts.ridgeCount ?? 9
     for (let s = 0; s < segments; s++) {
       const a = (s / segments) * Math.PI * 2 + twist
+      const ridge =
+        ridgeAmp === 0
+          ? 0
+          : ridgeAmp * (Math.sin(a * ridgeCount) * 0.62 + Math.sin(a * ridgeCount * 2.17 + 1.7) * 0.38)
       const wobble =
         1 +
-        noise * (ringNoise[s] * 0.45 + Math.sin(a * 3 + i * 0.9) * 0.28 + Math.sin(a * noiseScale + i * 2.1) * 0.27)
+        noise * (ringNoise[s] * 0.45 + Math.sin(a * 3 + i * 0.9) * 0.28 + Math.sin(a * noiseScale + i * 2.1) * 0.27) +
+        ridge
       const rr = Math.max(0.004, r * wobble)
       const nx = Math.cos(a) * right.x + Math.sin(a) * normal.x
       const ny = Math.cos(a) * right.y + Math.sin(a) * normal.y
@@ -341,6 +353,23 @@ export class Builder {
     this.add(new THREE.BoxGeometry(w, h, d), t, material, opts)
   }
 
+  /**
+   * Chamfered box. `material` is used for the flats; `opts.edge` overrides the
+   * bevel strips and corners, and `opts.materials.{px,nx,py,ny,pz,nz}` gives a
+   * different material to individual faces (a concrete slab with a stone
+   * topping, say). See `chamferBox` for why the creases are flat-shaded.
+   */
+  chamfer(w, h, d, t, material, opts = {}) {
+    const { materials, edge, ...rest } = opts
+    for (const piece of chamferBox(w, h, d, rest)) {
+      const mat =
+        piece.region === 'face'
+          ? materials?.[piece.face] ?? material
+          : edge ?? materials?.[piece.face] ?? material
+      this.add(piece.geometry, t, mat, rest)
+    }
+  }
+
   plane(w, h, t, material, opts) {
     this.add(new THREE.PlaneGeometry(w, h), t, material, opts)
   }
@@ -391,6 +420,14 @@ export class Builder {
     return lathe(profile, segments, opts)
   }
 
+  makeFrame(outerW, outerH, section, depth, opts) {
+    return frameRing(outerW, outerH, section, depth, opts)
+  }
+
+  frame(outerW, outerH, section, depth, t, material, opts) {
+    this.add(frameRing(outerW, outerH, section, depth, opts), t, material, opts)
+  }
+
   makeTube(points, radius, opts) {
     return tube(points, radius, opts)
   }
@@ -406,3 +443,202 @@ export class Builder {
 }
 
 export const V = (x, y, z) => new THREE.Vector3(x, y, z)
+
+/**
+ * Window / door frame: a rectangular ring extruded with a small bevel.
+ *
+ * Aluminium sections are extrusions and they are *bevelled* — a frame drawn as
+ * four flat boxes has no edge for the sun to catch and reads as a printed
+ * rectangle on the wall. This gives the section a real 45° arris on both faces
+ * for about 60 triangles.
+ */
+export function frameRing(outerW, outerH, section, depth, opts = {}) {
+  const innerW = Math.max(0.01, outerW - section * 2)
+  const innerH = Math.max(0.01, outerH - section * 2)
+  const shape = new THREE.Shape()
+  shape.moveTo(-outerW / 2, -outerH / 2)
+  shape.lineTo(outerW / 2, -outerH / 2)
+  shape.lineTo(outerW / 2, outerH / 2)
+  shape.lineTo(-outerW / 2, outerH / 2)
+  shape.closePath()
+  const hole = new THREE.Path()
+  hole.moveTo(-innerW / 2, -innerH / 2)
+  hole.lineTo(-innerW / 2, innerH / 2)
+  hole.lineTo(innerW / 2, innerH / 2)
+  hole.lineTo(innerW / 2, -innerH / 2)
+  hole.closePath()
+  shape.holes.push(hole)
+  const bevel = Math.max(0, Math.min(opts.bevel ?? 0.008, section / 3))
+  // A bevelled section is 64 triangles against 32 for a plain extrusion. That
+  // is worth paying on an entrance the camera walks up to and not worth paying
+  // on 168 windows twelve storeys up, so the caller decides.
+  const useBevel = bevel > 1e-4
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    depth: Math.max(0.001, useBevel ? depth - bevel * 2 : depth),
+    bevelEnabled: useBevel,
+    bevelThickness: bevel,
+    bevelSize: bevel,
+    bevelSegments: 1,
+    curveSegments: 1,
+    steps: 1,
+  })
+  geometry.translate(0, 0, -(useBevel ? depth - bevel * 2 : depth) / 2)
+  return geometry
+}
+
+/* ------------------------------------------------------- chamfered solids */
+
+/**
+ * Chamfered (bevelled) box.
+ *
+ * A box with a small 45° chamfer on all twelve edges and a cut on all eight
+ * corners. This is the primitive the architecture was missing: an axis-aligned
+ * box has a mathematically perfect 90° edge, which no cast-concrete or
+ * blockwork building has, and which is one of the fastest ways to read a
+ * building as CG. The chamfer is not decoration — it gives the edge a second
+ * plane at 45° to the wall, so sunlight produces a real highlight-to-shadow
+ * transition along every corner instead of a one-pixel aliasing line.
+ *
+ * Default bevel is 20 mm. It is meant to be *subtle*: at 20 mm on a 3 m floor
+ * the chamfer is invisible as a shape and unmistakable as a shading cue.
+ *
+ * @param opts.bevel      chamfer width in metres (default 0.02)
+ * @param opts.profile    'chamfer' (flat 45° strip) | 'round' (fillet)
+ * @param opts.segments   subdivisions across the bevel; only meaningful for
+ *                        'round', where more segments smooth the fillet. A
+ *                        chamfer is planar, so extra segments only add
+ *                        collinear vertices and are ignored.
+ *
+ * @returns pieces: [{ face, region, geometry }]
+ *   face   one of px nx py ny pz nz — the box face this piece belongs to
+ *   region 'face' (the flat area), 'edge' (a chamfer strip), 'corner'
+ *
+ * **No piece is emitted twice.** Every edge strip and every corner patch is
+ * generated by six face grids, so ownership is resolved by axis index: a strip
+ * belongs to the adjacent face with the lowest axis index. Without that rule
+ * two coplanar quads land in the same place and z-fight.
+ */
+export function chamferBox(w, h, d, opts = {}) {
+  const half = [w / 2, h / 2, d / 2]
+  const bevel = Math.max(0, Math.min(opts.bevel ?? 0.02, Math.min(half[0], half[1], half[2]) - 1e-4))
+  const profile = opts.profile ?? 'chamfer'
+  const segments = profile === 'chamfer' ? 1 : Math.max(1, Math.round(opts.segments ?? 1))
+  const core = half.map((a) => a - bevel)
+
+  /** Sample coordinates along one axis: chamfer band, flat core, chamfer band. */
+  const axisCoords = (axis) => {
+    const a = half[axis]
+    const e = core[axis]
+    const out = []
+    for (let i = 0; i <= segments; i++) out.push(-a + ((a - e) * i) / segments)
+    out.push(e)
+    for (let i = 1; i <= segments; i++) out.push(e + ((a - e) * i) / segments)
+    return out
+  }
+  const coords = [axisCoords(0), axisCoords(1), axisCoords(2)]
+
+  /**
+   * Chamfer mapping: project a point on the un-chamfered box surface onto the
+   * chamfered one. `q` is the same point clamped to the core box; `n` is the
+   * part of it that lies in the bevel band. Scaling `n` so its L1 norm equals
+   * the bevel puts the point exactly on the 45° cut; normalising it instead
+   * puts it on a circular fillet.
+   */
+  const project = (p) => {
+    const q = [0, 0, 0]
+    const n = [0, 0, 0]
+    for (let i = 0; i < 3; i++) {
+      q[i] = Math.max(-core[i], Math.min(core[i], p[i]))
+      n[i] = p[i] - q[i]
+    }
+    const l1 = Math.abs(n[0]) + Math.abs(n[1]) + Math.abs(n[2])
+    if (l1 < 1e-9) return p
+    if (profile === 'round') {
+      const len = Math.hypot(n[0], n[1], n[2])
+      return [q[0] + (n[0] / len) * bevel, q[1] + (n[1] / len) * bevel, q[2] + (n[2] / len) * bevel]
+    }
+    const s = bevel / l1
+    return [q[0] + n[0] * s, q[1] + n[1] * s, q[2] + n[2] * s]
+  }
+
+  const FACE_NAME = ['px', 'nx', 'py', 'ny', 'pz', 'nz']
+  const pieces = []
+  const push = (face, region, tris) => {
+    const positions = []
+    const normals = []
+    const uvs = []
+    for (const tri of tris) {
+      const [a, b, c] = tri
+      const ux = b[0] - a[0]
+      const uy = b[1] - a[1]
+      const uz = b[2] - a[2]
+      const vx = c[0] - a[0]
+      const vy = c[1] - a[1]
+      const vz = c[2] - a[2]
+      let nx = uy * vz - uz * vy
+      let ny = uz * vx - ux * vz
+      let nz = ux * vy - uy * vx
+      const len = Math.hypot(nx, ny, nz)
+      if (len < 1e-12) continue
+      nx /= len
+      ny /= len
+      nz /= len
+      // every piece is flat-shaded: a chamfer is two planes meeting at a
+      // crease, and smoothing across that crease is what makes a bevelled box
+      // look like a rounded one
+      for (const p of [a, b, c]) {
+        positions.push(p[0], p[1], p[2])
+        normals.push(nx, ny, nz)
+      }
+      uvs.push(0, 0, 1, 0, 1, 1)
+    }
+    if (!positions.length) return
+    const geometry = new THREE.BufferGeometry()
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+    geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3))
+    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2))
+    pieces.push({ face, region, geometry })
+  }
+
+  for (let a = 0; a < 3; a++) {
+    const u = a === 0 ? 1 : 0
+    const v = a === 0 ? 2 : a === 1 ? 2 : 1
+    for (const sign of [1, -1]) {
+      const face = FACE_NAME[a * 2 + (sign > 0 ? 0 : 1)]
+      const buckets = { face: [], edge: [], corner: [] }
+      const cu = coords[u]
+      const cv = coords[v]
+      for (let i = 0; i < cu.length - 1; i++) {
+        for (let j = 0; j < cv.length - 1; j++) {
+          const mu = (cu[i] + cu[i + 1]) / 2
+          const mv = (cv[j] + cv[j + 1]) / 2
+          const outU = Math.abs(mu) > core[u] + 1e-9
+          const outV = Math.abs(mv) > core[v] + 1e-9
+          if (!outU && !outV) {
+            // the flat area of this face — always owned by this face
+          } else {
+            // owned by the adjacent face with the lowest axis index
+            if ((outU && u < a) || (outV && v < a)) continue
+          }
+          const region = outU && outV ? 'corner' : outU || outV ? 'edge' : 'face'
+          const at = (uu, vv) => {
+            const p = [0, 0, 0]
+            p[a] = sign * half[a]
+            p[u] = uu
+            p[v] = vv
+            return project(p)
+          }
+          const p00 = at(cu[i], cv[j])
+          const p10 = at(cu[i + 1], cv[j])
+          const p11 = at(cu[i + 1], cv[j + 1])
+          const p01 = at(cu[i], cv[j + 1])
+          buckets[region].push([p00, p10, p11], [p00, p11, p01])
+        }
+      }
+      for (const region of ['face', 'edge', 'corner']) {
+        if (buckets[region].length) push(face, region, buckets[region])
+      }
+    }
+  }
+  return pieces
+}

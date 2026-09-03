@@ -240,7 +240,7 @@ export function nearKeepClear(x: number, z: number, pad = 16) {
   })
 }
 
-const TREE_SPECIES = ['tree-a', 'tree-b', 'tree-c', 'tree-d']
+const TREE_SPECIES = ['tree-a', 'tree-b', 'tree-c', 'tree-d', 'tree-e']
 
 export function trees(tier: 'low' | 'mid' | 'high'): { id: string; items: Placed[] }[] {
   const settings = TIER[tier]
@@ -272,7 +272,7 @@ export function trees(tier: 'low' | 'mid' | 'high'): { id: string; items: Placed
   const buckets = new Map<string, Placed[]>()
   for (const point of points) {
     const id = TREE_SPECIES[Math.floor(random() * TREE_SPECIES.length)]
-    const base = id === 'tree-b' ? 1.16 : id === 'tree-d' ? 0.78 : id === 'tree-c' ? 1.06 : 0.94
+    const base = id === 'tree-b' ? 1.16 : id === 'tree-d' ? 0.78 : id === 'tree-c' ? 1.06 : id === 'tree-e' ? 0.86 : 0.94
     const scale = base * (0.76 + random() * 0.56)
     const item: Placed = {
       id,

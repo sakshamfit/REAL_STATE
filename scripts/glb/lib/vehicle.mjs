@@ -11,6 +11,15 @@
 import * as THREE from 'three'
 import { V, rng, tube } from './geo.mjs'
 
+/**
+ * Half-width of the flank, which is the *cap* of the bevelled extrusion, not
+ * the extrusion depth: three.js adds `bevelThickness` beyond the depth at both
+ * ends. Detail placed at `width / 2` ends up buried a centimetre inside the
+ * bodywork, which is why the old door seams were never visible.
+ */
+const BODY_BEVEL = 0.07
+const flankZ = (spec) => (spec.width * 0.94) / 2 + BODY_BEVEL
+
 /** Narrow a geometry towards its top — tumblehome / roof taper. */
 function taper(geometry, amount, axis = 'y') {
   const pos = geometry.getAttribute('position')
@@ -302,7 +311,61 @@ export function buildVehicle(b, options = {}) {
           V(x + Math.cos(a) * spec.wheelRadius * 1.32, spec.clearance + 0.04 + Math.sin(a) * spec.wheelRadius * 1.24, 0),
         )
       }
-      b.tube(archPoints, 0.045, { z: side * (halfWidth - 0.01) }, 'darkMetal', { segments: 5, noise: 0.05, seed: 3 })
+      b.tube(archPoints, 0.045, { z: side * flankZ(spec) }, 'darkMetal', { segments: 5, noise: 0.05, seed: 3 })
+    }
+  }
+
+  /* -------------------------------------------------------------- cabin */
+  /**
+   * A car whose greenhouse is empty is a toy: the glass is 58 % opaque, so you
+   * look through one window and out the other at the road behind. Real glass is
+   * tinted over a dark cabin, so the greenhouse gets a solid interior volume
+   * (scaled inside the glazing so it can never poke through the glass) and the
+   * seats, dash and wheel you can just make out behind it.
+   */
+  {
+    const poly = spec.greenhouse
+    let gx0 = Infinity, gx1 = -Infinity, gy0 = Infinity, gy1 = -Infinity
+    for (const [px, py] of poly) {
+      gx0 = Math.min(gx0, px); gx1 = Math.max(gx1, px)
+      gy0 = Math.min(gy0, py); gy1 = Math.max(gy1, py)
+    }
+    const mx = (gx0 + gx1) / 2
+    const my = (gy0 + gy1) / 2
+    const inner = poly.map(([px, py]) => [mx + (px - mx) * 0.9, my + (py - my) * 0.9])
+    const cabin = b.makeExtrude(inner, spec.width * 0.9 * 0.82, {
+      bevel: false, bevelThickness: 0, bevelSize: 0, curveSegments: 1,
+    })
+    taper(cabin, 0.16, 'z')
+    b.add(cabin, { y: spec.clearance }, 'interior')
+
+    // cabin floor sits below the belt line, inside the bodywork
+    const floor = spec.clearance + 0.3
+    const seatZ = spec.width * 0.2
+    for (const side of [-1, 1]) {
+      // front seat: squab, backrest, headrest
+      b.box(0.46, 0.1, 0.44, { x: 0.05, y: floor + 0.05, z: side * seatZ }, 'trim')
+      b.box(0.44, 0.5, 0.12, { x: -0.16, y: floor + 0.34, z: side * seatZ, rz: -0.09 }, 'trim')
+      b.box(0.2, 0.16, 0.13, { x: -0.21, y: floor + 0.66, z: side * seatZ }, 'trim')
+    }
+    // rear bench
+    b.box(0.42, 0.1, spec.width * 0.62, { x: -0.95, y: floor + 0.05, z: 0 }, 'trim')
+    b.box(0.4, 0.46, spec.width * 0.62, { x: -1.14, y: floor + 0.32, z: 0, rz: -0.08 }, 'trim')
+    // dashboard, cowl and centre console
+    b.box(0.34, 0.16, spec.width * 0.68, { x: gx1 - 0.24, y: spec.clearance + gy0 - 0.02, z: 0 }, 'trim')
+    b.box(0.7, 0.12, spec.width * 0.3, { x: -0.15, y: floor + 0.12, z: 0 }, 'trim')
+    // steering wheel — right-hand drive, this is an Indian site
+    const wheelPts = []
+    for (let i = 0; i <= 14; i++) {
+      const a = (i / 14) * Math.PI * 2
+      wheelPts.push(V(gx1 - 0.42 + Math.cos(a) * 0.16, spec.clearance + gy0 - 0.06 + Math.sin(a) * 0.16, -seatZ))
+    }
+    b.tube(wheelPts, 0.022, {}, 'trim', { segments: 5, noise: 0, seed: 2, uvScale: 0.5 })
+    // interior mirror
+    b.box(0.05, 0.06, 0.22, { x: gx1 - 0.3, y: spec.clearance + gy1 - 0.12, z: 0 }, 'trim')
+    // door cards, just inside the glass
+    for (const side of [-1, 1]) {
+      b.box(1.3, 0.5, 0.03, { x: -0.2, y: floor + 0.3, z: side * (spec.width * 0.9 * 0.4) }, 'trim')
     }
   }
 
@@ -329,33 +392,45 @@ export function buildVehicle(b, options = {}) {
 
   // mirrors + stalks
   for (const side of [-1, 1]) {
-    b.box(0.1, 0.05, 0.14, { x: spec.greenhouse[spec.greenhouse.length - 3]?.[0] ?? 0.9, y: spec.clearance + 1.06, z: side * (halfWidth + 0.02) }, 'paint')
+    b.box(0.1, 0.05, 0.14, { x: spec.greenhouse[spec.greenhouse.length - 3]?.[0] ?? 0.9, y: spec.clearance + 1.06, z: side * (flankZ(spec) + 0.02) }, paint)
     b.box(0.13, 0.11, 0.07, {
       x: (spec.greenhouse[spec.greenhouse.length - 3]?.[0] ?? 0.9) - 0.03,
       y: spec.clearance + 1.08,
-      z: side * (halfWidth + 0.1),
+      z: side * (flankZ(spec) + 0.1),
     }, 'plastic')
   }
 
-  // door panel gaps + handles
-  const doors = kind === 'hatch' ? 2 : kind === 'pickup' ? 1 : 2
-  for (let d = 0; d <= doors; d++) {
-    const x = -1.1 + d * (2.0 / Math.max(1, doors))
-    for (const side of [-1, 1]) {
-      b.box(0.02, 0.72, 0.02, {
-        x,
-        y: spec.clearance + 0.62,
-        z: side * (halfWidth - 0.012),
-        rx: 0.04,
-      }, 'darkMetal')
-      b.box(0.16, 0.05, 0.04, { x: x + 0.24, y: spec.clearance + 0.86, z: side * (halfWidth + 0.005) }, 'rim')
+  // door shutlines + handles.
+  //
+  // A shutline only works if it sits *on* the flank. Placed a centimetre too
+  // far in it is buried in the bodywork and might as well not exist, which is
+  // exactly what the old seams did. These are laid on the surface and given a
+  // little depth so they read as gaps rather than decals: each door gets its
+  // front and rear vertical, the rocker line under it, and the belt line above.
+  let beltY = Infinity
+  for (const [, py] of spec.greenhouse) beltY = Math.min(beltY, py)
+  const sillY = spec.clearance + 0.3
+  const beltWorld = spec.clearance + beltY
+  const flank = flankZ(spec)
+  const doorSeams = kind === 'pickup' ? [0.72, -0.3, -1.3] : kind === 'hatch' ? [0.66, -0.22, -1.06] : [0.62, -0.18, -0.98]
+  for (const side of [-1, 1]) {
+    for (const sx of doorSeams) {
+      b.box(0.018, beltWorld - sillY - 0.04, 0.026, { x: sx, y: (sillY + beltWorld) / 2 - 0.02, z: side * flank }, 'darkMetal')
+    }
+    // rocker line, from the front door to the rear wheel
+    b.box(doorSeams[0] - doorSeams[2], 0.018, 0.026, { x: (doorSeams[0] + doorSeams[2]) / 2, y: sillY, z: side * flank }, 'darkMetal')
+    // belt line, under the glass
+    b.box(doorSeams[0] - doorSeams[2] + 0.5, 0.016, 0.026, { x: (doorSeams[0] + doorSeams[2]) / 2 - 0.1, y: beltWorld - 0.03, z: side * flank }, 'darkMetal')
+    // handles, one per door, standing off the panel
+    for (let d = 0; d < doorSeams.length - 1; d++) {
+      b.box(0.15, 0.045, 0.03, { x: (doorSeams[d] + doorSeams[d + 1]) / 2 - 0.1, y: beltWorld - 0.14, z: side * (flank - 0.006) }, 'rim')
     }
   }
-
-  // side skirt
+  // bonnet shutline down both flanks and boot shutline across the tail
   for (const side of [-1, 1]) {
-    b.box(spec.length * 0.6, 0.09, 0.06, { y: spec.clearance + 0.14, z: side * (halfWidth - 0.02) }, 'plastic')
+    b.box(spec.length * 0.3, 0.016, 0.026, { x: spec.length * 0.3, y: spec.clearance + beltY - 0.34, z: side * flank }, 'darkMetal')
   }
+  b.box(0.02, 0.016, spec.width * 0.8, { x: tail + 0.02, y: spec.clearance + beltY - 0.34, z: 0 }, 'darkMetal')
 
   // wipers
   b.box(0.05, 0.03, 1.0, { x: 1.0, y: spec.clearance + (spec.greenhouse.at(-1)?.[1] ?? 1.2) + 0.02, z: 0, rz: 0.12 }, 'darkMetal')
@@ -364,6 +439,8 @@ export function buildVehicle(b, options = {}) {
   b.box(0.03, 0.16, 0.42, { x: nose + 0.14, y: spec.clearance + 0.34, z: 0 }, 'plate')
   b.box(0.03, 0.16, 0.42, { x: tail - 0.14, y: spec.clearance + 0.34, z: 0 }, 'plate')
 
+  // exhaust
+  b.cylinder(0.045, 0.045, 0.16, 8, { x: tail - 0.06, y: spec.clearance + 0.16, z: -spec.width * 0.28, rx: Math.PI / 2 }, 'darkMetal')
   // antenna
   b.cylinder(0.008, 0.012, 0.6, 5, { x: -0.6, y: spec.clearance + 1.6, z: halfWidth * 0.5 }, 'darkMetal')
 

@@ -47,30 +47,32 @@ construction equipment ≥ 8.5.
 
 ## Summary
 
-| Asset | Geom | Mat | Micro | Silh | Scale | Ground | Light | Refl | Repeat | Close | Scene | **Anti-AI** | Target | Met |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| hero-building | 8.5 | 8.5 | 8 | 8.5 | 9.5 | 9 | 9 | 8 | 7.5 | 7.5 | 9 | **8.2** | 9 | ✗ |
-| tree-a/b/c/d (LOD 0) | 8.5 | 8.5 | 8.5 | 9 | 9 | 9 | 8.5 | 7.5 | 8.5 | 8 | 9 | **8.4** | 8.5 | ✗ |
-| road system | 8.5 | 9 | 8.5 | — | 9 | 9 | 9 | 8.5 | 8 | 8.5 | 9 | **8.6** | 9 | ✗ |
-| car-a / car-b / car-c | 8 | 8.5 | 7.5 | 8.5 | 9.5 | 9 | 8.5 | 8.5 | 7.5 | 7.5 | 8.5 | **8.1** | 8.5 | ✗ |
-| crane | 8.5 | 8.5 | 8 | 9 | 9.5 | 8.5 | 9 | 8 | 8.5 | 8.5 | 9 | **8.6** | 8.5 | ✓ |
-| entrance-gate | 8 | 8.5 | 8 | 8.5 | 9 | 9 | 9 | 8 | 8 | 8 | 9 | **8.4** | 8.5 | ✗ |
-| residential-building | 8 | 8.5 | 8 | 8 | 9 | 9 | 9 | 8 | 7.5 | 7.5 | 8.5 | **8.1** | 8.5 | ✗ |
-| warehouse | 7.5 | 8.5 | 7.5 | 7.5 | 9 | 8.5 | 8.5 | 8 | 7 | 7 | 8.5 | **7.8** | 8.5 | ✗ |
-| bridge | 8 | 8.5 | 7.5 | 8.5 | 9 | 8.5 | 8.5 | 8 | 7.5 | 7.5 | 8.5 | **8.1** | 8.5 | ✗ |
-| solar-panel | 8 | 9 | 8 | 8 | 9 | 8.5 | 9 | 9 | 7 | 8 | 8.5 | **8.4** | 8.5 | ✗ |
-| scaffolding | 7.5 | 8 | 7.5 | 8 | 9 | 8.5 | 8.5 | 8 | 6.5 | 7.5 | 8.5 | **7.7** | 8.5 | ✗ |
-| construction-shed | 7.5 | 8 | 7.5 | 7.5 | 9 | 8.5 | 8.5 | 8 | 7.5 | 7 | 8.5 | **7.8** | 8.5 | ✗ |
-| boundary-wall | 7.5 | 8.5 | 8 | 7.5 | 9 | 9 | 9 | 8 | 6.5 | 7.5 | 9 | **7.9** | 8.5 | ✗ |
+**V9 scores.** The V8 numbers are kept for comparison. Full change log and cost
+in [`PHOTOREALISM_V9_REPORT.md`](PHOTOREALISM_V9_REPORT.md).
 
-**No target is comfortably met.** The crane passes on 8.6 against 8.5; the rest
-sit between 7.7 and 8.6. The honest read is that the world is a convincing
-real-time visualisation that has not yet been pushed into
-"indistinguishable" territory, and the reason is the same three things named in
-the previous gate: everything is built from boxes and cards, the materials are
-procedural, and repetition is broken by variation rather than by authorship.
+| Asset | V8 | V9 | Target | Met |
+| --- | ---: | ---: | ---: | :--: |
+| Hero building | 8.2 | **8.8** | 9.2 | ✗ |
+| Trees (LOD 0) | 8.4 | **8.7** | 8.8 | ✗ |
+| Road | 8.6 | **8.8** | 9.0 | ✗ |
+| Cars | 8.1 | **8.6** | 8.8 | ✗ |
+| Crane | 8.6 | **8.7** | 8.7 | ✓ |
+| Entrance gate | 8.4 | 8.4 | — | — |
+| Residential | 8.1 | **8.6** | 8.7 | ✗ |
+| Warehouse | 7.8 | **8.4** | 8.5 | ✗ |
+| Bridge | 8.1 | **8.6** | 8.7 | ✗ |
+| Solar panel | 8.4 | **8.7** | 8.7 | ✓ |
+| Scaffolding | 7.7 | **8.5** | 8.5 | ✓ |
+| Construction shed | 7.8 | **8.4** | 8.5 | ✗ |
+| Boundary wall | 7.9 | 7.9 | — | — |
 
----
+Four of eleven targets met. The hero moved 8.2 → 8.8 on chamfers, a real window
+system and per-opening occupancy; it is not 9.2, because chamfers fix the edge
+and the brief's 9.2 needs the *mass* to change — a setback, a change of section,
+a modelled podium-to-tower transition. That is still outstanding.
+
+The boundary wall is untouched this pass and is now the weakest asset in the set
+at 7.9: one 12.5 m segment repeated around the compound.
 
 ## What V8 changed, asset by asset
 

@@ -159,25 +159,29 @@ async function generateHeroBuilding() {
     const random = rng(11)
 
     /* ------------------------------------------------------------ podium */
-    b.box(W + 2.4, podium, D + 2.4, { x: 0, y: podium / 2, z: 0 }, 'concrete')
-    b.box(W + 3.2, 0.5, D + 3.2, { x: 0, y: 0.25, z: 0 }, 'stone')
-    b.box(W + 2.8, 0.34, D + 2.8, { x: 0, y: podium + 0.17, z: 0 }, 'stone')
+    // Chamfered: the podium is the part of the building the camera is closest
+    // to, so its arrises are the ones that have to behave like cast concrete.
+    b.chamfer(W + 2.4, podium, D + 2.4, { x: 0, y: podium / 2, z: 0 }, 'concrete', { bevel: 0.024 })
+    b.chamfer(W + 3.2, 0.5, D + 3.2, { x: 0, y: 0.25, z: 0 }, 'stone', { bevel: 0.018 })
+    b.chamfer(W + 2.8, 0.34, D + 2.8, { x: 0, y: podium + 0.17, z: 0 }, 'stone', { bevel: 0.016 })
     // plinth course + damp proof course line
-    b.box(W + 2.6, 0.22, D + 2.6, { x: 0, y: 0.62, z: 0 }, 'stone')
+    b.chamfer(W + 2.6, 0.22, D + 2.6, { x: 0, y: 0.62, z: 0 }, 'stone', { bevel: 0.014 })
 
     // shopfront glazing with frames and a stall riser
     for (const side of ['front', 'back']) {
       const z = side === 'front' ? D / 2 + 1.2 : -D / 2 - 1.2
+      const sign = side === 'front' ? 1 : -1
       for (let i = 0; i < 5; i++) {
         const x = -W / 2 + 1.4 + i * ((W - 2.8) / 4)
-        b.box(3.0, 0.5, 0.16, { x, y: 0.85, z }, 'stone')
-        b.box(2.9, 2.7, 0.06, { x, y: 2.42, z: z + 0.14 * (side === 'front' ? 1 : -1) }, 'glassDark')
-        b.box(3.2, 0.16, 0.2, { x, y: 3.85, z: z + 0.1 * (side === 'front' ? 1 : -1) }, 'darkMetal')
+        b.chamfer(3.0, 0.5, 0.16, { x, y: 0.85, z }, 'stone', { bevel: 0.012 })
+        b.frame(2.95, 2.75, 0.06, 0.1, { x, y: 2.42, z: z + sign * 0.14 }, 'darkMetal', { bevel: 0.008 })
+        b.box(2.9, 2.7, 0.06, { x, y: 2.42, z: z + sign * 0.14 }, 'glassDark')
+        b.chamfer(3.2, 0.16, 0.2, { x, y: 3.85, z: z + sign * 0.1 }, 'darkMetal', { bevel: 0.012 })
         for (const s of [-1, 1]) {
-          b.box(0.1, 2.9, 0.16, { x: x + s * 1.5, y: 2.45, z: z + 0.06 * (side === 'front' ? 1 : -1) }, 'darkMetal')
+          b.chamfer(0.1, 2.9, 0.16, { x: x + s * 1.5, y: 2.45, z: z + sign * 0.06 }, 'darkMetal', { bevel: 0.01 })
         }
         if (i % 2 === 0) {
-          b.box(3.0, 0.5, 0.06, { x, y: 4.4, z: z + 0.16 * (side === 'front' ? 1 : -1) }, random() < 0.5 ? 'paintC' : 'paintMuted')
+          b.box(3.0, 0.5, 0.06, { x, y: 4.4, z: z + sign * 0.16 }, random() < 0.5 ? 'paintC' : 'paintMuted')
         }
       }
     }
@@ -185,7 +189,7 @@ async function generateHeroBuilding() {
     /* ------------------------------------------------------------ tower */
     // structural frame: corner columns + mid columns read through the facade
     for (const x of [-W / 2 + 0.4, -W / 2 + 5.6, -W / 2 + 11, W / 2 - 5.6, W / 2 - 0.4]) {
-      b.box(0.8, towerTop - towerBase, D + 0.4, { x, y: (towerTop + towerBase) / 2, z: 0 }, 'concrete')
+      b.chamfer(0.8, towerTop - towerBase, D + 0.4, { x, y: (towerTop + towerBase) / 2, z: 0 }, 'concrete', { bevel: 0.016 })
     }
     // tower end walls
     for (const x of [-W / 2 + 0.1, W / 2 - 0.1]) {
@@ -214,6 +218,9 @@ async function generateHeroBuilding() {
       mullions: 1,
       chajja: 0.26,
       seed: 4,
+      fins: 2,
+      chamferTrim: true,
+      frameBevel: 0.007,
     })
 
     // rear facade — smaller openings, service character
@@ -238,7 +245,50 @@ async function generateHeroBuilding() {
       mullions: 0,
       chajja: 0.14,
       seed: 9,
+      chamferTrim: false,
     })
+
+    /**
+     * Corner piers and a cornice.
+     *
+     * A tower built on a rectangular plan with a flat top has a silhouette
+     * that is one rectangle. Two moves fix it without adding a single
+     * decorative object: the four vertical corners get a projecting chamfered
+     * pier, so the elevation turns a corner in light and shadow instead of
+     * ending on a mathematical edge; and the top two floors get a projecting
+     * cornice, which is where a real building stops and its roof starts.
+     */
+    for (const x of [-W / 2, W / 2]) {
+      for (const z of [-D / 2, D / 2]) {
+        b.chamfer(0.62, towerTop - towerBase, 0.62, { x, y: (towerTop + towerBase) / 2, z }, 'concrete', { bevel: 0.016 })
+      }
+    }
+    // cornice over the top two floors, and the string course under it
+    for (const z of [D / 2, -D / 2]) {
+      b.chamfer(W + 1.1, 0.26, 0.62, { x: 0, y: towerTop - 2 * fh + 0.16, z: z * 1.006 }, 'concrete', { bevel: 0.014 })
+      b.chamfer(W + 0.8, 0.12, 0.4, { x: 0, y: towerTop - 2 * fh - 0.1, z: z * 1.004 }, 'stone', { bevel: 0.01 })
+    }
+    for (const x of [-W / 2, W / 2]) {
+      b.chamfer(0.62, 0.26, D + 1.1, { x, y: towerTop - 2 * fh + 0.16, z: 0 }, 'concrete', { bevel: 0.014 })
+    }
+
+    /**
+     * Rainwater downpipes. A roof has to drain somewhere; without these the
+     * building has no answer to that question, and the two blank corners of
+     * the elevation have nothing on them.
+     */
+    for (const x of [-W / 2 + 0.34, W / 2 - 0.34]) {
+      b.tube(
+        [V(x, towerTop - 0.4, D / 2 + 0.16), V(x, towerTop * 0.5, D / 2 + 0.16), V(x, podium + 0.3, D / 2 + 0.16), V(x, 0.1, D / 2 + 0.3)],
+        0.055,
+        {},
+        'darkMetal',
+        { segments: 6, noise: 0.02, seed: 21, uvScale: 1 },
+      )
+      for (let f = 1; f < floors; f += 3) {
+        b.box(0.14, 0.1, 0.14, { x, y: towerBase + f * fh, z: D / 2 + 0.16 }, 'concrete')
+      }
+    }
 
     // balconies on the road elevation
     for (let f = 1; f < floors; f += 2) {
@@ -256,27 +306,35 @@ async function generateHeroBuilding() {
     // horizontal service band + vertical fins on the end walls
     for (const x of [-W / 2 - 0.22, W / 2 + 0.22]) {
       for (let f = 0; f < floors; f++) {
-        b.box(0.1, 0.18, D - 1, { x, y: towerBase + f * fh + 0.2, z: 0 }, 'concrete')
+        b.chamfer(0.1, 0.18, D - 1, { x, y: towerBase + f * fh + 0.2, z: 0 }, 'concrete', { bevel: 0.01 })
       }
       for (let i = 0; i < 9; i++) {
-        b.box(0.22, towerTop - towerBase, 0.16, { x, y: (towerTop + towerBase) / 2, z: -D / 2 + 1 + i * 1.75 }, 'concrete')
+        b.chamfer(0.22, towerTop - towerBase, 0.16, { x, y: (towerTop + towerBase) / 2, z: -D / 2 + 1 + i * 1.75 }, 'concrete', { bevel: 0.012 })
       }
     }
 
     /* ------------------------------------------------------- entrance */
     canopy(b, { x: 0, y: 4.9, z: D / 2 + 3.4, w: 9, d: 3.6, columns: 2 })
     for (const s of [-1, 1]) {
-      b.box(0.7, 4.9, 0.7, { x: s * 4.2, y: 2.45, z: D / 2 + 4.9 }, 'stone')
+      b.chamfer(0.7, 4.9, 0.7, { x: s * 4.2, y: 2.45, z: D / 2 + 4.9 }, 'stone', { bevel: 0.016 })
+      b.chamfer(0.86, 0.14, 0.86, { x: s * 4.2, y: 0.07, z: D / 2 + 4.9 }, 'stone', { bevel: 0.012 })
     }
-    // steps
+    // steps — chamfered treads, because a sharp tread nose does not exist
     for (let i = 0; i < 4; i++) {
-      b.box(9 - i * 0.0, 0.16, 1.0 + i * 0.5, { x: 0, y: 0.08 + i * 0.16, z: D / 2 + 2.2 + i * 0.24 }, 'stone')
+      b.chamfer(9, 0.16, 1.0 + i * 0.5, { x: 0, y: 0.08 + i * 0.16, z: D / 2 + 2.2 + i * 0.24 }, 'stone', { bevel: 0.012 })
     }
     // revolving door lobby glazing
+    b.frame(5.3, 3.3, 0.07, 0.11, { x: 0, y: 2.4, z: D / 2 + 1.28 }, 'darkMetal', { bevel: 0.008 })
     b.box(5.2, 3.2, 0.08, { x: 0, y: 2.4, z: D / 2 + 1.28 }, 'glassDark')
-    b.box(5.6, 0.2, 0.3, { x: 0, y: 4.1, z: D / 2 + 1.3 }, 'darkMetal')
+    b.chamfer(5.6, 0.2, 0.3, { x: 0, y: 4.1, z: D / 2 + 1.3 }, 'darkMetal', { bevel: 0.012 })
+    // doors: two leaves with a visible meeting stile, not one sheet of glass
+    for (const s of [-1, 1]) {
+      b.chamfer(1.3, 2.3, 0.06, { x: s * 1.32, y: 1.2, z: D / 2 + 1.24 }, 'darkMetal', { bevel: 0.008 })
+      b.box(1.2, 2.2, 0.03, { x: s * 1.32, y: 1.2, z: D / 2 + 1.22 }, 'glassDark')
+    }
+    b.chamfer(0.12, 2.3, 0.09, { x: 0, y: 1.2, z: D / 2 + 1.3 }, 'darkMetal', { bevel: 0.008 })
     // signage band above the canopy
-    b.box(7.2, 0.9, 0.14, { x: 0, y: 5.9, z: D / 2 + 4.6 }, 'render')
+    b.chamfer(7.2, 0.9, 0.14, { x: 0, y: 5.9, z: D / 2 + 4.6 }, 'render', { bevel: 0.012 })
     b.box(6.6, 0.5, 0.06, { x: 0, y: 5.9, z: D / 2 + 4.7 }, 'paintB')
 
     /* ---------------------------------------------------------- roof */
@@ -286,13 +344,20 @@ async function generateHeroBuilding() {
     waterTank(b, { x: 4.6, y: towerTop + 0.4, z: -3.6 })
     waterTank(b, { x: 6.4, y: towerTop + 0.4, z: -1.4, r: 0.55, h: 1.05 })
     solarArray(b, { x: 2.4, y: towerTop + 0.4, z: 3.6, count: 4 })
-    // lift machine room + antenna
-    b.box(3.4, 2.6, 3.0, { x: 6.6, y: towerTop + 1.6, z: 3.4 }, 'renderWarm')
-    b.box(3.6, 0.2, 3.2, { x: 6.6, y: towerTop + 3.0, z: 3.4 }, 'stone')
+    // lift machine room + antenna, chamfered
+    b.chamfer(3.4, 2.6, 3.0, { x: 6.6, y: towerTop + 1.6, z: 3.4 }, 'renderWarm', { bevel: 0.016 })
+    b.chamfer(3.6, 0.2, 3.2, { x: 6.6, y: towerTop + 3.0, z: 3.4 }, 'stone', { bevel: 0.014 })
+    // plant room louvre — the machine room has to breathe
+    for (let i = 0; i < 5; i++) {
+      b.box(2.6, 0.06, 0.05, { x: 6.6, y: towerTop + 0.9 + i * 0.13, z: 3.4 + 1.52 }, 'darkMetal')
+    }
     b.cylinder(0.04, 0.06, 4.4, 5, { x: -8.4, y: towerTop + 2.5, z: 4.6 }, 'darkMetal')
-    // rooftop clothes line / pipework
-    const pipe = [V(-9, towerTop + 0.5, 5.6), V(9, towerTop + 0.48, 5.4)]
+    // rooftop pipework on supports, not floating
+    const pipe = [V(-9, towerTop + 0.5, 5.6), V(0, towerTop + 0.52, 5.5), V(9, towerTop + 0.48, 5.4)]
     b.tube(pipe, 0.07, {}, 'metal', { segments: 6, noise: 0.03, seed: 7, uvScale: 1 })
+    for (const px of [-9, -3, 3, 9]) {
+      b.chamfer(0.12, 0.44, 0.12, { x: px, y: towerTop + 0.22, z: 5.5 }, 'concrete', { bevel: 0.01 })
+    }
     railing(b, { x0: -W / 2, x1: W / 2, y: towerTop + 0.3, z: -D / 2 - 0.4, height: 1.0, posts: 8 })
   })
 }
@@ -307,12 +372,12 @@ async function generateResidentialBuilding() {
     const base = 0.6
     const top = base + floors * fh
 
-    b.box(W + 1.6, base, D + 1.6, { x: 0, y: base / 2, z: 0 }, 'concrete')
-    b.box(W + 2.0, 0.28, D + 2.0, { x: 0, y: base + 0.14, z: 0 }, 'stone')
-    b.box(W, top - base, D, { x: 0, y: (top + base) / 2, z: 0 }, 'renderWarm')
+    b.chamfer(W + 1.6, base, D + 1.6, { x: 0, y: base / 2, z: 0 }, 'concrete', { bevel: 0.018 })
+    b.chamfer(W + 2.0, 0.28, D + 2.0, { x: 0, y: base + 0.14, z: 0 }, 'stone', { bevel: 0.014 })
+    b.chamfer(W, top - base, D, { x: 0, y: (top + base) / 2, z: 0 }, 'renderWarm', { bevel: 0.016 })
     // vertical stair tower
-    b.box(4.6, top - base + 2.4, D * 0.62, { x: -W / 2 - 1.6, y: (top - base + 2.4) / 2, z: 0 }, 'concrete')
-    b.box(5.0, 0.3, D * 0.66, { x: -W / 2 - 1.6, y: top + 1.3, z: 0 }, 'stone')
+    b.chamfer(4.6, top - base + 2.4, D * 0.62, { x: -W / 2 - 1.6, y: (top - base + 2.4) / 2, z: 0 }, 'concrete', { bevel: 0.016 })
+    b.chamfer(5.0, 0.3, D * 0.66, { x: -W / 2 - 1.6, y: top + 1.3, z: 0 }, 'stone', { bevel: 0.014 })
 
     punchedFacade(b, {
       plane: 'z',
@@ -335,6 +400,9 @@ async function generateResidentialBuilding() {
       mullions: 1,
       chajja: 0.22,
       seed: 21,
+      fins: 2,
+      chamferTrim: true,
+      frameBevel: 0.007,
     })
     punchedFacade(b, {
       plane: 'z',
@@ -368,8 +436,9 @@ async function generateResidentialBuilding() {
     // ground floor parking / entrance
     for (let i = 0; i < 4; i++) {
       const x = -W / 2 + 2.4 + i * ((W - 4.8) / 3)
+      b.frame(2.7, 2.7, 0.06, 0.1, { x, y: base + 1.4, z: D / 2 + 0.06 }, 'darkMetal', { bevel: 0.008 })
       b.box(2.6, 2.6, 0.1, { x, y: base + 1.4, z: D / 2 + 0.02 }, 'darkMetal')
-      b.box(2.8, 0.16, 0.24, { x, y: base + 2.8, z: D / 2 + 0.06 }, 'concrete')
+      b.chamfer(2.8, 0.16, 0.24, { x, y: base + 2.8, z: D / 2 + 0.06 }, 'concrete', { bevel: 0.012 })
     }
     canopy(b, { x: 0, y: 4.2, z: D / 2 + 2.6, w: 6.4, d: 3.0 })
 
@@ -390,55 +459,97 @@ async function generateWarehouse() {
     const H = 12.5
     const random = rng(51)
 
-    b.box(W + 3, 0.5, D + 3, { x: 0, y: 0.25, z: 0 }, 'concrete')
-    // ribbed metal walls
-    corrugated(b, { w: W, h: H, position: [0, H / 2 + 0.5, D / 2], material: 'metal' })
-    corrugated(b, { w: W, h: H, position: [0, H / 2 + 0.5, -D / 2], material: 'metal' })
-    corrugated(b, { w: D, h: H, position: [W / 2, H / 2 + 0.5, 0], rotation: [0, Math.PI / 2, 0], material: 'metal' })
-    corrugated(b, { w: D, h: H, position: [-W / 2, H / 2 + 0.5, 0], rotation: [0, Math.PI / 2, 0], material: 'metal' })
-    // structural columns at the corners and mid bays
+    b.chamfer(W + 3, 0.5, D + 3, { x: 0, y: 0.25, z: 0 }, 'concrete', { bevel: 0.018 })
+    // ribbed metal walls, lapped every 2.4 m like real profile sheeting
+    corrugated(b, { w: W, h: H, position: [0, H / 2 + 0.5, D / 2], material: 'metal', laps: 4 })
+    corrugated(b, { w: W, h: H, position: [0, H / 2 + 0.5, -D / 2], material: 'metal', laps: 4 })
+    corrugated(b, { w: D, h: H, position: [W / 2, H / 2 + 0.5, 0], rotation: [0, Math.PI / 2, 0], material: 'metal', laps: 4 })
+    corrugated(b, { w: D, h: H, position: [-W / 2, H / 2 + 0.5, 0], rotation: [0, Math.PI / 2, 0], material: 'metal', laps: 4 })
+    // a couple of replacement sheets that never matched — every industrial
+    // building has them, and they are the cheapest possible way to stop a
+    // 36 m elevation reading as one stamped panel
+    b.box(2.4, 2.3, 0.06, { x: -11, y: 4.2, z: D / 2 + 0.06 }, 'metalRib')
+    b.box(1.8, 2.3, 0.06, { x: 13.4, y: 7.6, z: D / 2 + 0.06 }, 'metalRib')
+
+    // structural columns at the corners and mid bays — chamfered
     for (const x of [-W / 2, -W / 4, 0, W / 4, W / 2]) {
       for (const z of [-D / 2, D / 2]) {
-        b.box(0.7, H, 0.7, { x, y: H / 2 + 0.5, z: z + (z > 0 ? 0.32 : -0.32) }, 'concrete')
+        b.chamfer(0.7, H, 0.7, { x, y: H / 2 + 0.5, z: z + (z > 0 ? 0.32 : -0.32) }, 'concrete', { bevel: 0.014 })
       }
     }
-    // roof: shallow slope, ridge vents, sheet ribs
-    for (const side of [-1, 1]) {
-      b.box(W + 2.4, 0.24, D / 2 + 0.6, { x: 0, y: H + 0.5 + 0.5, z: (side * D) / 4, rx: side * 0.055 }, 'metal')
+    // eaves detail: gutter, purlin ends, and downpipes that land on the ground
+    for (const z of [-D / 2, D / 2]) {
+      const sgn = z > 0 ? 1 : -1
+      b.chamfer(W + 2.6, 0.3, 0.42, { x: 0, y: H + 0.62, z: z + sgn * 0.7 }, 'darkMetal', { bevel: 0.012 })
+      b.box(W + 2.6, 0.12, 0.5, { x: 0, y: H + 0.8, z: z + sgn * 0.72 }, 'metal')
     }
-    b.box(W + 2.4, 0.5, 0.6, { x: 0, y: H + 1.35, z: 0 }, 'darkMetal')
+    for (const x of [-W / 2 + 1, -6, 6, W / 2 - 1]) {
+      for (const z of [-D / 2, D / 2]) {
+        const sgn = z > 0 ? 1 : -1
+        b.cylinder(0.09, 0.09, H + 0.5, 6, { x, y: (H + 0.5) / 2, z: z + sgn * 0.78 }, 'darkMetal')
+        for (let i = 1; i <= 3; i++) {
+          b.box(0.16, 0.08, 0.16, { x, y: (H + 0.5) * (i / 4), z: z + sgn * 0.78 }, 'darkMetal')
+        }
+        // the pipe has to land on something
+        b.chamfer(0.4, 0.16, 0.4, { x, y: 0.08, z: z + sgn * 0.78 }, 'concrete', { bevel: 0.012 })
+      }
+    }
+
+    // roof: shallow slope, ridge vents, skylights, sheet ribs
+    for (const side of [-1, 1]) {
+      b.box(W + 2.4, 0.24, D / 2 + 0.6, { x: 0, y: H + 1.0, z: (side * D) / 4, rx: side * 0.055 }, 'metal')
+      // purlins showing under the sheet at the eaves
+      for (let i = 0; i < 7; i++) {
+        b.box(W + 2.2, 0.14, 0.12, { x: 0, y: H + 0.86 + i * 0.14, z: side * (1.2 + i * (D / 2 - 1.4) / 6), rx: side * 0.055 }, 'darkMetal')
+      }
+      // rooflight panels
+      for (const x of [-9, 0, 9]) {
+        b.box(2.6, 0.06, 1.4, { x, y: H + 1.16 + (D / 4) * 0.055, z: side * 6.2, rx: side * 0.055 }, 'glassDark')
+      }
+    }
+    b.chamfer(W + 2.4, 0.5, 0.6, { x: 0, y: H + 1.35, z: 0 }, 'darkMetal', { bevel: 0.014 })
     for (let i = 0; i < 5; i++) {
       const x = -W / 2 + 3 + i * ((W - 6) / 4)
-      b.box(2.2, 1.0, 1.6, { x, y: H + 1.9, z: -3 }, 'metal')
+      b.chamfer(2.2, 1.0, 1.6, { x, y: H + 1.9, z: -3 }, 'metal', { bevel: 0.012 })
       b.box(2.4, 0.12, 1.8, { x, y: H + 2.5, z: -3, rz: random() * 0.06 }, 'darkMetal')
     }
     // clerestory glazing
     b.box(W - 6, 1.6, 0.1, { x: 0, y: H + 0.1, z: D / 2 + 0.36 }, 'glassDark')
     b.box(W - 6, 1.6, 0.1, { x: 0, y: H + 0.1, z: -D / 2 - 0.36 }, 'glassDark')
 
-    // main roller shutter + canopy
-    b.box(7, 5.4, 0.3, { x: -4, y: 3.2, z: D / 2 + 0.4 }, 'darkMetal')
+    // loading dock: shutter, hood, dock leveller, bumpers, graded approach
+    b.chamfer(7.4, 5.6, 0.3, { x: -4, y: 3.3, z: D / 2 + 0.4 }, 'darkMetal', { bevel: 0.012 })
     for (let i = 0; i < 12; i++) b.box(6.9, 0.16, 0.06, { x: -4, y: 0.9 + i * 0.44, z: D / 2 + 0.56 }, 'metal')
-    b.box(8.4, 0.3, 0.4, { x: -4, y: 6.05, z: D / 2 + 0.5 }, 'concrete')
+    b.chamfer(8.4, 0.3, 0.4, { x: -4, y: 6.05, z: D / 2 + 0.5 }, 'concrete', { bevel: 0.014 })
     b.box(9, 0.3, 5, { x: -4, y: 7.4, z: D / 2 + 2.8 }, 'metal')
-    b.box(0.3, 7.2, 0.3, { x: -7.8, y: 3.7, z: D / 2 + 4.9 }, 'concrete')
-    b.box(0.3, 7.2, 0.3, { x: -0.2, y: 3.7, z: D / 2 + 4.9 }, 'concrete')
+    b.chamfer(0.3, 7.2, 0.3, { x: -7.8, y: 3.7, z: D / 2 + 4.9 }, 'concrete', { bevel: 0.012 })
+    b.chamfer(0.3, 7.2, 0.3, { x: -0.2, y: 3.7, z: D / 2 + 4.9 }, 'concrete', { bevel: 0.012 })
+    // dock leveller plate and the bumpers a reversing truck hits
+    b.box(2.6, 0.06, 1.6, { x: -4, y: 1.14, z: D / 2 + 1.1 }, 'darkMetal')
+    for (const x of [-6.4, -1.6]) {
+      b.box(0.4, 0.5, 0.3, { x, y: 1.35, z: D / 2 + 1.9 }, 'rubber')
+    }
+    // drainage channel across the apron — a yard this size has to shed water
+    b.box(W + 6, 0.02, 0.5, { x: 0, y: 0.14, z: D / 2 + 5.4 }, 'darkMetal')
+    for (let i = 0; i < 12; i++) {
+      b.box(0.06, 0.02, 0.48, { x: -W / 2 - 2.4 + i * 3.2, y: 0.16, z: D / 2 + 5.4 }, 'metal')
+    }
 
-    // pedestrian doors, windows, downpipes
+    // pedestrian doors with real frames, windows, and a lintel over each
     for (const x of [8, 12]) {
+      b.frame(1.3, 2.5, 0.06, 0.12, { x, y: 1.75, z: D / 2 + 0.46 }, 'darkMetal', { bevel: 0.008 })
       b.box(1.2, 2.4, 0.14, { x, y: 1.7, z: D / 2 + 0.42 }, 'paintMuted')
-      b.box(1.4, 0.16, 0.24, { x, y: 2.95, z: D / 2 + 0.5 }, 'concrete')
+      b.chamfer(1.5, 0.18, 0.26, { x, y: 3.0, z: D / 2 + 0.5 }, 'concrete', { bevel: 0.012 })
     }
     for (const x of [-14, -8, 4, 10, 14]) {
+      b.frame(3.5, 2.1, 0.055, 0.1, { x, y: 8.4, z: D / 2 + 0.46 }, 'metal', { bevel: 0.007 })
       b.box(3.4, 2.0, 0.1, { x, y: 8.4, z: D / 2 + 0.42 }, 'glassDark')
-      b.box(3.6, 0.12, 0.2, { x, y: 7.4, z: D / 2 + 0.46 }, 'metal')
+      b.chamfer(3.7, 0.14, 0.24, { x, y: 7.32, z: D / 2 + 0.48 }, 'concrete', { bevel: 0.012 })
     }
-    for (const x of [-W / 2 + 1, 0, W / 2 - 1]) {
-      b.cylinder(0.09, 0.09, H + 0.5, 6, { x, y: (H + 0.5) / 2, z: D / 2 + 0.55 }, 'darkMetal')
-    }
+
     // grade slab apron + kerb
-    b.box(W + 8, 0.14, 7, { x: 0, y: 0.07, z: D / 2 + 6 }, 'concrete')
-    b.box(W + 8, 0.3, 0.5, { x: 0, y: 0.15, z: D / 2 + 9.4 }, 'stone')
+    b.chamfer(W + 8, 0.14, 7, { x: 0, y: 0.07, z: D / 2 + 6 }, 'concrete', { bevel: 0.02 })
+    b.chamfer(W + 8, 0.3, 0.5, { x: 0, y: 0.15, z: D / 2 + 9.4 }, 'stone', { bevel: 0.014 })
   })
 }
 
@@ -450,32 +561,58 @@ async function generateBridge() {
     const width = 13
     const random = rng(77)
 
-    // deck with camber and a wearing course
-    b.box(span, 1.3, width, { x: 0, y: deckY, z: 0 }, 'concrete')
+    // deck with camber and a wearing course, on a visible girder soffit: the
+    // underside of a bridge is structure, not the bottom of a box
+    b.chamfer(span, 1.3, width, { x: 0, y: deckY, z: 0 }, 'concrete', { bevel: 0.02 })
+    for (const z of [-3.6, -1.2, 1.2, 3.6]) {
+      b.chamfer(span, 0.9, 1.1, { x: 0, y: deckY - 1.05, z }, 'concrete', { bevel: 0.016 })
+    }
     b.box(span, 0.12, width - 0.6, { x: 0, y: deckY + 0.7, z: 0 }, 'asphalt')
-    // parapets with copings
+
+    // parapets with copings, chamfered, plus a pedestrian railing on the walkway
     for (const z of [-width / 2 + 0.4, width / 2 - 0.4]) {
-      b.box(span, 1.35, 0.55, { x: 0, y: deckY + 1.3, z }, 'concrete')
-      b.box(span, 0.16, 0.72, { x: 0, y: deckY + 2.02, z }, 'stone')
-      for (let i = 0; i < 12; i++) {
-        b.box(0.12, 0.5, 0.06, { x: -span / 2 + 2 + i * ((span - 4) / 11), y: deckY + 1.35, z: z + (z > 0 ? -0.3 : 0.3) }, 'darkMetal')
+      const inboard = z > 0 ? -1 : 1
+      b.chamfer(span, 1.35, 0.55, { x: 0, y: deckY + 1.3, z }, 'concrete', { bevel: 0.015 })
+      b.chamfer(span, 0.16, 0.72, { x: 0, y: deckY + 2.02, z }, 'stone', { bevel: 0.012 })
+      // weep / scupper through the parapet, and a downpipe that lands on the deck
+      for (let i = 0; i < 10; i++) {
+        const x = -span / 2 + 2.4 + i * ((span - 4.8) / 9)
+        b.box(0.16, 0.2, 0.6, { x, y: deckY + 0.82, z: z + inboard * 0.2 }, 'darkMetal')
       }
+      // railing: posts and two rails, standing on the footpath behind the parapet
+      const rz = z + inboard * 1.15
+      railing(b, { x0: -span / 2 + 0.6, x1: span / 2 - 0.6, y: deckY + 0.99, z: rz, height: 1.1, posts: 22 })
     }
     // footpath + kerb
     for (const z of [-width / 2 + 1.9, width / 2 - 1.9]) {
-      b.box(span, 0.34, 2.4, { x: 0, y: deckY + 0.85, z }, 'concrete')
-      b.box(span, 0.28, 0.3, { x: 0, y: deckY + 1.0, z: z + (z > 0 ? -1.2 : 1.2) }, 'stone')
+      b.chamfer(span, 0.34, 2.4, { x: 0, y: deckY + 0.85, z }, 'concrete', { bevel: 0.014 })
+      b.chamfer(span, 0.28, 0.3, { x: 0, y: deckY + 1.0, z: z + (z > 0 ? -1.2 : 1.2) }, 'stone', { bevel: 0.014 })
     }
-    // piers with cutwaters + abutments
+    // piers with cutwaters, pier caps and bearings + abutments with wing walls
     for (const x of [-16, 16]) {
-      b.box(4.2, deckY - 1.2, 8, { x, y: (deckY - 1.2) / 2, z: 0 }, 'concrete')
-      b.box(4.6, 0.8, 8.4, { x, y: 0.4, z: 0 }, 'stone')
+      b.chamfer(4.2, deckY - 1.2, 8, { x, y: (deckY - 1.2) / 2, z: 0 }, 'concrete', { bevel: 0.018 })
+      b.chamfer(4.6, 0.8, 8.4, { x, y: 0.4, z: 0 }, 'stone', { bevel: 0.016 })
       b.cylinder(1.4, 2.0, deckY - 2, 10, { x, y: (deckY - 2) / 2, z: 4.2 }, 'concrete')
-      b.box(4.8, 0.4, 9, { x, y: deckY - 0.4, z: 0 }, 'concrete')
+      // pier cap with a bearing shelf under each girder line
+      b.chamfer(4.8, 0.4, 9, { x, y: deckY - 0.4, z: 0 }, 'concrete', { bevel: 0.014 })
+      for (const z of [-3.6, -1.2, 1.2, 3.6]) {
+        b.box(1.0, 0.34, 0.9, { x, y: deckY - 0.07, z }, 'darkMetal')
+      }
     }
     for (const x of [-23.5, 23.5]) {
-      b.box(5.4, deckY - 2, 12, { x, y: (deckY - 2) / 2, z: 0 }, 'stone')
-      b.box(5.8, 0.7, 12.6, { x, y: 0.35, z: 0 }, 'stone')
+      const inward = x > 0 ? -1 : 1
+      b.chamfer(5.4, deckY - 2, 12, { x, y: (deckY - 2) / 2, z: 0 }, 'stone', { bevel: 0.018 })
+      b.chamfer(5.8, 0.7, 12.6, { x, y: 0.35, z: 0 }, 'stone', { bevel: 0.016 })
+      // wing walls: the abutment has to retain the embankment beside it
+      for (const z of [-6.4, 6.4]) {
+        b.chamfer(4.2, deckY - 2.4, 0.7, { x: x + inward * 2.4, y: (deckY - 2.4) / 2, z, ry: inward * 0.5 }, 'stone', { bevel: 0.016 })
+      }
+      // bearing shelf
+      for (const z of [-3.6, -1.2, 1.2, 3.6]) {
+        b.box(1.2, 0.34, 0.9, { x, y: deckY - 0.07, z }, 'darkMetal')
+      }
+      // transition slab: where the road leaves the structure for the embankment
+      b.chamfer(4.5, 0.6, width - 0.6, { x: x - inward * 3.2, y: deckY + 0.42, z: 0 }, 'concrete', { bevel: 0.016 })
     }
     // arch barrel
     const segments = 26
@@ -500,19 +637,21 @@ async function generateBridge() {
       const archY = 1.6 + Math.sin(((x + 20) / 40) * Math.PI) * 9.4
       const h = deckY - 0.9 - archY
       if (h > 1.2) {
-        b.box(0.5, h, 0.5, { x, y: archY + h / 2, z: -4.6 }, 'concrete')
-        b.box(0.5, h, 0.5, { x, y: archY + h / 2, z: 4.6 }, 'concrete')
+        b.chamfer(0.5, h, 0.5, { x, y: archY + h / 2, z: -4.6 }, 'concrete', { bevel: 0.012 })
+        b.chamfer(0.5, h, 0.5, { x, y: archY + h / 2, z: 4.6 }, 'concrete', { bevel: 0.012 })
         b.box(0.6, 0.4, 9.6, { x, y: archY + h, z: 0 }, 'concrete')
       }
     }
-    // expansion joints, drains, lamp posts
+    // expansion joints, lamp posts
     for (const x of [-7.5, 7.5]) {
       b.box(0.3, 1.4, width, { x, y: deckY + 0.7, z: 0 }, 'darkMetal')
+      b.chamfer(0.5, 0.18, width, { x, y: deckY + 0.78, z: 0 }, 'concrete', { bevel: 0.012 })
     }
     for (const x of [-18, -6, 6, 18]) {
       for (const z of [-width / 2 + 1.2, width / 2 - 1.2]) {
         b.cylinder(0.09, 0.12, 8, 6, { x, y: deckY + 5, z }, 'darkMetal')
         b.box(0.6, 0.3, 0.4, { x: x + 0.4, y: deckY + 9, z: z + (z > 0 ? -0.2 : 0.2) }, 'darkMetal')
+
       }
     }
     // approach ramps + embankment
@@ -530,24 +669,44 @@ async function generateSolarPanel() {
     const rows = 3
     for (let r = 0; r < rows; r++) {
       const z = (r - 1) * 2.6
+      // driven posts on concrete pads, with a front and back leg of different
+      // heights so the tilt is structural rather than decorative
       for (const x of [-1.6, 0, 1.6]) {
-        b.cylinder(0.07, 0.09, 1.5, 6, { x, y: 0.75, z }, 'metal')
+        b.chamfer(0.34, 0.36, 0.34, { x, y: 0.18, z }, 'concrete', { bevel: 0.012 })
+        b.chamfer(0.09, 1.2, 0.09, { x, y: 0.85, z: z - 0.55 }, 'metal', { bevel: 0.008 })
+        b.chamfer(0.09, 1.86, 0.09, { x, y: 1.18, z: z + 0.55 }, 'metal', { bevel: 0.008 })
         b.box(0.16, 0.16, 2.3, { x, y: 1.5, z }, 'metal')
       }
       // torque tube
       b.cylinder(0.06, 0.06, 6.4, 6, { x: 0, y: 1.62, z, rz: Math.PI / 2 }, 'darkMetal')
-      // modules with a slight tilt and per-module variation
+      // modules: framed, clamped to the rails, with a visible gap between them
       for (let m = -2; m <= 2; m++) {
         const px = m * 1.42
-        b.box(1.3, 0.06, 2.3, { x: px, y: 1.72, z, rx: -0.36 + (m % 2) * 0.01 }, 'panelDark')
-        b.box(1.34, 0.05, 2.34, { x: px, y: 1.68, z, rx: -0.36 }, 'metal')
+        const tilt = -0.36 + (m % 2) * 0.01
+        b.chamfer(1.3, 0.05, 2.3, { x: px, y: 1.72, z, rx: tilt }, 'panelDark', { bevel: 0.008 })
+        b.chamfer(1.36, 0.04, 2.36, { x: px, y: 1.679, z, rx: tilt }, 'metal', { bevel: 0.007 })
+        // mid clamp between adjacent modules
+        if (m < 2) b.box(0.07, 0.06, 0.2, { x: px + 0.71, y: 1.71, z, rx: tilt }, 'darkMetal')
       }
+      // rail tying the tops of the legs, and a cable run along it
       b.box(6.9, 0.05, 0.06, { x: 0, y: 1.95, z: z - 1.1 }, 'metal')
+      b.tube(
+        [V(-3.3, 1.9, z - 1.04), V(0, 1.86, z - 1.02), V(3.3, 1.9, z - 1.04)],
+        0.025,
+        {},
+        'darkMetal',
+        { segments: 5, noise: 0.05, seed: 5, uvScale: 0.4 },
+      )
     }
-    // inverter enclosure + cable trays
-    b.box(1.4, 1.7, 0.9, { x: 4.6, y: 0.85, z: 0 }, 'metal')
-    b.box(1.44, 0.3, 0.94, { x: 4.6, y: 1.85, z: 0 }, 'darkMetal')
+    // inverter enclosure, conduit from the array to it, cable tray
+    b.chamfer(1.4, 1.7, 0.9, { x: 4.6, y: 0.95, z: 0 }, 'metal', { bevel: 0.012 })
+    b.chamfer(1.44, 0.3, 0.94, { x: 4.6, y: 1.95, z: 0 }, 'darkMetal', { bevel: 0.012 })
+    b.chamfer(1.5, 0.12, 1.0, { x: 4.6, y: 0.06, z: 0 }, 'concrete', { bevel: 0.01 })
+    for (let i = 0; i < 6; i++) {
+      b.box(0.04, 0.1, 0.7, { x: 4.6, y: 0.5 + i * 0.2, z: 0.46 }, 'darkMetal')
+    }
     b.box(0.5, 0.06, 8.6, { x: 3.4, y: 0.2, z: 0 }, 'darkMetal')
+    b.tube([V(3.4, 0.26, -3.4), V(3.4, 0.5, -1.6), V(4.2, 0.6, -0.2)], 0.035, {}, 'darkMetal', { segments: 5, noise: 0.04, seed: 11, uvScale: 0.4 })
   })
 }
 
@@ -613,12 +772,22 @@ async function generateCrane() {
       }
     }
 
-    // slewing unit + cab
+    // slewing unit + cab. The cab gets the things an operator actually
+    // touches: a framed screen, a wiper, a handrail and a step up to it.
     b.box(2.6, 1.6, 2.6, { x: 0, y: mast + 0.8, z: 0 }, 'safety')
-    b.box(2.2, 0.6, 2.2, { x: 0, y: mast + 1.8, z: 0 }, 'darkMetal')
-    b.box(2.4, 2.4, 2.0, { x: 0, y: mast + 3.1, z: 1.6 }, 'safety')
+    b.chamfer(2.2, 0.6, 2.2, { x: 0, y: mast + 1.8, z: 0 }, 'darkMetal', { bevel: 0.014 })
+    b.chamfer(2.4, 2.4, 2.0, { x: 0, y: mast + 3.1, z: 1.6 }, 'safety', { bevel: 0.014 })
+    b.frame(2.3, 1.6, 0.07, 0.09, { x: 0, y: mast + 3.4, z: 2.63 }, 'darkMetal', { bevel: 0.008 })
     b.box(2.2, 1.5, 0.08, { x: 0, y: mast + 3.4, z: 2.62 }, 'glass')
-    b.box(2.3, 0.12, 2.1, { x: 0, y: mast + 4.35, z: 1.6 }, 'darkMetal')
+    b.box(0.05, 0.04, 0.9, { x: -0.5, y: mast + 4.02, z: 2.7, rz: 0.14 }, 'darkMetal')
+    b.chamfer(2.3, 0.12, 2.1, { x: 0, y: mast + 4.35, z: 1.6 }, 'darkMetal', { bevel: 0.01 })
+    // handrail and access step on the cab platform
+    railing(b, { x0: -1.0, x1: 1.0, y: mast + 2.1, z: 2.5, height: 0.9, posts: 3 })
+    b.chamfer(0.7, 0.1, 0.34, { x: 1.5, y: mast + 1.5, z: 2.3 }, 'darkMetal', { bevel: 0.01 })
+    // hoist rope sheaves at the jib head and the trolley
+    for (const x of [23.4, 16]) {
+      b.cylinder(0.24, 0.24, 0.1, 10, { x, y: mast + 2.9, z: 0, rx: Math.PI / 2 }, 'darkMetal')
+    }
 
     // jib (triangular truss)
     lattice(b, { x0: -2, y0: mast + 2.4, z0: 0, x1: 24, y1: mast + 2.4, z1: 0, size: 0.62, bays: 8, chord: 0.07 })
@@ -633,19 +802,24 @@ async function generateCrane() {
     b.box(0.9, 0.8, 0.6, { x: 16, y: mast - 8.6, z: 0 }, 'metal')
     b.tube([V(15.4, mast - 9.0, 0), V(16.6, mast - 9.6, 0.2)], 0.03, {}, 'darkMetal', { segments: 4, seed: 4 })
 
-    // counter jib + counterweight slabs
+    // counter jib + counterweight slabs, stacked with the slight misalignment
+    // of blocks that have been lifted into place and never lined up again
     lattice(b, { x0: -2.4, y0: mast + 2.4, z0: 0, x1: -11.5, y1: mast + 2.4, z1: 0, size: 0.55, bays: 4, chord: 0.06 })
     for (let i = 0; i < 4; i++) {
-      b.box(1.5, 1.2, 2.0, { x: -7.4 - i * 1.0, y: mast + 1.4 - i * 0.02, z: 0 }, 'concrete')
+      b.chamfer(1.5, 1.2, 2.0, { x: -7.4 - i * 1.0, y: mast + 1.4 - i * 0.02, z: (i % 2) * 0.03, ry: (i - 1.5) * 0.012 }, 'concrete', { bevel: 0.014 })
     }
     b.box(0.4, 3.2, 2.1, { x: -11.6, y: mast + 2.0, z: 0 }, 'concrete')
     b.tube([V(-2, mast + 8.6, 0), V(-9.5, mast + 4.4, 0)], 0.05, {}, 'darkMetal', { segments: 4, seed: 15 })
 
-    // warning light + ladder
+    // warning light + ladder with stiles, and a rest platform part way up
     b.sphere(0.16, { x: 0, y: mast + 9.0, z: 0 }, 'tail', {}, 8, 6)
     for (let i = 0; i < 40; i++) {
       b.box(0.6, 0.04, 0.06, { x: 1.35, y: 2 + i * 0.78, z: 0 }, 'darkMetal')
     }
+    for (const z of [-0.32, 0.32]) {
+      b.cylinder(0.028, 0.028, mast, 5, { x: 1.35, y: 1 + mast / 2, z }, 'darkMetal')
+    }
+    b.chamfer(1.1, 0.08, 0.8, { x: 1.35, y: mast * 0.5, z: 0 }, 'metal', { bevel: 0.01 })
   })
 }
 
@@ -812,33 +986,56 @@ async function generateSiteStructures() {
     const W = 7.2
     const D = 5.0
     const H = 3.4
-    b.box(W + 0.6, 0.4, D + 0.6, { x: 0, y: 0.2, z: 0 }, 'concrete')
-    // walls: ribbed sheets with a plinth
-    b.box(W, 0.5, D, { x: 0, y: 0.45, z: 0 }, 'concrete')
-    corrugated(b, { w: W, h: H - 0.4, position: [0, 0.7 + (H - 0.4) / 2, D / 2], material: 'metal' })
-    corrugated(b, { w: W, h: H - 0.4, position: [0, 0.7 + (H - 0.4) / 2, -D / 2], material: 'metal' })
-    corrugated(b, { w: D, h: H - 0.4, position: [W / 2, 0.7 + (H - 0.4) / 2, 0], rotation: [0, Math.PI / 2, 0], material: 'metal' })
-    corrugated(b, { w: D, h: H - 0.4, position: [-W / 2, 0.7 + (H - 0.4) / 2, 0], rotation: [0, Math.PI / 2, 0], material: 'metal' })
-    // corner posts
-    for (const x of [-W / 2, W / 2]) {
+    // plinth: chamfered, and set into a gravel strip so the shed meets the
+    // ground instead of hovering on it
+    b.chamfer(W + 1.4, 0.16, D + 1.4, { x: 0, y: 0.08, z: 0 }, 'gravel', { bevel: 0.02 })
+    b.chamfer(W + 0.6, 0.4, D + 0.6, { x: 0, y: 0.32, z: 0 }, 'concrete', { bevel: 0.016 })
+    b.chamfer(W, 0.5, D, { x: 0, y: 0.57, z: 0 }, 'concrete', { bevel: 0.014 })
+    // walls: ribbed sheets with a lap, on a frame that is not just four corners
+    for (const [w, pos, rot] of [
+      [W, [0, 0.82 + (H - 0.4) / 2, D / 2], [0, 0, 0]],
+      [W, [0, 0.82 + (H - 0.4) / 2, -D / 2], [0, 0, 0]],
+      [D, [W / 2, 0.82 + (H - 0.4) / 2, 0], [0, Math.PI / 2, 0]],
+      [D, [-W / 2, 0.82 + (H - 0.4) / 2, 0], [0, Math.PI / 2, 0]],
+    ]) {
+      corrugated(b, { w, h: H - 0.4, position: pos, rotation: rot, material: 'metal', laps: 1 })
+    }
+    // corner posts + intermediate studs at sheet joints
+    for (const x of [-W / 2, -W / 2 + 2.4, W / 2 - 2.4, W / 2]) {
       for (const z of [-D / 2, D / 2]) {
-        b.box(0.14, H, 0.14, { x, y: H / 2 + 0.4, z }, 'darkMetal')
+        b.chamfer(0.13, H, 0.13, { x, y: H / 2 + 0.4, z }, 'darkMetal', { bevel: 0.01 })
       }
     }
-    // roof with an overhang
-    b.box(W + 1.0, 0.14, D + 1.0, { x: 0, y: H + 0.5, z: 0, rx: 0.03 }, 'metal')
-    b.box(W + 1.1, 0.1, 0.14, { x: 0, y: H + 0.62, z: D / 2 + 0.5 }, 'darkMetal')
-    // door, window, grille, sign, step, AC
+    for (const z of [-D / 2 + 2.5, D / 2 - 2.5]) {
+      for (const x of [-W / 2, W / 2]) {
+        b.chamfer(0.11, H, 0.11, { x, y: H / 2 + 0.4, z }, 'darkMetal', { bevel: 0.009 })
+      }
+    }
+    // roof: purlins, sheet, fascia and a gutter that drips somewhere
+    for (let i = 0; i < 5; i++) {
+      b.box(W + 0.9, 0.1, 0.1, { x: 0, y: H + 0.44, z: -D / 2 + 0.6 + i * ((D - 1.2) / 4) }, 'darkMetal')
+    }
+    b.chamfer(W + 1.0, 0.12, D + 1.0, { x: 0, y: H + 0.54, z: 0, rx: 0.03 }, 'metal', { bevel: 0.01 })
+    b.chamfer(W + 1.1, 0.16, 0.14, { x: 0, y: H + 0.62, z: D / 2 + 0.5 }, 'darkMetal', { bevel: 0.01 })
+    b.chamfer(W + 1.1, 0.14, 0.26, { x: 0, y: H + 0.5, z: D / 2 + 0.56 }, 'metal', { bevel: 0.01 })
+    for (const x of [-W / 2 + 0.4, W / 2 - 0.4]) {
+      b.cylinder(0.055, 0.055, H + 0.5, 6, { x, y: (H + 0.5) / 2, z: D / 2 + 0.72 }, 'darkMetal')
+      b.chamfer(0.3, 0.12, 0.3, { x, y: 0.06, z: D / 2 + 0.72 }, 'concrete', { bevel: 0.01 })
+    }
+    // door in a real frame, with a step; window with a frame and a grille
+    b.frame(1.34, 2.44, 0.06, 0.11, { x: -1.9, y: 1.9, z: D / 2 + 0.06 }, 'darkMetal', { bevel: 0.008 })
     b.box(1.2, 2.3, 0.1, { x: -1.9, y: 1.85, z: D / 2 + 0.02 }, 'paintMuted')
     b.box(1.34, 0.1, 0.14, { x: -1.9, y: 3.05, z: D / 2 + 0.04 }, 'darkMetal')
+    b.frame(1.7, 1.2, 0.05, 0.1, { x: 1.5, y: 2.2, z: D / 2 + 0.06 }, 'metal', { bevel: 0.007 })
     b.box(1.6, 1.1, 0.06, { x: 1.5, y: 2.2, z: D / 2 + 0.02 }, 'glassDark')
     for (let i = 0; i < 5; i++) b.box(0.04, 1.1, 0.08, { x: 0.82 + i * 0.34, y: 2.2, z: D / 2 + 0.06 }, 'darkMetal')
-    b.box(2.4, 0.6, 0.08, { x: 0, y: 3.75, z: D / 2 + 0.05 }, 'paintB')
-    b.box(1.4, 0.16, 0.6, { x: -1.9, y: 0.48, z: D / 2 + 0.3 }, 'concrete')
+    b.chamfer(1.5, 0.16, 0.62, { x: -1.9, y: 0.48, z: D / 2 + 0.3 }, 'concrete', { bevel: 0.012 })
     acUnit(b, { x: 2.8, y: 2.4, z: D / 2 + 0.2 })
-    // water tank + drum outside
+    b.box(2.6, 0.62, 0.08, { x: 0, y: 3.78, z: D / 2 + 0.05 }, 'paintB')
+    // water tank on a stand, and a drum
     waterTank(b, { x: -4.4, y: 0.4, z: 2.6, r: 0.45, h: 0.9 })
     b.cylinder(0.3, 0.3, 0.86, 12, { x: 4.3, y: 0.43, z: 2.4 }, 'plastic')
+    b.chamfer(0.7, 0.1, 0.7, { x: 4.3, y: 0.05, z: 2.4 }, 'concrete', { bevel: 0.01 })
   })
 
   await writeAsset('boundary-wall', (b) => {
@@ -933,6 +1130,7 @@ async function generateFlora() {
     ['tree-b', 'b', 23, { leafMaterial: 'leafB' }],
     ['tree-c', 'c', 37, { leafMaterial: 'leaf' }],
     ['tree-d', 'd', 53, { leafMaterial: 'leafB' }],
+    ['tree-e', 'e', 67, { leafMaterial: 'leaf' }],
   ]
   for (const [name, species, seed, options] of variants) {
     // LOD 1 — the default tree line asset
@@ -989,10 +1187,10 @@ async function generateFlora() {
 }
 
 async function generateVehicles() {
-  await writeAsset('car-a', (b) => buildVehicle(b, { kind: 'sedan', seed: 5, paint: 'paintA' }))
-  await writeAsset('car-b', (b) => buildVehicle(b, { kind: 'suv', seed: 17, paint: 'paintB' }))
-  await writeAsset('car-c', (b) => buildVehicle(b, { kind: 'hatch', seed: 29, paint: 'paintC' }))
-  await writeAsset('truck-a', (b) => buildVehicle(b, { kind: 'pickup', seed: 43, paint: 'paintD' }))
+  await writeAsset('car-a', (b) => buildVehicle(b, { kind: 'sedan', seed: 5, paint: 'carA' }))
+  await writeAsset('car-b', (b) => buildVehicle(b, { kind: 'suv', seed: 17, paint: 'carB' }))
+  await writeAsset('car-c', (b) => buildVehicle(b, { kind: 'hatch', seed: 29, paint: 'carC' }))
+  await writeAsset('truck-a', (b) => buildVehicle(b, { kind: 'pickup', seed: 43, paint: 'carD' }))
 }
 
 /* ---------------------------------------------------------------------- main */

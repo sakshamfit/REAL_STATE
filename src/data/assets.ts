@@ -96,6 +96,7 @@ export const ASSETS: AssetEntry[] = [
       ['tree-b', 'Eucalyptus-type tall slim'],
       ['tree-c', 'Rain-tree wide canopy'],
       ['tree-d', 'Small ornamental'],
+      ['tree-e', 'Mature roadside spreading'],
     ] as const
   ).map(([id]) => ({
     id,
@@ -127,10 +128,12 @@ export const ASSETS: AssetEntry[] = [
       ['tree-b-close', 'Eucalyptus-type tall slim, hero detail'],
       ['tree-c-close', 'Rain-tree wide canopy, hero detail'],
       ['tree-d-close', 'Small ornamental, hero detail'],
+      ['tree-e-close', 'Mature roadside spreading, hero detail'],
       ['tree-a-far', 'Neem-type broadleaf, distant'],
       ['tree-b-far', 'Eucalyptus-type tall slim, distant'],
       ['tree-c-far', 'Rain-tree wide canopy, distant'],
       ['tree-d-far', 'Small ornamental, distant'],
+      ['tree-e-far', 'Mature roadside spreading, distant'],
     ] as const
   ).map(([id]) => ({
     id,
@@ -199,7 +202,7 @@ export const ASSETS: AssetEntry[] = [
     preload: true,
     cullDistance: 200,
     materialMap: {
-      paintA: 'paintA',
+      carA: 'carA',
       glass: 'glass',
       glassDark: 'glassDark',
       darkMetal: 'darkMetal',
@@ -210,6 +213,8 @@ export const ASSETS: AssetEntry[] = [
       light: 'light',
       tail: 'tail',
       plate: 'plate',
+      trim: 'trim',
+      interior: 'interior',
     },
   },
   {
@@ -234,6 +239,8 @@ export const ASSETS: AssetEntry[] = [
       light: 'light',
       tail: 'tail',
       plate: 'plate',
+      trim: 'trim',
+      interior: 'interior',
     },
   },
   {
@@ -247,7 +254,7 @@ export const ASSETS: AssetEntry[] = [
     preload: false,
     cullDistance: 200,
     materialMap: {
-      paintC: 'paintC',
+      carC: 'carC',
       glass: 'glass',
       glassDark: 'glassDark',
       darkMetal: 'darkMetal',
@@ -258,6 +265,8 @@ export const ASSETS: AssetEntry[] = [
       light: 'light',
       tail: 'tail',
       plate: 'plate',
+      trim: 'trim',
+      interior: 'interior',
     },
   },
   {
@@ -271,7 +280,9 @@ export const ASSETS: AssetEntry[] = [
     preload: false,
     cullDistance: 220,
     materialMap: {
-      paintD: 'paintD',
+      carD: 'carD',
+      trim: 'trim',
+      interior: 'interior',
       glass: 'glass',
       glassDark: 'glassDark',
       darkMetal: 'darkMetal',
@@ -487,6 +498,8 @@ export const ASSETS: AssetEntry[] = [
       glassDark: 'glassDark',
       metal: 'metal',
       darkMetal: 'darkMetal',
+      metalRib: 'metalRib',
+      rubber: 'rubber',
     },
   },
   {

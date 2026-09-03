@@ -494,6 +494,23 @@ export function metalMaterial(
   })
 }
 
+/**
+ * Replacement cladding sheet.
+ *
+ * A weathered, slightly oxidised galvalume panel: the sheet that gets bolted
+ * over a damaged one and never matches. Registered separately from `metal` so
+ * a building can carry one or two without tinting every other sheet on it.
+ */
+export function metalRibMaterial(size: 256 | 512 = 256) {
+  return fromSurface('metal-rib', 'metal', size, {
+    color: 0x9fa3a1,
+    roughness: 0.62,
+    metalness: 0.78,
+    envMapIntensity: 0.7,
+    normalScale: 0.5,
+  })
+}
+
 export function woodMaterial(size: 256 | 512 = 256) {
   return fromSurface('wood-bark', 'bark', size, {
     color: 0x8a7256,
@@ -692,6 +709,42 @@ export function emissiveMaterial(color: string, intensity = 1, opacity = 1) {
   )
 }
 
+/**
+ * Vehicle interior trim — seats, dash, door cards.
+ *
+ * Deliberately not black. A car cabin in daylight is several stops below the
+ * exterior, but pure black behind 58 % glass reads as a hole punched clean
+ * through the car rather than as an upholstered space, so this sits just above
+ * the `interior` material: dark enough to stay recessed, light enough that the
+ * seat backs and headrests are legible as shapes.
+ */
+export function trimMaterial() {
+  return plain('trim', { color: new THREE.Color('#23272b'), roughness: 0.84, metalness: 0 })
+}
+
+/**
+ * Vehicle paint.
+ *
+ * The old car paint was `metalness 0.35`, which is the single most common
+ * reason a painted surface reads as plastic or as a toy: on a metalness workflow
+ * the base colour *becomes* the specular reflectance, so a third of the paint's
+ * brightness turns into a coloured sheen and the diffuse goes muddy. Real
+ * automotive paint is a dielectric with a clear lacquer on top — metalness 0,
+ * low-ish roughness, and a bit more environment than a wall gets.
+ *
+ * Roughness is 0.34 rather than a showroom 0.05: these are site vehicles that
+ * have been parked outside.
+ */
+export function carPaintMaterial(color: string, size: 256 | 512 = 256) {
+  return fromSurface(`carpaint-${color}`, 'paint', size, {
+    color,
+    roughness: 0.34,
+    metalness: 0,
+    envMapIntensity: 1.25,
+    normalScale: 0.28,
+  })
+}
+
 export function flatMaterial(color: string, opacity = 1) {
   return memo(`flat-${color}-${opacity}`, () =>
     new THREE.MeshBasicMaterial({ color: new THREE.Color(color), transparent: opacity < 1, opacity }),
@@ -797,6 +850,8 @@ export function materialForKey(
       return woodMaterial(size)
     case 'metal':
       return metalMaterial('brushed', 1, size)
+    case 'metalRib':
+      return metalRibMaterial(size)
     case 'darkMetal':
       return metalMaterial('dark', 1, size)
     case 'rim':
@@ -817,12 +872,20 @@ export function materialForKey(
       return panelMaterial()
     case 'plastic':
       return plasticMaterial('#5c625a')
+    case 'carA':
+      return carPaintMaterial(PALETTE.paintA)
     case 'paintA':
       return paintMaterial(PALETTE.paintA, 0.24)
+    case 'carB':
+      return carPaintMaterial(PALETTE.paintB)
     case 'paintB':
       return paintMaterial(PALETTE.paintB, 0.3)
+    case 'carC':
+      return carPaintMaterial(PALETTE.paintC)
     case 'paintC':
       return paintMaterial(PALETTE.paintC, 0.28)
+    case 'carD':
+      return carPaintMaterial(PALETTE.paintD)
     case 'paintD':
       return paintMaterial(PALETTE.paintD, 0.32)
     case 'paintMuted':
@@ -837,6 +900,8 @@ export function materialForKey(
       return lightMaterial('#8e1f14', 0.15)
     case 'plate':
       return plasticMaterial('#d8d4c4')
+    case 'trim':
+      return trimMaterial()
     case 'sack':
       return fromSurface('sack', 'render', size, { color: 0xcfc8b6, roughness: 0.95, metalness: 0 })
     case 'tarp':
