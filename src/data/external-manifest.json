@@ -18,6 +18,7 @@
       "preload": false,
       "instanced": true,
       "substitution": "replace",
+      "typicality": "typical",
       "dimensions": [
         0.42,
         0.519,
@@ -54,6 +55,7 @@
       "preload": false,
       "instanced": true,
       "substitution": "replace",
+      "typicality": "atypical",
       "dimensions": [
         4.357,
         1.149,
@@ -271,6 +273,7 @@
       "preload": false,
       "instanced": true,
       "substitution": "augment",
+      "typicality": "typical",
       "dimensions": [
         5.07,
         8.4,
@@ -309,6 +312,7 @@
       "preload": false,
       "instanced": true,
       "substitution": "replace",
+      "typicality": "typical",
       "dimensions": [
         4.869,
         2.583,

@@ -49,9 +49,17 @@ export const CLASSES = {
     // 4–5 m long, 1.7–2.0 m wide, 1.4–1.9 m tall (brief §4).
     // The width band is generous at the top because a measured bounding box
     // includes the door mirrors, which a spec sheet does not.
+    //
+    // The height floor is the brief's own figure less a small tolerance. It
+    // used to be 1.1, which is below any road car and let a concept supercar
+    // (1.15 m) register as a sedan. A car that low is not a hatchback seen
+    // from an odd angle — it is a different kind of object, and it looked
+    // exactly as out of place on an Indian arterial road as the heritage lamp
+    // post did. Out-of-envelope proportions now demote the asset rather than
+    // silently passing (see `judge()`).
     length: [3.4, 5.4],
     width: [1.55, 2.3],
-    height: [1.1, 2.05],
+    height: [1.34, 2.05],
     target: { axis: 'x', value: 4.45 },
     /** length runs along X, nose towards +X — matches the procedural car-a/b/c */
     orient: 'length-x',

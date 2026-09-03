@@ -598,6 +598,8 @@ type ExternalManifestEntry = {
   sourceUrl: string | null
   /** how this asset competes with the project's own: replace | augment | never */
   substitution?: 'replace' | 'augment' | 'never'
+  /** how representative of its class the asset is; drives placement priority */
+  typicality?: 'typical' | 'unusual' | 'atypical'
 }
 
 /**
@@ -690,6 +692,23 @@ const SUBSTITUTION = new Map(VALID_EXTERNAL.map((entry) => [entry.id, entry.subs
 
 const substitutionFor = (id: string): 'replace' | 'augment' | 'never' => SUBSTITUTION.get(id) ?? 'augment'
 
+// Manifest ids already carry the `external-` prefix; do not add it again.
+const TYPICALITY = new Map(VALID_EXTERNAL.map((entry) => [entry.id, entry.typicality ?? 'typical']))
+
+/**
+ * How ordinary an example of its class an asset is.
+ *
+ * Measured by the ingest pipeline from the object's own proportions. An asset
+ * whose dimensions sit outside the class envelope on two or more axes is real
+ * and usable but not representative — a concept supercar is still a car — and
+ * putting it in the foreground of an Indian construction site is the vehicle
+ * version of lining the road with heritage lamp posts (§6).
+ */
+export const typicalityOf = (id: string): 'typical' | 'unusual' | 'atypical' =>
+  TYPICALITY.get(id) ?? 'typical'
+
+const TYPICALITY_RANK = { typical: 0, unusual: 1, atypical: 2 } as const
+
 /**
  * Resolve an asset slot to the best available model.
  *
@@ -741,6 +760,30 @@ export function resolveAssetIds(role: {
    */
   if (ids.length >= 2 || role.project.length === 0) return ids
   return [...ids, ...role.project.slice(0, 2)]
+}
+
+/**
+ * Order a pool for staged placement: foreground first, background last.
+ *
+ * §4 asks for the best realistic vehicle in the foreground, a second variant
+ * in the midground and simpler models in the distance. That only works if the
+ * pool is ordered by how well each model survives close inspection, which is
+ * not the same as whether it is external.
+ *
+ * A typical external asset earns the foreground — real materials and real
+ * geometry are exactly what close range rewards. An *atypical* one is pushed
+ * behind the project assets instead: the concept car reads fine as a shape
+ * parked down the road, and badly as the first thing the camera meets.
+ */
+export function stageByRealism(ids: string[]): string[] {
+  return [...ids].sort((a, b) => {
+    const rank = (id: string) => {
+      const t = typicalityOf(id)
+      if (!id.startsWith('external-')) return 1 // project assets: solid midground
+      return t === 'typical' ? 0 : 2 // typical external leads, atypical trails
+    }
+    return rank(a) - rank(b)
+  })
 }
 
 /** True when at least one external asset covers this role. */

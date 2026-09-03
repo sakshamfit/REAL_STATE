@@ -231,6 +231,8 @@ function runtimeEntry(result) {
     instanced: spec.instanced,
     /** replace | augment | never — how this asset competes with project assets */
     substitution: spec.substitution,
+    /** typical | unusual | atypical — how representative of its class it is */
+    typicality: result.plan?.typicality ?? 'typical',
     dimensions: size.map((v) => Number(v.toFixed(3))),
     triangles: result.after?.triangles ?? 0,
     materials: result.after?.materials ?? 0,

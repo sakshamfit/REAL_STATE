@@ -76,7 +76,9 @@ registry until a licence is recorded.
   - re-seated on y=0 and centred (origin 0.24 m off centre)
   - de-duplicated 0 texture(s) and 6 material(s)
 - **Warnings**
+  - height 1.15 m sits just outside the typical 1.34–2.05 m band
   - width 2.54 m sits just outside the typical 1.55–2.3 m band
+  - proportions are atypical for a passenger car — kept, but placed in the background rather than the foreground
   - 8 primitive(s) have no UVs — flat UVs generated, textures may look wrong
   - 213,347 triangles exceeds the 90,000 budget — simplified
   - 3 untextured material(s) read as plastic — runtime PBR applied

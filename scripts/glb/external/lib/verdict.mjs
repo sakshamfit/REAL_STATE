@@ -184,12 +184,34 @@ export function judge(report, classId) {
     ['height', scaled[1], spec.height],
     ['width', scaled[2], spec.width],
   ]
+  /**
+   * Typicality — how ordinary an example of its class this asset is.
+   *
+   * Passing the envelope means the object is *plausible*. It does not mean it
+   * is *representative*, and for placement those are different questions. A
+   * 1.15 m-tall concept supercar is a real car and clears every structural
+   * check, but making it the hero vehicle on an Indian construction site is
+   * the same mistake as lining the road with heritage lamp posts: technically
+   * valid, contextually wrong (§6).
+   *
+   * Each axis outside its band costs a point. The runtime uses the score to
+   * decide whether an asset leads the pool or fills the background, so an
+   * unusual model still earns its place — just not in the foreground.
+   */
+  let offAxis = 0
   for (const [name, value, [lo, hi]] of axes) {
     if (value < lo * 0.72 || value > hi * 1.38) {
       errors.push(`${name} ${value.toFixed(2)} m is outside the plausible ${lo}–${hi} m for a ${spec.label.toLowerCase()}`)
     } else if (value < lo || value > hi) {
+      offAxis += 1
       warnings.push(`${name} ${value.toFixed(2)} m sits just outside the typical ${lo}–${hi} m band`)
     }
+  }
+  plan.typicality = offAxis === 0 ? 'typical' : offAxis === 1 ? 'unusual' : 'atypical'
+  if (offAxis >= 2) {
+    warnings.push(
+      `proportions are atypical for a ${spec.label.toLowerCase()} — kept, but placed in the background rather than the foreground`,
+    )
   }
   if (errors.length) return { status: 'reject', errors, warnings, repairs, plan, spec }
 

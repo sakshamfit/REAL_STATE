@@ -286,7 +286,7 @@ async function sceneInstances() {
     ...yardBarriers().map((item) => ({ ...item, id: 'barrier' })),
     ...yardProps(),
     ...parkedVehicles().flatMap((group) => group.items.map((item) => ({ ...item, id: group.id }))),
-    { id: 'hero-building', x: HERO_BUILDING.x, z: HERO_BUILDING.z, rotation: 0, y: 0 },
+    { id: 'hero-building', x: HERO_BUILDING.x, z: HERO_BUILDING.z + HERO_BUILDING.modelZOffset, rotation: 0, y: 0 },
     { id: 'entrance-gate', x: GATE.x, z: GATE.z, rotation: Math.PI / 2, y: 0 },
     { id: 'crane', x: HERO_BUILDING.x + 15, z: HERO_BUILDING.z + 8, rotation: -0.4, y: 0 },
     { id: 'residential-building', x: SERVICE_WORLDS.residential.x, z: SERVICE_WORLDS.residential.z, rotation: -Math.PI / 2, y: 0 },
