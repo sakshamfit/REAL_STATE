@@ -2,93 +2,90 @@
 
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
-import { Environment, Lightformer } from '@react-three/drei'
 import * as THREE from 'three'
 import type { QualitySettings } from '@/lib/quality'
-import { DEFAULT_ENVIRONMENT } from '@/data/environments'
-import { runtime } from '@/lib/store'
+import { SUN_DIRECTION } from './Sky'
+import {
+  AMBIENT_COLOR,
+  AMBIENT_INTENSITY,
+  BACKGROUND_INTENSITY,
+  DAYLIGHT_EXPOSURE,
+  ENVIRONMENT_INTENSITY,
+  FILL_BOUNCE,
+  FILL_SKY,
+  HEMI_INTENSITY,
+  SUN_COLOR,
+  SUN_INTENSITY,
+} from '@/lib/daylight'
 
 /**
- * Real daylight architectural lighting.
+ * Daylight.
  *
- * One key shadow sun follows the camera so a world this long only ever needs a
- * single shadow map. A broad hemisphere/ambient pair provides believable sky
- * bounce, and a warm environment map gives glass/metal something realistic to
- * reflect.
+ * One sun, one sky dome, one bounce. The key light follows the camera along a
+ * fixed world direction so a 1.3 km world still gets a single, tight shadow map
+ * (crisp contact shadows) and every surface is lit by the same sun the sky dome
+ * is drawn from. No rim lights, no neon, no fake fill.
  */
-const smoothstep01 = (t: number) => {
-  const x = Math.min(1, Math.max(0, t))
-  return x * x * (3 - 2 * x)
-}
+
+export { DAYLIGHT_EXPOSURE } from '@/lib/daylight'
 
 export function Lighting({ quality }: { quality: QualitySettings }) {
   const sun = useRef<THREE.DirectionalLight>(null)
-  const fill = useRef<THREE.DirectionalLight>(null)
+  const target = useMemo(() => new THREE.Object3D(), [])
   const camera = useThree((state) => state.camera)
-  const preset = DEFAULT_ENVIRONMENT
-
-  const targets = useMemo(
-    () => ({ sun: new THREE.Object3D(), fill: new THREE.Object3D() }),
-    [],
-  )
+  const gl = useThree((state) => state.gl)
+  const scene = useThree((state) => state.scene)
+  const shadowExtent = quality.tier === 'low' ? 42 : quality.tier === 'mid' ? 70 : 92
 
   useEffect(() => {
-    if (sun.current) sun.current.target = targets.sun
-    if (fill.current) fill.current.target = targets.fill
-  }, [targets])
+    if (sun.current) sun.current.target = target
+    gl.toneMapping = THREE.ACESFilmicToneMapping
+    gl.toneMappingExposure = DAYLIGHT_EXPOSURE
+    scene.environmentIntensity = ENVIRONMENT_INTENSITY
+    scene.backgroundIntensity = BACKGROUND_INTENSITY
+  }, [gl, scene, target])
 
   useFrame(() => {
+    const light = sun.current
+    if (!light) return
     const position = camera.position
-    const dawn = 0.1 + 0.9 * smoothstep01(runtime.progress / 0.045)
-    if (sun.current) {
-      sun.current.intensity = preset.light.sunIntensity * dawn
-      sun.current.position.set(position.x + 46, position.y + 68, position.z + 34)
-      targets.sun.position.set(position.x, 0, position.z - 40)
-      targets.sun.updateMatrixWorld()
-    }
-    if (fill.current) {
-      fill.current.intensity = preset.light.fillIntensity * dawn
-      fill.current.position.set(position.x - 34, position.y + 16, position.z + 42)
-      targets.fill.position.set(position.x, 0, position.z - 10)
-      targets.fill.updateMatrixWorld()
-    }
+    // keep the sun at a constant world direction, centred on the camera
+    light.position.set(
+      position.x + SUN_DIRECTION.x * 140,
+      position.y + SUN_DIRECTION.y * 140,
+      position.z + SUN_DIRECTION.z * 140,
+    )
+    target.position.set(position.x, 0, position.z - 30)
+    target.updateMatrixWorld()
+
+    // the world opens at full daylight; there is no dawn to wait through
+    light.intensity = SUN_INTENSITY
   })
 
   return (
     <>
-      <ambientLight intensity={preset.light.ambientIntensity} color={preset.light.ambientColor} />
-      <hemisphereLight args={[preset.light.hemiSky, preset.light.hemiGround, preset.light.hemiIntensity]} />
+      {/* sky dome + ground bounce: this is what softens the shadows */}
+      <hemisphereLight args={[FILL_SKY, FILL_BOUNCE, HEMI_INTENSITY]} />
+      <ambientLight intensity={AMBIENT_INTENSITY} color={AMBIENT_COLOR} />
 
       <directionalLight
         ref={sun}
-        intensity={preset.light.sunIntensity}
-        color={preset.light.sunColor}
+        color={SUN_COLOR}
+        intensity={SUN_INTENSITY}
         castShadow={quality.shadows}
         shadow-mapSize-width={quality.shadowMapSize}
         shadow-mapSize-height={quality.shadowMapSize}
-        shadow-camera-near={1}
-        shadow-camera-far={340}
-        shadow-camera-left={-90}
-        shadow-camera-right={90}
-        shadow-camera-top={90}
-        shadow-camera-bottom={-90}
-        shadow-bias={-0.0008}
-        shadow-normalBias={0.06}
+        shadow-camera-near={20}
+        shadow-camera-far={330}
+        shadow-camera-left={-shadowExtent}
+        shadow-camera-right={shadowExtent}
+        shadow-camera-top={shadowExtent}
+        shadow-camera-bottom={-shadowExtent}
+        shadow-bias={-0.00035}
+        shadow-normalBias={0.045}
+        shadow-radius={quality.tier === 'high' ? 2.4 : 1.6}
       />
-      <primitive object={targets.sun} />
-
-      <directionalLight ref={fill} intensity={preset.light.fillIntensity} color={preset.light.fillColor} />
-      <primitive object={targets.fill} />
-
-      {quality.environment ? (
-        <Environment resolution={128} frames={1}>
-          <color attach="background" args={['#9fb6c4']} />
-          <Lightformer intensity={2.6} rotation-x={Math.PI / 2} position={[0, 8, -6]} scale={[16, 16, 1]} color="#fff1dd" />
-          <Lightformer intensity={0.85} rotation-y={Math.PI / 2} position={[-8, 2, 0]} scale={[24, 4, 1]} color="#bcd0da" />
-          <Lightformer intensity={0.7} rotation-y={-Math.PI / 2} position={[8, 1, 0]} scale={[24, 2, 1]} color="#d7c5a9" />
-          <Lightformer form="ring" intensity={1.1} position={[0, 4, 9]} scale={8} color="#ffffff" />
-        </Environment>
-      ) : null}
+      <primitive object={target} />
     </>
   )
 }

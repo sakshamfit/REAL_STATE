@@ -7,9 +7,10 @@ import { FUTURE_BUILDING } from '@/lib/world'
 import { beatLocal } from '@/lib/chapters'
 import { runtime } from '@/lib/store'
 import { smoothstep } from '@/lib/math'
-import { concreteMaterial, decalMaterial, emissiveMaterial, glassMaterial, metalMaterial, PALETTE } from '@/lib/materials'
+import { concreteMaterial, glassMaterial, metalMaterial } from '@/lib/materials'
 import type { QualitySettings } from '@/lib/quality'
 import { useChapterVisibility } from '../hooks'
+import { GroundPatch } from '../GroundPatch'
 import { Block, InstancedBoxes, type Item } from '../primitives'
 
 const { x, z, width, depth, height } = FUTURE_BUILDING
@@ -21,9 +22,9 @@ export function FutureScene({ quality }: { quality: QualitySettings }) {
 
   const light = concreteMaterial('light', 1.4, quality.textureSize)
   const dark = concreteMaterial('dark', 2, quality.textureSize)
-  const glass = glassMaterial('#101b20', 0.32)
+  const glass = glassMaterial('#16242b', 0.58)
   const steel = metalMaterial('dark', 3, quality.textureSize)
-  const accent = emissiveMaterial(PALETTE.accent, 1.5)
+  const accent = metalMaterial('accent', 2, quality.textureSize)
 
   const { slabs, fins, edges, solar } = useMemo(() => {
     const levels = 8
@@ -69,9 +70,9 @@ export function FutureScene({ quality }: { quality: QualitySettings }) {
   const solarMaterial = useMemo(
     () =>
       new THREE.MeshStandardMaterial({
-        color: new THREE.Color('#0b1216'),
-        roughness: 0.18,
-        metalness: 0.9,
+        color: new THREE.Color('#152a41'),
+        roughness: 0.11,
+        metalness: 0.4,
         envMapIntensity: 1.5,
       }),
     [],
@@ -106,15 +107,22 @@ export function FutureScene({ quality }: { quality: QualitySettings }) {
         <mesh position={[0, height + 9, 0]} material={steel}>
           <cylinderGeometry args={[0.22, 0.34, 14, 8]} />
         </mesh>
-        <mesh position={[0, height + 16.4, 0]} material={emissiveMaterial(PALETTE.accent, 3)}>
-          <sphereGeometry args={[0.5, 12, 12]} />
+        <mesh position={[0, height + 16.4, 0]} material={steel}>
+          <sphereGeometry args={[0.42, 12, 12]} />
         </mesh>
       </group>
 
-      <mesh rotation-x={-Math.PI / 2} position={[0, 0.1, 0]}>
-        <planeGeometry args={[120, 120]} />
-        <primitive object={decalMaterial('#000000', 0.55)} attach="material" />
-      </mesh>
+      <GroundPatch
+        surface="soilDry"
+        width={124}
+        length={124}
+        position={[0, 0.012, 0]}
+        seed={601}
+        dissolve={0.7}
+        strength={0.95}
+        opacity={0.85}
+        quality={quality}
+      />
     </group>
   )
 }

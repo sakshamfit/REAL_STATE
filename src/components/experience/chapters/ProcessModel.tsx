@@ -3,25 +3,26 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { PROCESS_STAGE_Z } from '@/lib/world'
+import { PROCESS_MODEL, PROCESS_STAGE_Z } from '@/lib/world'
 import { beatLocal } from '@/lib/chapters'
 import { runtime } from '@/lib/store'
 import { smoothstep } from '@/lib/math'
 import type { QualitySettings } from '@/lib/quality'
-import { concreteMaterial, emissiveMaterial, glassMaterial, metalMaterial, PALETTE } from '@/lib/materials'
+import { concreteMaterial, glassMaterial, metalMaterial, paintMaterial } from '@/lib/materials'
 import { useChapterVisibility } from '../hooks'
-import { Block, Grow, InstancedBoxes, type Item } from '../primitives'
+import { Block, InstancedBoxes, type Item } from '../primitives'
 import { AssetModel } from '@/lib/glb'
+import { GroundPatch } from '../GroundPatch'
 
 const STAGE_BEATS = ['process-1', 'process-2', 'process-3', 'process-4', 'process-5']
 
 /** Miniature construction environment — the whole method, visible at once. */
 export function ProcessModel({ quality }: { quality: QualitySettings }) {
-  const group = useChapterVisibility<THREE.Group>([0, 6, -520], 230)
+  const group = useChapterVisibility<THREE.Group>([PROCESS_MODEL.x, 6, -520], 230)
   const concrete = concreteMaterial('mid', 1, quality.textureSize)
   const dark = concreteMaterial('dark', 2, quality.textureSize)
   const steel = metalMaterial('dark', 2, quality.textureSize)
-  const glass = glassMaterial('#0f1a1e', 0.3)
+  const glass = glassMaterial('#16242b', 0.56)
 
   const survey = useMemo(() => {
     const items: Item[] = []
@@ -52,33 +53,41 @@ export function ProcessModel({ quality }: { quality: QualitySettings }) {
   }, [])
 
   return (
-    <group ref={group} position={[0, 0, 0]}>
+    <group ref={group} position={[PROCESS_MODEL.x, 0, 0]}>
       {/* site plate */}
-      <Block size={[40, 0.6, 64]} position={[0, 0.3, -525]} material={dark} />
-      <Block size={[40.6, 0.12, 64.6]} position={[0, 0.64, -525]} material={concrete} receiveShadow />
+      <Block size={[40, 0.5, 64]} position={[0, 0.25, -525]} material={dark} />
+      <Block size={[40.6, 0.12, 64.6]} position={[0, 0.54, -525]} material={concrete} receiveShadow />
+      <GroundPatch
+        surface="soilDry"
+        width={64}
+        length={88}
+        position={[0, 0.012, -525]}
+        seed={501}
+        dissolve={0.7}
+        strength={0.95}
+        opacity={0.85}
+        quality={quality}
+      />
 
       {/* stage plates */}
       {PROCESS_STAGE_Z.map((z, index) => (
-        <StagePlate key={z} z={z} beat={STAGE_BEATS[index]} />
+        <StagePlate key={z} z={z} />
       ))}
 
       {/* 01 — requirement analysis */}
       <group position={[0, 0.7, PROCESS_STAGE_Z[0]]}>
-        <Grow beat="process-1" start={0.05} duration={0.45} drop={2}>
+        <group>
           <InstancedBoxes items={survey} material={concrete} />
-          <mesh position={[0, 0.2, 0]} rotation-x={-Math.PI / 2} material={emissiveMaterial(PALETTE.accent, 1.2)}>
-            <ringGeometry args={[5.4, 5.8, 64]} />
+          <mesh position={[0, 0.2, 0]} rotation-x={-Math.PI / 2} material={concreteMaterial('light', 1.5, quality.textureSize)}>
+            <ringGeometry args={[5.2, 6, 48]} />
           </mesh>
-          <mesh position={[0, 0.2, 0]} rotation-x={-Math.PI / 2} material={emissiveMaterial(PALETTE.accent, 0.6)}>
-            <ringGeometry args={[2.6, 2.75, 48]} />
-          </mesh>
-        </Grow>
+        </group>
       </group>
 
       {/* 02 — design & planning */}
       <group position={[0, 0.7, PROCESS_STAGE_Z[1]]}>
-        <Grow beat="process-2" start={0.05} duration={0.45} drop={2}>
-          <Block size={[13, 0.12, 9]} position={[0, 0.06, 0]} material={emissiveMaterial('#8fb6c9', 0.8)} castShadow={false} />
+        <group>
+          <Block size={[13, 0.12, 9]} position={[0, 0.06, 0]} material={paintMaterial('#e8e2d2', 1, quality.textureSize)} castShadow={false} />
           <Block size={[13.4, 0.06, 9.4]} position={[0, 0.02, 0]} material={dark} castShadow={false} />
           {[-4, 0, 4].map((offset) => (
             <mesh key={offset} position={[-5.4, 0.3, offset]} rotation={[Math.PI / 2, 0, 0]} material={concrete}>
@@ -87,18 +96,18 @@ export function ProcessModel({ quality }: { quality: QualitySettings }) {
           ))}
           <Block size={[0.12, 1.6, 0.12]} position={[4.6, 0.8, -3]} material={steel} />
           <Block size={[0.12, 2.2, 0.12]} position={[5.4, 1.1, 2]} material={steel} />
-        </Grow>
+        </group>
       </group>
 
       {/* 03 — procurement */}
       <group position={[0, 0.7, PROCESS_STAGE_Z[2]]}>
-        <Grow beat="process-3" start={0.05} duration={0.45} drop={2}>
+        <group>
           <InstancedBoxes items={stock} material={concrete} />
           <Block size={[5.4, 1.4, 2.2]} position={[3.6, 0.9, 0]} material={steel} />
           <Block size={[2.2, 1.1, 2]} position={[5.2, 2.1, 0]} material={metalMaterial('accent', 1, quality.textureSize)} />
           <Block size={[0.5, 0.5, 0.5]} position={[2.4, 0.4, 1.1]} material={steel} />
           <Block size={[0.5, 0.5, 0.5]} position={[2.4, 0.4, -1.1]} material={steel} />
-        </Grow>
+        </group>
       </group>
 
       {/* 04 — execution */}
@@ -115,47 +124,38 @@ export function ProcessModel({ quality }: { quality: QualitySettings }) {
 
       {/* 05 — quality & safety */}
       <group position={[0, 0.7, PROCESS_STAGE_Z[4]]}>
-        <Grow beat="process-5" start={0.05} duration={0.45} drop={2}>
+        <group>
           <Block size={[10, 3.4, 7]} position={[0, 1.7, 0]} material={concrete} />
           <Block size={[10.2, 1.2, 7.2]} position={[0, 3.9, 0]} material={glass} castShadow={false} />
           {[-3.4, 0, 3.4].map((offset) => (
-            <mesh key={offset} position={[offset, 0.65, 4.4]} material={emissiveMaterial(PALETTE.accent, 1.6)}>
+            <mesh key={offset} position={[offset, 0.65, 4.4]} material={paintMaterial('#d8c48a', 1, quality.textureSize)}>
               <coneGeometry args={[0.42, 1.3, 4]} />
             </mesh>
           ))}
-          <mesh position={[0, 0.12, 0]} rotation-x={-Math.PI / 2} material={emissiveMaterial(PALETTE.accent, 0.7)}>
+          <mesh position={[0, 0.12, 0]} rotation-x={-Math.PI / 2} material={concreteMaterial('light', 1.5, quality.textureSize)}>
             <ringGeometry args={[6.4, 6.7, 64, 1, Math.PI * 0.15, Math.PI * 0.7]} />
           </mesh>
-        </Grow>
+        </group>
       </group>
 
-      <ScanSweep />
+      <ScanSweep quality={quality} />
     </group>
   )
 }
 
-/** Per-stage floor plate that lights up while its beat is playing. */
-function StagePlate({ z, beat }: { z: number; beat: string }) {
+/** Per-stage floor plate. */
+function StagePlate({ z }: { z: number }) {
   const material = useMemo(
     () =>
       new THREE.MeshStandardMaterial({
-        color: new THREE.Color('#141618'),
-        emissive: new THREE.Color(PALETTE.accent),
-        emissiveIntensity: 0.1,
-        roughness: 0.6,
-        metalness: 0.2,
+        color: new THREE.Color('#8b857a'),
+        roughness: 0.95,
+        metalness: 0.02,
       }),
     [],
   )
 
   useEffect(() => () => material.dispose(), [material])
-
-  useFrame(() => {
-    const t = beatLocal(beat, runtime.progress)
-    const active = smoothstep(t / 0.12) * (1 - smoothstep((t - 0.9) / 0.1))
-    const pulse = 0.12 + active * (1.15 + Math.sin(performance.now() * 0.004) * 0.18)
-    material.emissiveIntensity += (pulse - material.emissiveIntensity) * 0.12
-  })
 
   return <Block size={[16, 0.14, 11]} position={[0, 0.74, z]} material={material} castShadow={false} />
 }
@@ -198,9 +198,9 @@ function MiniStructure({
   )
 }
 
-function ScanSweep() {
+function ScanSweep({ quality }: { quality: QualitySettings }) {
   const ref = useRef<THREE.Mesh>(null)
-  const material = useMemo(() => emissiveMaterial(PALETTE.accent, 2.2, 0.5), [])
+  const material = useMemo(() => paintMaterial('#d8c48a', 1, quality.textureSize), [quality.textureSize])
 
   useFrame((state) => {
     const mesh = ref.current

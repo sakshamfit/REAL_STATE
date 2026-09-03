@@ -1,56 +1,68 @@
 'use client'
 
-import { Cloud, Clouds, Sky as DaySky } from '@react-three/drei'
-import { DEFAULT_ENVIRONMENT } from '@/data/environments'
+import { useEffect, useMemo, useRef } from 'react'
+import { useFrame, useThree } from '@react-three/fiber'
+import * as THREE from 'three'
 import type { QualitySettings } from '@/lib/quality'
+import { buildCloudTexture, buildSkyTexture, DEFAULT_SKY } from '@/lib/sky'
 
 /**
- * Physically-inspired daylight sky with subtle drifting cloud layers.
- * Kept lightweight: one Sky dome plus two low-cost cloud fields.
+ * Sky + image based lighting.
+ *
+ * The background, the reflections and the sun all come from one procedural
+ * equirect map, so glass, water and painted metal reflect exactly the sky that
+ * is on screen. A second, slowly rotating cloud sheet supplies cloud structure.
  */
 export function Sky({ quality }: { quality: QualitySettings }) {
-  const preset = DEFAULT_ENVIRONMENT
+  const gl = useThree((state) => state.gl)
+  const scene = useThree((state) => state.scene)
+  const cloudRef = useRef<THREE.Mesh>(null)
+
+  const skyTexture = useMemo(() => buildSkyTexture(DEFAULT_SKY, quality.tier === 'low' ? 256 : 512), [quality.tier])
+  const cloudTexture = useMemo(
+    () => buildCloudTexture(5, quality.tier === 'low' ? 512 : 1024, DEFAULT_SKY.cloudiness),
+    [quality.tier],
+  )
+
+  useEffect(() => {
+    const previousBackground = scene.background
+    const previousEnvironment = scene.environment
+    scene.background = skyTexture
+
+    // every tier gets image based lighting — without it PBR reads as plastic
+    const pmrem = new THREE.PMREMGenerator(gl)
+    pmrem.compileEquirectangularShader()
+    const target = pmrem.fromEquirectangular(skyTexture)
+    scene.environment = target.texture
+    pmrem.dispose()
+    return () => {
+      scene.background = previousBackground
+      scene.environment = previousEnvironment
+      target.dispose()
+    }
+  }, [gl, scene, skyTexture, quality.tier])
+
+  useFrame((state, delta) => {
+    // clouds drift, very slowly — a breeze in the upper air, not a timelapse
+    if (cloudRef.current) cloudRef.current.rotation.y += delta * 0.0016
+  })
 
   return (
-    <group position={[0, 0, -650]}>
-      <DaySky
-        distance={1600}
-        sunPosition={preset.sky.sunPosition}
-        turbidity={preset.sky.turbidity}
-        rayleigh={preset.sky.rayleigh}
-        mieCoefficient={preset.sky.mieCoefficient}
-        mieDirectionalG={preset.sky.mieDirectionalG}
-      />
-      {quality.tier !== 'low' ? (
-        <Clouds limit={18}>
-          <Cloud
-            seed={0}
-            segments={ins(quality)}
-            bounds={[90, 12, 90]}
-            volume={18}
-            color="#ffffff"
-            opacity={0.55}
-            speed={0.06}
-            position={[-40, 82, -320]}
-            scale={[1.3, 0.55, 1.3]}
-          />
-          <Cloud
-            seed={7}
-            segments={ins(quality)}
-            bounds={[70, 10, 70]}
-            volume={15}
-            color="#f3f1ec"
-            opacity={0.38}
-            speed={0.045}
-            position={[46, 72, -180]}
-            scale={[1.1, 0.42, 1.1]}
-          />
-        </Clouds>
-      ) : null}
+    <group>
+      <mesh ref={cloudRef} scale={[-1, 1, 1]} renderOrder={-1}>
+        <sphereGeometry args={[1420, 40, 24]} />
+        <meshBasicMaterial
+          map={cloudTexture}
+          transparent
+          opacity={0.72}
+          depthWrite={false}
+          side={THREE.BackSide}
+          fog={false}
+        />
+      </mesh>
     </group>
   )
 }
 
-function ins(quality: QualitySettings) {
-  return quality.tier === 'mid' ? 12 : 20
-}
+export const SUN_DIRECTION = DEFAULT_SKY.sunDirection.clone()
+export const HORIZON_COLOR = DEFAULT_SKY.horizon.clone()

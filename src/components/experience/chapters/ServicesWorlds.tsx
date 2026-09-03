@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { SERVICE_WORLDS } from '@/lib/world'
@@ -8,16 +8,10 @@ import { beatLocal } from '@/lib/chapters'
 import { runtime } from '@/lib/store'
 import { smoothstep } from '@/lib/math'
 import type { QualitySettings } from '@/lib/quality'
-import {
-  concreteMaterial,
-  decalMaterial,
-  emissiveMaterial,
-  glassMaterial,
-  metalMaterial,
-  PALETTE,
-} from '@/lib/materials'
+import { concreteMaterial, glassMaterial, metalMaterial } from '@/lib/materials'
 import { useChapterVisibility } from '../hooks'
-import { Block, Grow, InstancedBoxes, type Item } from '../primitives'
+import { GroundPatch } from '../GroundPatch'
+import { Block, InstancedBoxes, type Item } from '../primitives'
 import { AssetModel } from '@/lib/glb'
 
 export function ServicesWorlds({ quality }: { quality: QualitySettings }) {
@@ -73,7 +67,7 @@ function CivilFrame({ quality }: { quality: QualitySettings }) {
 
   return (
     <group ref={group} position={[x, 0, z]}>
-      <Grow beat="service-civil" start={0.03} duration={0.4}>
+      <group>
         <Block size={[36, 0.6, 42]} position={[0, 0.3, 0]} material={dark} />
         <InstancedBoxes items={columns} material={concrete} />
         <InstancedBoxes items={beams} material={concrete} />
@@ -84,11 +78,22 @@ function CivilFrame({ quality }: { quality: QualitySettings }) {
         {/* scaffold planks */}
         <Block size={[28, 0.3, 1.6]} position={[0, 15.6, -12]} material={steel} />
         <Block size={[28, 0.3, 1.6]} position={[0, 15.6, 12]} material={steel} />
-      </Grow>
-      <mesh rotation-x={-Math.PI / 2} position={[0, 0.06, 0]}>
-        <planeGeometry args={[70, 70]} />
-        <primitive object={decalMaterial('#000000', 0.5)} attach="material" />
-      </mesh>
+      </group>
+      <GroundPatch
+        surface="soilDry"
+        width={66}
+        length={66}
+        position={[0, 0.01, 0]}
+        seed={201}
+        dissolve={0.75}
+        strength={0.95}
+        opacity={0.8}
+        quality={quality}
+      />
+      <AssetModel id="rebar-stack" position={[-16, 0, 20]} rotation={[0, 0.4, 0]} quality={quality} lod="auto" />
+      <AssetModel id="cement-bags" position={[16, 0, -20]} rotation={[0, -0.6, 0]} quality={quality} lod="auto" />
+      <AssetModel id="barrier" position={[0, 0, 22]} rotation={[0, 0, 0]} quality={quality} lod="auto" />
+      <AssetModel id="excavator" position={[17, 0, 19]} rotation={[0, -2.2, 0]} quality={quality} lod="auto" />
     </group>
   )
 }
@@ -100,13 +105,13 @@ function Residence({ quality }: { quality: QualitySettings }) {
   const group = useChapterVisibility<THREE.Group>([x, 6, z], 200)
   const light = concreteMaterial('light', 1.4, quality.textureSize)
   const dark = concreteMaterial('dark', 2, quality.textureSize)
-  const glass = glassMaterial('#0f161a', 0.3)
-  const warm = emissiveMaterial('#f6e7c6', 1.1)
+  const glass = glassMaterial('#16242b', 0.56)
+  const warm = concreteMaterial('light', 1.2, quality.textureSize)
   const water = metalMaterial('dark', 2, quality.textureSize)
 
   return (
     <group ref={group} position={[x, 0, z]}>
-      <Grow beat="service-residential" start={0.03} duration={0.42}>
+      <group>
         <Block size={[36, 0.8, 24]} position={[0, 0.4, 0]} material={dark} />
 
         {/* real residential GLB massing; procedural pavilion is the fallback */}
@@ -127,7 +132,7 @@ function Residence({ quality }: { quality: QualitySettings }) {
             </>
           }
         />
-      </Grow>
+      </group>
 
       {/* reflecting pool */}
       <mesh rotation-x={-Math.PI / 2} position={[-11, 0.09, 8]}>
@@ -135,15 +140,23 @@ function Residence({ quality }: { quality: QualitySettings }) {
         <primitive object={water} attach="material" />
       </mesh>
 
-      {/* bollards */}
-      <Block size={[0.3, 0.9, 0.3]} position={[-2, 1.25, 10]} material={emissiveMaterial(PALETTE.accent, 1.4)} />
-      <Block size={[0.3, 0.9, 0.3]} position={[4, 1.25, 10]} material={emissiveMaterial(PALETTE.accent, 1.4)} />
-      <Block size={[0.3, 0.9, 0.3]} position={[10, 1.25, 10]} material={emissiveMaterial(PALETTE.accent, 1.4)} />
+      {/* concrete bollards at the drop-off */}
+      <Block size={[0.32, 0.95, 0.32]} position={[-2, 0.48, 10]} material={concreteMaterial('light', 1, quality.textureSize)} />
+      <Block size={[0.32, 0.95, 0.32]} position={[4, 0.48, 10]} material={concreteMaterial('light', 1, quality.textureSize)} />
+      <Block size={[0.32, 0.95, 0.32]} position={[10, 0.48, 10]} material={concreteMaterial('light', 1, quality.textureSize)} />
+      <AssetModel id="car-b" position={[-14, 0, 12]} rotation={[0, -0.5, 0]} quality={quality} lod="auto" />
 
-      <mesh rotation-x={-Math.PI / 2} position={[0, 0.05, 0]}>
-        <planeGeometry args={[80, 70]} />
-        <primitive object={decalMaterial('#000000', 0.5)} attach="material" />
-      </mesh>
+      <GroundPatch
+        surface="gravel"
+        width={72}
+        length={62}
+        position={[0, 0.01, 0]}
+        seed={211}
+        dissolve={0.7}
+        strength={0.95}
+        opacity={0.8}
+        quality={quality}
+      />
     </group>
   )
 }
@@ -156,7 +169,6 @@ function Infrastructure({ quality }: { quality: QualitySettings }) {
   const concrete = concreteMaterial('mid', 1.6, quality.textureSize)
   const dark = concreteMaterial('dark', 3, quality.textureSize)
   const steel = metalMaterial('dark', 4, quality.textureSize)
-  const road = concreteMaterial('dark', 8, quality.textureSize)
 
   const { arch, hangers, dashes } = useMemo(() => {
     const arch: Item[] = []
@@ -198,14 +210,20 @@ function Infrastructure({ quality }: { quality: QualitySettings }) {
 
   return (
     <group ref={group}>
-      {/* road */}
-      <mesh rotation-x={-Math.PI / 2} position={[x, 0.04, z]} receiveShadow>
-        <planeGeometry args={[22, 150]} />
-        <primitive object={road} attach="material" />
-      </mesh>
-      <InstancedBoxes items={dashes} material={emissiveMaterial(PALETTE.accent, 0.9)} castShadow={false} />
+      {/* approach road */}
+      <GroundPatch
+        surface="asphalt"
+        width={20}
+        length={140}
+        position={[x, 0.014, z]}
+        seed={221}
+        dissolve={0.25}
+        strength={1}
+        opacity={1}
+        quality={quality}
+      />
 
-      <Grow beat="service-infrastructure" start={0.05} duration={0.45}>
+      <group>
         {/* real bridge GLB; procedural arch is the fallback */}
         <AssetModel
           id="bridge"
@@ -225,7 +243,7 @@ function Infrastructure({ quality }: { quality: QualitySettings }) {
             </>
           }
         />
-      </Grow>
+      </group>
     </group>
   )
 }
@@ -240,9 +258,9 @@ function SolarField({ quality }: { quality: QualitySettings }) {
   const panelMaterial = useMemo(
     () =>
       new THREE.MeshStandardMaterial({
-        color: new THREE.Color('#0a1013'),
-        roughness: 0.16,
-        metalness: 0.88,
+        color: new THREE.Color('#152a41'),
+        roughness: 0.11,
+        metalness: 0.4,
         envMapIntensity: 1.5,
       }),
     [],
@@ -267,13 +285,14 @@ function SolarField({ quality }: { quality: QualitySettings }) {
   useFrame(() => {
     if (tracker.current) {
       const t = beatLocal('service-solar', runtime.progress)
-      tracker.current.rotation.x = -0.42 + Math.sin(t * Math.PI) * 0.12
+      // trackers creep, they do not sweep
+      tracker.current.rotation.x = -0.42 + (t - 0.5) * 0.05
     }
   })
 
   return (
     <group ref={group} position={[0, 0, 0]}>
-      <Grow beat="service-solar" start={0.05} duration={0.5}>
+      <group>
         {/* detailed tracker GLBs near the camera */}
         {[-8, 0, 8].map((dx, index) => (
           <AssetModel
@@ -298,12 +317,20 @@ function SolarField({ quality }: { quality: QualitySettings }) {
         {/* inverter rows */}
         <Block size={[2.2, 1.6, 1.2]} position={[x + 22, 0.8, z - 12]} material={metalMaterial('dark', 1, quality.textureSize)} />
         <Block size={[2.2, 1.6, 1.2]} position={[x + 22, 0.8, z - 9]} material={metalMaterial('dark', 1, quality.textureSize)} />
-      </Grow>
+      </group>
 
-      <mesh rotation-x={-Math.PI / 2} position={[x, 0.05, z]}>
-        <planeGeometry args={[90, 70]} />
-        <primitive object={decalMaterial('#000000', 0.45)} attach="material" />
-      </mesh>
+      <GroundPatch
+        surface="soilDry"
+        width={84}
+        length={66}
+        position={[x, 0.01, z]}
+        seed={231}
+        dissolve={0.65}
+        strength={0.95}
+        opacity={0.85}
+        quality={quality}
+      />
+      <AssetModel id="car-b" position={[x - 26, 0, z + 26]} rotation={[0, 0.9, 0]} quality={quality} lod="auto" />
     </group>
   )
 }
@@ -313,84 +340,72 @@ function SolarField({ quality }: { quality: QualitySettings }) {
 function Renovation({ quality }: { quality: QualitySettings }) {
   const { x, z } = SERVICE_WORLDS.renovation
   const group = useChapterVisibility<THREE.Group>([x, 8, z], 220)
-  const oldRef = useRef<THREE.Group>(null)
   const debrisRef = useRef<THREE.InstancedMesh>(null)
   const dummy = useMemo(() => new THREE.Object3D(), [])
 
+  /** Rubble from the stripped facade, lying where it fell. */
   const debris = useMemo(() => {
-    const count = Math.max(6, Math.round(22 * quality.density))
-    const items: { from: [number, number, number]; direction: [number, number, number]; scale: [number, number, number] }[] = []
+    const count = Math.max(6, Math.round(26 * quality.density))
+    const items: { position: [number, number, number]; rotation: number; scale: [number, number, number] }[] = []
     for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2
-      const radius = 8 + Math.random() * 6
+      const radius = 9 + Math.random() * 9
       items.push({
-        from: [Math.cos(angle) * 6, 2 + Math.random() * 8, Math.sin(angle) * 5],
-        direction: [Math.cos(angle) * radius, -1, Math.sin(angle) * radius],
-        scale: [0.6 + Math.random() * 1.8, 0.5 + Math.random() * 1.4, 0.6 + Math.random() * 1.8],
+        position: [Math.cos(angle) * radius, 0.16 + Math.random() * 0.2, Math.sin(angle) * radius],
+        rotation: Math.random() * Math.PI,
+        scale: [0.5 + Math.random() * 1.5, 0.3 + Math.random() * 0.7, 0.5 + Math.random() * 1.5],
       })
     }
     return items
   }, [quality.density])
 
-  useFrame((state) => {
-    const t = beatLocal('service-renovation', runtime.progress)
-    const dissolve = smoothstep((t - 0.18) / 0.42)
-
-    if (oldRef.current) {
-      oldRef.current.scale.setScalar(Math.max(0.0001, 1 - dissolve * 0.96))
-      oldRef.current.position.y = -dissolve * 9
-      oldRef.current.rotation.y = dissolve * 0.16
-      oldRef.current.visible = dissolve < 0.995
-    }
-
+  useEffect(() => {
     const mesh = debrisRef.current
-    if (mesh) {
-      const scatter = smoothstep((t - 0.16) / 0.5)
-      debris.forEach((item, index) => {
-        dummy.position.set(
-          item.from[0] + item.direction[0] * scatter,
-          Math.max(0.2, item.from[1] + item.direction[1] * scatter),
-          item.from[2] + item.direction[2] * scatter,
-        )
-        dummy.rotation.set(scatter * 2.4, scatter * 1.8 + index, scatter * 1.2)
-        dummy.scale.set(...item.scale)
-        dummy.scale.multiplyScalar(Math.max(0.0001, 1 - smoothstep((t - 0.75) / 0.22)))
-        dummy.updateMatrix()
-        mesh.setMatrixAt(index, dummy.matrix)
-      })
-      mesh.instanceMatrix.needsUpdate = true
-      mesh.visible = t > 0.12 && t < 0.99
-    }
-    void state
-  })
+    if (!mesh) return
+    debris.forEach((item, index) => {
+      dummy.position.set(...item.position)
+      dummy.rotation.set(0, item.rotation, 0)
+      dummy.scale.set(...item.scale)
+      dummy.updateMatrix()
+      mesh.setMatrixAt(index, dummy.matrix)
+    })
+    mesh.instanceMatrix.needsUpdate = true
+  }, [debris, dummy])
 
   return (
     <group ref={group} position={[x, 0, z]}>
-      <group ref={oldRef}>
-        <Block size={[20, 9, 16]} position={[0, 4.5, 0]} material={concreteMaterial('stone', 1.6, quality.textureSize)} />
-        <Block size={[14, 5, 12]} position={[2, 11.6, -1]} material={concreteMaterial('stone', 1.2, quality.textureSize)} />
-        <Block size={[7, 3, 6]} position={[-6, 14.4, 3]} material={concreteMaterial('stone', 1, quality.textureSize)} />
-        <Block size={[9, 0.6, 5]} position={[8, 8.4, 5]} rotation={[0, 0, -0.22]} material={concreteMaterial('stone', 1, quality.textureSize)} />
-        <Block size={[0.18, 3.2, 0.18]} position={[-9, 10.4, -6]} material={metalMaterial('accent', 1, quality.textureSize)} />
-        <Block size={[0.18, 2.6, 0.18]} position={[-7, 10.1, -6]} material={metalMaterial('accent', 1, quality.textureSize)} />
-        <Block size={[0.18, 2.1, 0.18]} position={[-5, 9.8, -6]} material={metalMaterial('accent', 1, quality.textureSize)} />
-      </group>
+      {/* the existing structure being refurbished: old render, new render */}
+      <AssetModel id="residential-building" position={[0, 0, 0]} rotation={[0, 0.3, 0]} quality={quality} lod="auto" />
 
-      <Grow beat="service-renovation" start={0.34} duration={0.46}>
-        <Block size={[24, 0.8, 18]} position={[0, 0.4, 0]} material={concreteMaterial('dark', 2, quality.textureSize)} />
-        <Block size={[21, 13, 15]} position={[0, 7.1, 0]} material={concreteMaterial('light', 1.6, quality.textureSize)} />
-        <Block size={[21.5, 9.6, 15.5]} position={[0, 7.4, 0]} material={glassMaterial('#101a1f', 0.34)} castShadow={false} />
-        <Block size={[27, 0.7, 19]} position={[0, 14.1, 0]} material={concreteMaterial('light', 2, quality.textureSize)} />
-        <Block size={[0.4, 13, 0.9]} position={[10.8, 7.1, 4]} material={metalMaterial('accent', 2, quality.textureSize)} />
-        <Block size={[0.4, 13, 0.9]} position={[10.8, 7.1, 0]} material={metalMaterial('accent', 2, quality.textureSize)} />
-        <Block size={[0.4, 13, 0.9]} position={[10.8, 7.1, -4]} material={metalMaterial('accent', 2, quality.textureSize)} />
-      </Grow>
+      {/* full-height scaffolding on two elevations */}
+      <AssetModel id="scaffolding" position={[-13.5, 0, 4]} rotation={[0, 0.3, 0]} quality={quality} lod="auto" />
+      <AssetModel id="scaffolding" position={[13.5, 0, -4]} rotation={[0, Math.PI + 0.3, 0]} quality={quality} lod="auto" />
+
+      {/* materials staged for the retrofit */}
+      <AssetModel id="material-stack" position={[-20, 0, 16]} rotation={[0, 0.5, 0]} quality={quality} lod="auto" />
+      <AssetModel id="cement-bags" position={[-14, 0, 18]} rotation={[0, -0.3, 0]} quality={quality} lod="auto" />
+      <AssetModel id="rebar-stack" position={[18, 0, -16]} rotation={[0, 1.1, 0]} quality={quality} lod="auto" />
+      <AssetModel id="barrier" position={[0, 0, 20]} rotation={[0, 0, 0]} quality={quality} lod="auto" />
+      <AssetModel id="barrier" position={[7, 0, 20]} rotation={[0, 0, 0]} quality={quality} lod="auto" />
 
       <instancedMesh
         ref={debrisRef}
         args={[new THREE.BoxGeometry(1, 1, 1), concreteMaterial('stone', 1, quality.textureSize), debris.length]}
         castShadow
+        receiveShadow
         frustumCulled={false}
+      />
+
+      <GroundPatch
+        surface="soilDry"
+        width={70}
+        length={62}
+        position={[0, 0.01, 0]}
+        seed={251}
+        dissolve={0.8}
+        strength={0.95}
+        opacity={0.8}
+        quality={quality}
       />
     </group>
   )
@@ -443,7 +458,7 @@ function Warehouse({ quality }: { quality: QualitySettings }) {
 
   return (
     <group ref={group} position={[x, 0, z]}>
-      <Grow beat="service-materials" start={0.04} duration={0.44}>
+      <group>
         {/* real warehouse GLB; open canopy/deck is the fallback */}
         <AssetModel
           id="warehouse"
@@ -473,16 +488,32 @@ function Warehouse({ quality }: { quality: QualitySettings }) {
         <Block size={[0.4, 8, 0.4]} position={[-18, 4, 4]} material={steel} />
         <Block size={[0.4, 0.4, 10]} position={[-18, 7.8, -1]} material={steel} />
         <Block size={[14, 0.3, 0.3]} position={[-18, 5.6, 0]} material={steel} />
-      </Grow>
+      </group>
 
-      <mesh rotation-x={-Math.PI / 2} position={[0, 0.05, 0]}>
-        <planeGeometry args={[90, 70]} />
-        <primitive object={decalMaterial('#000000', 0.5)} attach="material" />
-      </mesh>
-      <mesh rotation-x={-Math.PI / 2} position={[0, 0.03, 0]} receiveShadow>
-        <planeGeometry args={[70, 50]} />
-        <primitive object={dark} attach="material" />
-      </mesh>
+      <GroundPatch
+        surface="concrete"
+        width={70}
+        length={52}
+        position={[0, 0.02, 0]}
+        seed={241}
+        dissolve={0.3}
+        strength={1}
+        opacity={1}
+        quality={quality}
+      />
+      <GroundPatch
+        surface="soilDry"
+        width={92}
+        length={72}
+        position={[0, 0.008, 0]}
+        seed={243}
+        dissolve={0.7}
+        strength={0.95}
+        opacity={0.85}
+        quality={quality}
+      />
+      <AssetModel id="truck-a" position={[24, 0, -16]} rotation={[0, -1.9, 0]} quality={quality} lod="auto" />
+      <AssetModel id="car-c" position={[24, 0, -10]} rotation={[0, 1.7, 0]} quality={quality} lod="auto" />
     </group>
   )
 }

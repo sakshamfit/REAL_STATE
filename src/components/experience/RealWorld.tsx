@@ -1,130 +1,186 @@
 'use client'
 
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import type { QualitySettings } from '@/lib/quality'
-import { AssetModel } from '@/lib/glb'
-import { materialForKey } from '@/lib/materials'
-import { InstancedBoxes, type Item } from './primitives'
+import { AssetModel, InstancedAsset, type InstanceItem } from '@/lib/glb'
+import {
+  LANE,
+  TRAFFIC,
+  boundaryWalls,
+  groundPatches,
+  parkedVehicles,
+  streetLights,
+  yardBarriers,
+  yardProps,
+  type Placed,
+} from '@/lib/layout'
+import { GroundPatch } from './GroundPatch'
+import { ContactRings } from './Vegetation'
+import { plinthMaterial } from '@/lib/materials'
 
 /**
- * The physical world the cinematic camera travels through.
+ * The road corridor's furniture.
  *
- * This is deliberately a real place, not a floating scene: a road corridor, a
- * boundary wall, Indian vegetation, street lights, parked vehicles and a
- * construction shed. Every object is grounded, scaled to real-world metres and
- * registered in `src/data/assets.ts`.
+ * Street lighting, the plot boundary wall, a working construction yard, parked
+ * vehicles and live traffic. Every object sits on the terrain height at its own
+ * position, faces the way it would in India (left-hand traffic) and is drawn
+ * from the instanced asset pool. Placement lives in `src/lib/layout.ts` so the
+ * offline QA rasteriser renders the same world.
  */
+
+const toInstances = (items: Placed[]): InstanceItem[] =>
+  items.map((item) => ({
+    position: [item.x, item.y ?? 0, item.z],
+    rotation: item.rotation,
+    scale: [item.scale ?? 1, item.scaleY ?? item.scale ?? 1, item.scale ?? 1],
+  }))
+
+/**
+ * The plinth course under the compound wall.
+ *
+ * A rendered wall that meets bare soil looks pasted on. Real boundary walls
+ * stand on a slightly wider plinth that stays damp, collects dirt and throws
+ * the shadow line that tells you the wall is actually standing in the ground.
+ */
+function WallPlinths({ quality }: { quality: QualitySettings }) {
+  const ref = useRef<THREE.InstancedMesh>(null)
+  const dummy = useMemo(() => new THREE.Object3D(), [])
+  const segments = useMemo(() => boundaryWalls(), [])
+  const geometry = useMemo(() => new THREE.BoxGeometry(12, 0.34, 0.62), [])
+  const material = useMemo(() => plinthMaterial(quality.textureSize), [quality.textureSize])
+
+  useEffect(() => {
+    const mesh = ref.current
+    if (!mesh) return
+    segments.forEach((segment, index) => {
+      dummy.position.set(segment.x, (segment.y ?? 0) + 0.17, segment.z)
+      dummy.rotation.set(0, segment.rotation, 0)
+      dummy.scale.set(segment.scale ?? 1, 1, 1)
+      dummy.updateMatrix()
+      mesh.setMatrixAt(index, dummy.matrix)
+    })
+    mesh.instanceMatrix.needsUpdate = true
+    mesh.computeBoundingSphere()
+  }, [segments, dummy])
+
+  useEffect(
+    () => () => {
+      geometry.dispose()
+    },
+    [geometry],
+  )
+
+  return (
+    <instancedMesh
+      ref={ref}
+      args={[geometry, material, Math.max(1, segments.length)]}
+      castShadow={quality.tier !== 'low'}
+      receiveShadow
+    />
+  )
+}
+
 export function RealWorld({ quality }: { quality: QualitySettings }) {
-  const treeRefs = useRef<(THREE.Object3D | null)[]>([])
-  const treePositions = useMemo(() => {
-    const count = Math.max(6, Math.round(14 * Math.max(0.35, quality.density)))
-    const positions: { x: number; z: number; kind: 'tree-a' | 'tree-b'; scale: number; seed: number }[] = []
-    for (let i = 0; i < count; i++) {
-      const z = -8 - i * (38 / Math.max(1, count))
-      positions.push({
-        x: i % 2 === 0 ? -8.5 + Math.random() * 1.6 : 8.5 - Math.random() * 1.6,
-        z,
-        kind: i % 3 === 0 ? 'tree-b' : 'tree-a',
-        scale: 0.82 + Math.random() * 0.4,
-        seed: i * 1.91 + 0.4,
-      })
-    }
-    return positions
-  }, [quality.density])
-
-  useFrame((state) => {
-    const t = state.clock.elapsedTime
-    for (let i = 0; i < treeRefs.current.length; i++) {
-      const object = treeRefs.current[i]
-      if (!object) continue
-      const seed = treePositions[i]?.seed ?? i
-      object.rotation.z = Math.sin(t * 0.42 + seed) * 0.006 + Math.sin(t * 0.27 + seed * 2) * 0.003
-      object.rotation.x = Math.cos(t * 0.35 + seed * 1.3) * 0.004
-    }
-  })
-
-  const streetLights = useMemo(() => {
-    const count = Math.max(4, Math.round(6 * Math.max(0.5, quality.density)))
-    return Array.from({ length: count }, (_, i) => ({
-      x: 5.6,
-      z: -12 - i * 70,
-    }))
-  }, [quality.density])
-
-  const bushes = useMemo(() => {
-    const count = Math.max(4, Math.round(9 * Math.max(0.4, quality.density)))
-    return Array.from({ length: count }, (_, i) => ({
-      x: (i % 2 === 0 ? -1 : 1) * (4.6 + Math.random() * 1.2),
-      z: -4 - i * 24,
-      scale: 0.7 + Math.random() * 0.7,
-    }))
-  }, [quality.density])
-
-  const walls = useMemo(() => {
-    const items: Item[] = []
-    for (let z = 2; z >= -78; z -= 12.4) {
-      items.push({ position: [-7.2, 0, z], scale: [1, 1, 1] })
-      items.push({ position: [7.2, 0, z], scale: [1, 1, 1] })
-    }
-    return items
-  }, [])
-
-  const wallMaterial = materialForKey('render', { textureSize: quality.textureSize })
+  const walls = useMemo(() => toInstances(boundaryWalls()), [])
+  const lights = useMemo(() => toInstances(streetLights(quality.tier === 'low' ? 92 : 46)), [quality.tier])
+  const barriers = useMemo(() => toInstances(yardBarriers()), [])
+  const props = useMemo(() => yardProps(), [])
+  const vehicles = useMemo(() => parkedVehicles(), [])
+  const vehiclePoints = useMemo(() => vehicles.flatMap((group) => group.items), [vehicles])
+  const patches = useMemo(() => groundPatches(), [])
 
   return (
     <group>
-      {/* boundary wall along the approach */}
-      <InstancedBoxes items={walls} material={wallMaterial} />
+      <InstancedAsset id="street-light" items={lights} quality={quality} castShadow={quality.tier === 'high'} />
+      <WallPlinths quality={quality} />
+      <InstancedAsset id="boundary-wall" items={walls} quality={quality} castShadow={quality.tier !== 'low'} />
+      <InstancedAsset id="barrier" items={barriers} quality={quality} />
+      {/* dust shadow / drips under the parked vehicles so they touch the ground */}
+      <ContactRings items={vehiclePoints} radius={2.3} opacity={0.3} />
 
-      {/* vegetation */}
-      {treePositions.map((tree, index) => (
+      {patches.map((patch, index) => (
+        <GroundPatch
+          key={index}
+          surface={patch.surface}
+          width={patch.width}
+          length={patch.length}
+          position={[patch.x, 0.012, patch.z]}
+          rotation={patch.rotation}
+          seed={patch.seed}
+          dissolve={patch.dissolve}
+          strength={patch.strength}
+          opacity={patch.opacity}
+          lift={0.004}
+          quality={quality}
+        />
+      ))}
+
+      {props.map((prop, index) => (
         <AssetModel
-          key={`${tree.kind}-${index}`}
-          id={tree.kind}
-          position={[tree.x, 0, tree.z]}
-          scale={[tree.scale, tree.scale, tree.scale]}
-          rotation={[0, (index * 0.71) % (Math.PI * 2), 0]}
+          key={`${prop.id}-${index}`}
+          id={prop.id}
+          position={[prop.x, prop.y ?? 0, prop.z]}
+          rotation={[0, prop.rotation, 0]}
           quality={quality}
           lod="auto"
-          onObject={(object) => {
-            treeRefs.current[index] = object
+        />
+      ))}
+
+      {vehicles.map((group) => (
+        <InstancedAsset key={group.id} id={group.id} items={toInstances(group.items)} quality={quality} />
+      ))}
+
+      <Traffic quality={quality} />
+    </group>
+  )
+}
+
+/**
+ * Live traffic. Cars hold a constant world speed and are recycled 340 m behind
+ * or ahead of the camera, so a vehicle never visibly pops: by the time it wraps
+ * it is out of frame or dissolved in haze.
+ */
+function Traffic({ quality }: { quality: QualitySettings }) {
+  const cars = useMemo(
+    () => (quality.tier === 'low' ? TRAFFIC.slice(0, 1) : quality.tier === 'mid' ? TRAFFIC.slice(0, 2) : TRAFFIC),
+    [quality.tier],
+  )
+  const refs = useRef<(THREE.Group | null)[]>([])
+  const positions = useRef<number[]>(cars.map((car) => car.start))
+
+  useFrame((state, delta) => {
+    const cameraZ = state.camera.position.z
+    const dt = Math.min(delta, 0.05)
+    cars.forEach((car, index) => {
+      const group = refs.current[index]
+      if (!group) return
+      let z = positions.current[index] - car.direction * car.speed * dt
+      const relative = z - cameraZ
+      if (relative > 340) z -= 660
+      else if (relative < -340) z += 660
+      positions.current[index] = z
+      group.position.set(-car.direction * LANE + car.laneOffset, 0, z)
+      group.rotation.y = car.direction > 0 ? -Math.PI / 2 : Math.PI / 2
+      group.visible = Math.abs(z - cameraZ) < 330
+    })
+  })
+
+  return (
+    <group>
+      {cars.map((car, index) => (
+        <group
+          key={`${car.id}-${index}`}
+          ref={(node) => {
+            refs.current[index] = node
           }}
-        />
+          position={[-car.direction * LANE, 0, car.start]}
+          rotation={[0, car.direction > 0 ? -Math.PI / 2 : Math.PI / 2, 0]}
+        >
+          <AssetModel id={car.id} quality={quality} lod="auto" lodDistance={260} />
+        </group>
       ))}
-
-      {/* bushes / shrubs */}
-      {bushes.map((bush, index) => (
-        <AssetModel
-          key={`bush-${index}`}
-          id="bush"
-          position={[bush.x, 0, bush.z]}
-          scale={[bush.scale, bush.scale, bush.scale]}
-          rotation={[0, (index * 0.9) % (Math.PI * 2), 0]}
-          quality={quality}
-          lod="auto"
-        />
-      ))}
-
-      {/* street lights */}
-      {streetLights.map((light, index) => (
-        <AssetModel
-          key={`light-${index}`}
-          id="street-light"
-          position={[light.x, 0, light.z]}
-          rotation={[0, Math.PI, 0]}
-          quality={quality}
-          lod="auto"
-        />
-      ))}
-
-      {/* parked / passing cars */}
-      <AssetModel id="car-a" position={[-2.2, 0, -18]} rotation={[0, 0, 0]} quality={quality} lod="auto" />
-      <AssetModel id="car-a" position={[2.3, 0, -128]} rotation={[0, Math.PI, 0]} quality={quality} lod="auto" />
-
-      {/* construction shed beside the hero site */}
-      <AssetModel id="construction-shed" position={[-15, 0, -53]} rotation={[0, 0.12, 0]} quality={quality} lod="auto" />
     </group>
   )
 }

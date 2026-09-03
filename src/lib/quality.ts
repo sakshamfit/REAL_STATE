@@ -48,9 +48,12 @@ const PRESETS: Record<Tier, QualitySettings> = {
     tier: 'low',
     dpr: [0.8, 1.15],
     textureSize: 256,
-    shadows: false,
+    // shadows stay on even here: objects without contact shadows float, and
+    // floating objects fail the realism gate. The map is small and the
+    // shadow volume is tight so the cost stays low.
+    shadows: true,
     shadowMapSize: 512,
-    environment: false,
+    environment: true,
     dust: 160,
     density: 0.42,
     fov: 52,

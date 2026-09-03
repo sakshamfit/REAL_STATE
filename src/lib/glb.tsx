@@ -3,6 +3,8 @@
 import React, { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useGLTF } from '@react-three/drei'
 import { useFrame, useThree } from '@react-three/fiber'
+import * as THREE from 'three'
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import type { Object3D } from 'three'
 import { assetById, preloadAssetIds, type AssetEntry } from '@/data/assets'
 import { materialForKey } from './materials'
@@ -189,4 +191,178 @@ class AssetErrorBoundary extends React.Component<{ fallback: ReactNode; children
   render() {
     return this.state.failed ? this.props.fallback : this.props.children
   }
+}
+
+/** --------------------------------------------------------------- instancing */
+
+export type InstanceItem = {
+  position: [number, number, number]
+  /** yaw, radians */
+  rotation?: number
+  scale?: number | [number, number, number]
+}
+
+/**
+ * One GLB, many copies, one draw call per material.
+ *
+ * Repeated props (trees, street lights, barriers, parked cars) are merged per
+ * material and drawn as instanced meshes. Identical geometry is uploaded once;
+ * only the transform buffer differs. This is what lets the scene hold a real
+ * tree line and real street furniture without a few hundred draw calls.
+ */
+export function InstancedAsset({
+  id,
+  items,
+  quality,
+  castShadow = true,
+  receiveShadow = true,
+  capacity,
+}: {
+  id: string
+  items: InstanceItem[]
+  quality: QualitySettings
+  castShadow?: boolean
+  receiveShadow?: boolean
+  /**
+   * Fixed instance capacity. When the visible set changes (distance LOD) the
+   * mesh would otherwise be rebuilt at the new size every time a member moves
+   * between levels; allocating once and drawing `items.length` of it keeps
+   * those transitions free.
+   */
+  capacity?: number
+}) {
+  const asset = assetById.get(id)
+  const gltf = useGLTF(asset?.path ?? '/assets/glb/tree-a.glb')
+
+  const groups = useMemo(() => {
+    if (!asset) return []
+    const buckets = new Map<string, THREE.BufferGeometry[]>()
+    gltf.scene.updateMatrixWorld(true)
+    gltf.scene.traverse((object) => {
+      const mesh = object as THREE.Mesh
+      if (!mesh.isMesh || !mesh.geometry) return
+      const source = mesh.geometry as THREE.BufferGeometry
+      const original = mesh.material as { name?: string }
+      const name = typeof original?.name === 'string' ? original.name : ''
+      const key = asset.materialMap[name] ?? (name || 'concrete')
+      const geometry = source.clone()
+      geometry.applyMatrix4(mesh.matrixWorld)
+      const clean = geometry.index ? geometry.toNonIndexed() : geometry
+      if (clean !== geometry) geometry.dispose()
+      for (const attribute of Object.keys(clean.attributes)) {
+        if (attribute !== 'position' && attribute !== 'normal' && attribute !== 'uv') {
+          clean.deleteAttribute(attribute)
+        }
+      }
+      if (!clean.attributes.normal) clean.computeVertexNormals()
+      if (!clean.attributes.uv) {
+        const count = clean.attributes.position.count
+        clean.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(count * 2), 2))
+      }
+      const bucket = buckets.get(key)
+      if (bucket) bucket.push(clean)
+      else buckets.set(key, [clean])
+    })
+
+    return [...buckets.entries()].map(([key, geometries]) => {
+      const merged = geometries.length === 1 ? geometries[0] : mergeGeometries(geometries, false)
+      if (merged !== geometries[0]) geometries.forEach((geometry) => geometry.dispose())
+      merged.computeBoundingSphere()
+      return { key, geometry: merged }
+    })
+  }, [gltf, asset])
+
+  const dummy = useMemo(() => new THREE.Object3D(), [])
+  const tint = useMemo(() => new THREE.Color(1, 1, 1), [])
+
+  useEffect(() => {
+    return () => {
+      groups.forEach((group) => group.geometry.dispose())
+    }
+  }, [groups])
+
+  if (!asset || items.length === 0) return null
+
+  return (
+    <group>
+      {groups.map((group) => (
+        <InstancedPart
+          key={group.key}
+          geometry={group.geometry}
+          material={materialForKey(group.key, { textureSize: quality.textureSize })}
+          items={items}
+          capacity={capacity ?? Math.max(1, items.length)}
+          dummy={dummy}
+          tint={tint}
+          castShadow={castShadow}
+          receiveShadow={receiveShadow}
+        />
+      ))}
+    </group>
+  )
+}
+
+const fract = (value: number) => value - Math.floor(value)
+
+function InstancedPart({
+  geometry,
+  material,
+  items,
+  capacity,
+  dummy,
+  tint,
+  castShadow,
+  receiveShadow,
+}: {
+  geometry: THREE.BufferGeometry
+  material: THREE.Material
+  items: InstanceItem[]
+  capacity: number
+  dummy: THREE.Object3D
+  tint: THREE.Color
+  castShadow: boolean
+  receiveShadow: boolean
+}) {
+  const ref = useRef<THREE.InstancedMesh>(null)
+
+  useEffect(() => {
+    const mesh = ref.current
+    if (!mesh) return
+    items.forEach((item, index) => {
+      const scale = item.scale ?? 1
+      const [sx, sy, sz] = typeof scale === 'number' ? [scale, scale, scale] : scale
+      dummy.position.set(...item.position)
+      dummy.rotation.set(0, item.rotation ?? 0, 0)
+      dummy.scale.set(sx, sy, sz)
+      dummy.updateMatrix()
+      mesh.setMatrixAt(index, dummy.matrix)
+
+      // Per-instance tint, derived from where the instance stands so it is
+      // stable across reloads. Identical clones are the fastest way to make a
+      // CGI scene look like a CGI scene: real trees differ in vigour, age and
+      // dust, and so do real cars under the same sun. The spread is small
+      // enough that it reads as variation rather than as a colour effect.
+      const [x, , z] = item.position
+      const a = fract(Math.sin(x * 12.9898 + z * 78.233) * 43758.5453)
+      const b = fract(Math.sin(x * 39.3468 + z * 11.135) * 24634.6345)
+      const brightness = 0.9 + a * 0.2
+      const warmth = (b - 0.5) * 0.06
+      tint.setRGB(brightness * (1 + warmth), brightness, brightness * (1 - warmth))
+      mesh.setColorAt(index, tint)
+    })
+    mesh.count = items.length
+    mesh.instanceMatrix.needsUpdate = true
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
+    mesh.computeBoundingSphere()
+  }, [items, dummy, tint])
+
+  return (
+    <instancedMesh
+      ref={ref}
+      args={[geometry, material, capacity]}
+      castShadow={castShadow}
+      receiveShadow={receiveShadow}
+      frustumCulled={false}
+    />
+  )
 }

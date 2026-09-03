@@ -3,14 +3,11 @@
 import { Html } from '@react-three/drei'
 import { MATERIAL_GATES } from '@/lib/world'
 import { beatLocal } from '@/lib/chapters'
-import { runtime } from '@/lib/store'
-import { smoothstep } from '@/lib/math'
 import type { QualitySettings } from '@/lib/quality'
 import { concreteMaterial, glassMaterial, metalMaterial, PALETTE } from '@/lib/materials'
 import { useChapterVisibility } from '../hooks'
 import { Block } from '../primitives'
 import { useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
 import type * as THREE from 'three'
 
 /**
@@ -46,32 +43,23 @@ function Gate({
       : gate.material === 'steel'
         ? metalMaterial('brushed', 4, quality.textureSize)
         : gate.material === 'glass'
-          ? glassMaterial('#121c22', 0.42)
+          ? glassMaterial('#182730', 0.62)
           : concreteMaterial('stone', 2.4, quality.textureSize)
 
-  useFrame(() => {
-    const t = beatLocal('material-world', runtime.progress)
-    const group = ref.current
-    if (!group) return
-    const a = smoothstep((t - 0.08 - index * 0.09) / 0.3)
-    group.scale.y = Math.max(0.0001, a)
-    group.visible = a > 0.003
-  })
+  void ref
 
   return (
     <group ref={ref} position={[0, 0, gate.z]}>
-      <Block size={[9, 30, 5]} position={[-11.5, 12, 0]} material={material} />
-      <Block size={[9, 30, 5]} position={[11.5, 12, 0]} material={material} />
-      <Block size={[32, 9, 5]} position={[0, 21.5, 0]} material={material} />
-      <Block size={[32, 6, 5]} position={[0, -1, 0]} material={material} />
-
-      {/* light seam inside the frame */}
-      <Block size={[0.18, 12, 0.18]} position={[-6.9, 7, 2.4]} material={concreteMaterial('dark', 1, quality.textureSize)} />
-      <Block size={[0.18, 12, 0.18]} position={[6.9, 7, 2.4]} material={concreteMaterial('dark', 1, quality.textureSize)} />
+      {/* a gateway straddling the carriageway: two piers, a head beam, a plinth */}
+      <Block size={[7, 17, 4.2]} position={[-13, 8.5, 0]} material={material} />
+      <Block size={[7, 17, 4.2]} position={[13, 8.5, 0]} material={material} />
+      <Block size={[34, 4.4, 4.6]} position={[0, 19.2, 0]} material={material} />
+      <Block size={[7.6, 0.8, 4.8]} position={[-13, 0.4, 0]} material={concreteMaterial('dark', 2, quality.textureSize)} />
+      <Block size={[7.6, 0.8, 4.8]} position={[13, 0.4, 0]} material={concreteMaterial('dark', 2, quality.textureSize)} />
 
       <Html
         transform
-        position={[8.6, 15.4, 2.7]}
+        position={[8.6, 12.4, 2.5]}
         distanceFactor={10}
         style={{ pointerEvents: 'none' }}
       >

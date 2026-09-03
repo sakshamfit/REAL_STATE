@@ -11,11 +11,11 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { NodeIO } from '@gltf-transform/core'
-import { flatten, weld, prune } from '@gltf-transform/functions'
+import { flatten, weld, prune, quantize } from '@gltf-transform/functions'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.resolve(__dirname, '../..')
-const RAW_DIR = path.join(ROOT, 'public/assets/glb/raw')
+const RAW_DIR = path.join(ROOT, 'assets/raw')
 const OUT_DIR = path.join(ROOT, 'public/assets/glb')
 
 fs.mkdirSync(OUT_DIR, { recursive: true })
@@ -27,7 +27,12 @@ for (const file of fs.readdirSync(RAW_DIR).filter((f) => f.endsWith('.glb'))) {
   const doc = await io.read(input)
   const before = fs.statSync(input).size
 
-  await doc.transform(flatten(), weld({ tolerance: 1e-4 }), prune({ keepAttributes: true }))
+  await doc.transform(
+    flatten(),
+    weld({ tolerance: 1e-4 }),
+    quantize({ pattern: /^(POSITION|NORMAL|TEXCOORD)/, quantizePosition: 14, quantizeNormal: 10, quantizeTexcoord: 12 }),
+    prune({ keepAttributes: true }),
+  )
 
   await io.write(output, doc)
   const after = fs.statSync(output).size

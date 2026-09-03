@@ -9,10 +9,10 @@ import { company } from '@/data/company'
 import { loadProductionAssets } from '@/lib/asset-loader'
 
 function loaderStage(percent: number) {
-  if (percent < 14) return 'BUILDING THE WORLD'
-  if (percent < 46) return 'LOADING ARCHITECTURE'
-  if (percent < 92) return 'LOADING ENVIRONMENT'
-  if (percent < 100) return 'LOADING ATMOSPHERE'
+  if (percent < 14) return 'PREPARING THE WORLD'
+  if (percent < 46) return 'STREAMING ARCHITECTURE'
+  if (percent < 96) return 'STREAMING ENVIRONMENT'
+  if (percent < 100) return 'COMPILING THE FIRST FRAMES'
   return 'ENTERING'
 }
 
@@ -45,7 +45,7 @@ export function Preloader() {
       })
 
     const run = async () => {
-      advance(8, 0.5)
+      advance(8, 0.35)
       if (document.fonts?.ready) {
         try {
           await document.fonts.ready
@@ -54,12 +54,12 @@ export function Preloader() {
         }
       }
       if (cancelled) return
-      advance(12, 0.4)
+      advance(12, 0.3)
 
       // Real 0..1 progress from streaming the priority GLBs (never fake bytes)
       const assetProgress = await loadProductionAssets()
       if (cancelled) return
-      advance(18 + assetProgress * 68, 1.1)
+      advance(18 + assetProgress * 74, 0.5)
 
       try {
         await loadIndiaData()
@@ -68,17 +68,24 @@ export function Preloader() {
         /* the map falls back gracefully */
       }
       if (cancelled) return
-      advance(94, 1.2)
+      advance(96, 0.4)
 
-      // let the first frames of the world compile before we hand over control
-      await new Promise((resolve) => setTimeout(resolve, 520))
-      if (cancelled) return
+      // Hand over on a real signal: wait until the world has actually drawn
+      // three frames (shader compile + first upload), never a fixed timer.
       await new Promise((resolve) => {
-        const elapsed = performance.now() - startedAt.current
-        setTimeout(resolve, Math.max(0, 2600 - elapsed))
+        let frames = 0
+        const tick = () => {
+          frames += 1
+          if (frames >= 3) resolve(null)
+          else requestAnimationFrame(tick)
+        }
+        requestAnimationFrame(tick)
       })
       if (cancelled) return
-      advance(100, 0.6)
+      const elapsed = performance.now() - startedAt.current
+      if (elapsed < 700) await new Promise((resolve) => setTimeout(resolve, 700 - elapsed))
+      if (cancelled) return
+      advance(100, 0.35)
       setReady(true)
     }
 

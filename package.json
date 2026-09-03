@@ -2,7 +2,7 @@
   "name": "rudra-experience",
   "version": "1.0.0",
   "private": true,
-  "description": "RUDRA Constructions & Suppliers — cinematic 3D web experience with an interactive 3D India presence map.",
+  "description": "RUDRA Constructions & Suppliers \u2014 cinematic 3D web experience with an interactive 3D India presence map.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -15,13 +15,16 @@
     "assets:optimize": "node scripts/glb/optimize-assets.mjs",
     "assets:inspect": "node scripts/glb/inspect-assets.mjs",
     "assets:validate": "node scripts/glb/validate-assets.mjs",
-    "assets:visual-qa": "node scripts/glb/visual-qa.mjs"
+    "assets:visual-qa": "node scripts/glb/visual-qa.mjs",
+    "qa:daylight": "node --experimental-strip-types --import ./scripts/qa/ts-hook.mjs scripts/qa/daylight.mjs",
+    "qa:shots": "node --experimental-strip-types --import ./scripts/qa/ts-hook.mjs scripts/qa/world-shots.mjs"
   },
   "dependencies": {
     "@fontsource/inter": "^5.3.0",
     "@fontsource/space-grotesk": "^5.3.0",
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",
+    "@react-three/postprocessing": "^2.19.1",
     "gsap": "^3.13.0",
     "lenis": "^1.3.11",
     "next": "^14.2.35",

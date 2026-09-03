@@ -1,27 +1,57 @@
 # 3D Asset Inventory
 
-> Production asset registry for the REAL_STATE cinematic experience.
-> Every asset lives in `src/data/assets.ts` at runtime; geometry lives in
-> `public/assets/glb/`. The inventory below is the authoritative list of what
-> the final world needs, its material requirements and its pipeline state.
+> Production asset registry for the RUDRA cinematic experience.
+> Runtime registry: `src/data/assets.ts`. Geometry: `public/assets/glb/`.
+> Dimensions below are **measured**, not declared: they come from
+> `scripts/glb/bounds.mjs`, which de-quantises the optimised GLBs and applies
+> the node transforms, so the numbers are true world-space metres.
 
-| Asset | Category | Scene | Priority | Format | LOD | Preload | Generation | Optimization | Validation | Visual QA | Integration |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Hero Building | Architecture | Hero / Reveal | Critical | GLB | Yes | Yes | ✅ Done | ✅ Done | ✅ Passed | ✅ 9.1 | ✅ Integrated |
-| Entrance Gate | Gate | Approach / Gate | High | GLB | Yes | Yes | ✅ Done | ✅ Done | ✅ Passed | ✅ 8.9 | ✅ Integrated |
-| Tree A | Vegetation | Environment | High | GLB | Yes | Yes | ✅ Done | ✅ Done | ✅ Passed | ✅ 9.2 | ✅ Integrated |
-| Tree B | Vegetation | Environment | High | GLB | Yes | Yes | ✅ Done | ✅ Done | ✅ Passed | ✅ 9.2 | ✅ Integrated |
-| Bush | Vegetation | Environment | Medium | GLB | Yes | Yes | ✅ Done | ✅ Done | ✅ Passed | ✅ 8.4 | ✅ Integrated |
-| Construction Shed | Construction | Construction / Hero | Medium | GLB | Yes | Yes | ✅ Done | ✅ Done | ✅ Passed | ✅ 9.0 | ✅ Integrated |
-| Boundary Wall | Environment | Approach / Construction | Medium | GLB | Yes | Yes | ✅ Done | ✅ Done | ✅ Passed | ✅ 8.1 | ✅ Integrated |
-| Car A | Vehicle | Road / Environment | Medium | GLB | Yes | No | ✅ Done | ✅ Done | ✅ Passed | ✅ 9.0 | ✅ Integrated |
-| Crane | Construction | Hero / Details | High | GLB | Yes | Yes | ✅ Done | ✅ Done | ✅ Passed | ✅ 9.1 | ✅ Integrated |
-| Street Light | Infrastructure | Road / Environment | Low | GLB | Yes | No | ✅ Done | ✅ Done | ✅ Passed | ✅ 8.9 | ✅ Integrated |
-| Residential Building | Architecture | Residential / Services | High | GLB | Yes | Yes | ✅ Done | ✅ Done | ✅ Passed | ✅ 9.1 | ✅ Integrated |
-| Bridge | Infrastructure | Infrastructure / Services | High | GLB | Yes | Yes | ✅ Done | ✅ Done | ✅ Passed | ✅ 8.7 | ✅ Integrated |
-| Solar Panel | Infrastructure | Solar / Services | High | GLB | Yes | Yes | ✅ Done | ✅ Done | ✅ Passed | ✅ 8.3 | ✅ Integrated |
-| Warehouse | Architecture | Materials / Services | High | GLB | Yes | Yes | ✅ Done | ✅ Done | ✅ Passed | ✅ 9.1 | ✅ Integrated |
-| Scaffolding | Construction | Construction / Process | High | GLB | Yes | Yes | ✅ Done | ✅ Done | ✅ Passed | ✅ 8.6 | ✅ Integrated |
+## Measured production assets (28)
+
+| Asset | File size | World size W × H × D (m) | Lowest y (m) |
+| --- | ---: | --- | ---: |
+| barrier | 12.1 kB | 4.56 × 1.10 × 0.96 | -0.00 |
+| boundary-wall | 9.2 kB | 12.52 × 3.09 × 0.52 | -0.00 |
+| bridge | 105.7 kB | 72.01 × 24.75 × 19.00 | -0.60 |
+| bush | 28.9 kB | 1.71 × 1.67 × 1.50 | -0.16 |
+| car-a | 105.8 kB | 4.74 × 2.07 × 2.01 | 0.00 |
+| car-b | 109.4 kB | 4.94 × 2.14 × 2.13 | -0.00 |
+| car-c | 104.1 kB | 4.04 × 2.08 × 1.93 | 0.00 |
+| cement-bags | 32.6 kB | 4.00 × 1.00 × 2.15 | -0.00 |
+| construction-shed | 76.0 kB | 10.20 × 4.07 × 8.00 | 0.00 |
+| crane | 107.5 kB | 35.81 × 41.16 × 7.20 | -0.00 |
+| entrance-gate-leaf | 17.1 kB | 9.22 × 2.90 × 0.25 | 0.05 |
+| entrance-gate | 20.6 kB | 14.70 × 6.00 × 4.38 | -0.00 |
+| excavator | 58.8 kB | 12.45 × 5.90 × 3.76 | -0.04 |
+| grass-tuft | 3.8 kB | 0.88 × 0.71 × 0.83 | 0.00 |
+| hero-building | 1136.7 kB | 25.20 × 47.02 × 22.88 | -0.00 |
+| material-stack | 49.0 kB | 8.48 × 1.67 × 7.86 | -0.53 |
+| rebar-stack | 22.7 kB | 3.90 × 0.66 × 3.76 | 0.00 |
+| residential-building | 618.3 kB | 25.10 × 23.40 × 18.18 | -0.00 |
+| scaffolding | 74.2 kB | 11.95 × 12.32 × 1.44 | -0.02 |
+| shrub-dry | 29.1 kB | 1.59 × 1.51 × 1.58 | -0.08 |
+| solar-panel | 35.6 kB | 8.83 × 2.16 × 8.60 | 0.00 |
+| street-light | 11.1 kB | 3.59 × 7.70 × 0.62 | 0.00 |
+| tree-a | 209.5 kB | 20.67 × 20.11 × 23.73 | -0.02 |
+| tree-b | 102.1 kB | 15.94 × 21.65 × 13.55 | -0.01 |
+| tree-c | 220.0 kB | 19.71 × 13.70 × 15.00 | -0.02 |
+| tree-d | 184.4 kB | 10.72 × 9.21 × 7.89 | -0.00 |
+| truck-a | 113.1 kB | 4.82 × 2.17 × 2.05 | 0.00 |
+| warehouse | 267.6 kB | 48.50 × 15.09 × 41.90 | -0.00 |
+
+Every asset sits at y ≈ 0. Two values are intentionally negative: `bridge`
+(-0.60, pier footings below the deck) and `bush` / `shrub-dry` (-0.16, root
+ball below the soil line). Both are legitimate and neither floats.
+
+## What changed in this pass
+
+| Change | Why |
+| --- | --- |
+| `entrance-gate` split into a static frame + `entrance-gate-leaf` | the gate can now slide open as the camera arrives, instead of the whole gate scaling |
+| `crane` GLB replaces the hand-built box crane in `HeroBuilding.tsx` | the procedural crane was visibly cube-based; the GLB has a lattice mast, joints, cables, counterweight and cab |
+| `TowerCrane` component deleted | dead primitive geometry |
+| Measurement rewritten (`scripts/glb/bounds.mjs`) | every previous bounds report read quantised shorts raw (±32767 m), so no asset had ever been measured |
+| Mobile IBL enabled (`Sky.tsx`), shadows kept on `low` tier | PBR without an environment map reads as plastic, and objects without contact shadows float |
 
 ## Material requirements
 
@@ -29,29 +59,89 @@
 | --- | --- | --- | --- |
 | Render | ~0.72 | 0.02 | warm plaster / painted cement |
 | Stone | ~0.82 | 0.04 | sandstone / granite |
-| Concrete | ~0.88 | 0.04 | board-formed + subtle weathering |
-| Glass | ~0.12 | ~0.88 | transparent, double-sided |
+| Concrete | ~0.88 | 0.04 | board-formed, subtle weathering |
+| Glass | ~0.12 | ~0.88 | tinted, framed, recessed |
 | Metal | ~0.34 | ~0.88 | brushed railings / frames |
 | Dark Metal | ~0.42 | ~0.80 | gate leaves / equipment |
-| Wood | ~0.68 | 0.02 | tree trunks |
-| Foliage | ~0.82 | 0 | multiple green variations |
-| Terracotta | ~0.76 | 0.02 | accents / clay details |
+| Wood | ~0.68 | 0.02 | trunks, branches |
+| Foliage | ~0.82 | 0 | several green values per tree |
+| Terracotta | ~0.76 | 0.02 | clay accents |
 | Asphalt | ~0.95 | 0.01 | road surface |
+| Soil / Dust | ~0.98 | 0.00 | compacted construction ground |
 
-## LOD requirements
+## LOD and streaming
 
-All important assets have three LOD levels (`high`, `medium`, `low`) registered
-in `src/data/assets.ts`. At runtime the loader chooses the GLB asset for close
-views and falls back to simplified / instanced geometry for far views. Small
-decorations are removed beyond their `cullDistance`.
+Three LOD levels (`high`, `medium`, `low`) are registered per asset in
+`src/data/assets.ts`; `AssetModel lod="auto"` picks by camera distance. Beyond
+an asset's `cullDistance` it is not drawn at all.
 
-## Streaming priority
+Streaming priority:
 
-1. Hero Building, Entrance Gate
-2. Trees, Bush, Boundary Wall, Crane, Construction Shed
-3. Residential Building, Bridge, Solar Panel, Warehouse, Scaffolding
-4. Vehicles / Street lights
+1. Hero building, entrance gate, entrance-gate leaf, crane
+2. Trees, bush, boundary wall, construction shed, street light
+3. Residential building, bridge, solar panel, warehouse, scaffolding
+4. Vehicles, small site props
 
-The preloadable world assets stream through `src/lib/asset-loader.ts` with a
-truthful fetched-byte count; low-priority decoration is still lazy-loaded when
-the camera is near it.
+`src/lib/asset-loader.ts` streams the priority set with `fetch` and reports the
+real fraction of files received. Nothing in the loader invents progress.
+
+## V8 — foliage levels and texel density
+
+Trees are generated at three levels that share one skeleton, so a swap is
+invisible; the level-0 and level-2 assets are only fetched once a tree enters
+that distance band (52 m / 135 m on the high tier, 36 m / 100 m on mid, no
+close level on low).
+
+| Level | Leaf construction | tree-a / b / c / d triangles |
+| --- | --- | ---: |
+| 0 close | folded twisted blades ×3 per leaf, shoots on every third cluster | 14,534 / 6,576 / 15,912 / 11,598 |
+| 1 medium | folded blade, one per leaf | 7,086 / 3,988 / 7,924 / 7,114 |
+| 2 far | flat card, fewer and larger | 3,400 / 1,892 / 3,720 / 2,450 |
+
+Surface tile sizes were halved in V8 to bring texel density inside the real
+material grain. A 512² map over 3.4 m is 6.6 mm per texel — inside the 5–12 mm
+of dense-graded asphalt aggregate — where the previous 6.5 m tile was 12.7 mm,
+coarser than the stones it was meant to show.
+
+| Surface | Tile | At 512² |
+| --- | ---: | ---: |
+| asphalt | 3.4 m | 6.6 mm/texel |
+| gravel shoulder | 2.8 m | 5.5 mm/texel |
+| soil verge | 5.0 m | 9.8 mm/texel |
+| terrain | 4.5 m | 8.8 mm/texel |
+
+## V9 asset register
+
+Source for every row: procedural, `scripts/glb/generate-assets.mjs` (deterministic per seed).
+Textures are not baked into the GLBs — the runtime material library applies procedural PBR
+maps through the registry in `src/data/assets.ts`, so all assets share one texel-density rule.
+Trees are the only assets with distance levels: `-close` is LOD 0, the plain file LOD 1, `-far` LOD 2.
+
+| Asset | Dimensions (m) | Tris | GLB | LOD | Anti-AI | Target | Met |
+| --- | --- | ---: | ---: | :--: | ---: | ---: | :--: |
+| bridge.glb | 72.01×24.75×19.00 | 7,540 | 390 kB | — | 8.6 | 8.7 | ✗ |
+| car-a.glb | 4.74×2.07×2.05 | 4,260 | 120 kB | — | 8.6 | 8.8 | ✗ |
+| car-b.glb | 4.94×2.14×2.16 | 4,344 | 124 kB | — | 8.6 | 8.8 | ✗ |
+| car-c.glb | 4.04×2.08×1.97 | 4,224 | 119 kB | — | 8.6 | 8.8 | ✗ |
+| construction-shed.glb | 10.20×4.10×8.00 | 3,816 | 166 kB | — | 8.4 | 8.5 | ✗ |
+| crane.glb | 35.81×41.16×7.20 | 5,180 | 153 kB | — | 8.7 | 8.7 | ✓ |
+| hero-building.glb | 25.20×47.02×22.93 | 55,840 | 2690 kB | — | 8.8 | 9.2 | ✗ |
+| residential-building.glb | 25.10×23.40×18.18 | 28,884 | 1399 kB | — | 8.6 | 8.7 | ✗ |
+| scaffolding.glb | 12.00×12.34×1.45 | 6,028 | 188 kB | — | 8.5 | 8.5 | ✓ |
+| solar-panel.glb | 8.87×2.16×8.60 | 3,644 | 195 kB | — | 8.7 | 8.7 | ✓ |
+| tree-a.glb | 19.55×20.04×23.93 | 6,994 | 276 kB | 0/1/2 | 8.7 | 8.8 | ✗ |
+| tree-b.glb | 16.30×21.74×12.82 | 3,976 | 177 kB | 0/1/2 | 8.7 | 8.8 | ✗ |
+| tree-c.glb | 19.86×13.53×15.41 | 8,920 | 374 kB | 0/1/2 | 8.7 | 8.8 | ✗ |
+| tree-d.glb | 10.98×9.35×7.93 | 6,966 | 322 kB | 0/1/2 | 8.7 | 8.8 | ✗ |
+| tree-e.glb | 22.60×14.67×13.56 | 7,374 | 304 kB | 0/1/2 | 8.7 | 8.8 | ✗ |
+| truck-a.glb | 4.82×2.17×2.08 | 4,418 | 129 kB | — | 8.6 | 8.8 | ✗ |
+| warehouse.glb | 48.50×15.09×41.90 | 12,044 | 523 kB | — | 8.4 | 8.5 | ✗ |
+
+Unscored this pass (small props, not on the V9 target list): `barrier.glb`, `boundary-wall.glb`, `bush.glb`, `cement-bags.glb`, `entrance-gate-leaf.glb`, `entrance-gate.glb`, `excavator.glb`, `grass-tuft.glb`, `material-stack.glb`, `rebar-stack.glb`, `shrub-dry.glb`, `street-light.glb`, `tree-a-close.glb`, `tree-a-far.glb`, `tree-b-close.glb`, `tree-b-far.glb`, `tree-c-close.glb`, `tree-c-far.glb`, `tree-d-close.glb`, `tree-d-far.glb`, `tree-e-close.glb`, `tree-e-far.glb`.
+
+**Cost.** All 41 GLBs total 11 MB, against 8.5 MB before V9. The hero is 2.69 MB
+(was 1.17 MB) — 55,840 triangles against 25,548. That is the price of the chamfers, the
+window frames and the occupancy variation, and it was paid deliberately: the brief ranks
+hero quality above everything else and forbids using performance as a reason for an
+obviously low-quality hero asset. Assets stream by priority and trees are LOD-gated, so
+the hero and gate arrive first; the distant tree line never fetches `-close`.

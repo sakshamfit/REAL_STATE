@@ -3,62 +3,58 @@
 import { Html } from '@react-three/drei'
 import { TRUST_STRUCTURE } from '@/lib/world'
 import { trustPillars } from '@/data/company'
-import { beatLocal } from '@/lib/chapters'
-import { runtime } from '@/lib/store'
-import { smoothstep } from '@/lib/math'
-import { concreteMaterial, decalMaterial, emissiveMaterial, PALETTE } from '@/lib/materials'
+import { concreteMaterial, PALETTE } from '@/lib/materials'
 import type { QualitySettings } from '@/lib/quality'
+import type * as THREE from 'three'
 import { useChapterVisibility, useNearCamera } from '../hooks'
 import { Block } from '../primitives'
-import { useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
-import type * as THREE from 'three'
+import { AssetModel } from '@/lib/glb'
+import { GroundPatch } from '../GroundPatch'
 
+/** Where the four standards hang, in the air around the finished building. */
 const WORD_POSITIONS: { position: [number, number, number]; rotation: [number, number, number] }[] = [
-  { position: [-19, 8.5, 6], rotation: [0, 0.5, 0] },
-  { position: [19, 13.5, 2], rotation: [0, -0.5, 0] },
-  { position: [-17.5, 20, -4], rotation: [0, 0.42, 0] },
-  { position: [18, 25.5, -8], rotation: [0, -0.42, 0] },
+  { position: [-21, 9.5, 8], rotation: [0, 0.5, 0] },
+  { position: [21, 14.5, 4], rotation: [0, -0.5, 0] },
+  { position: [-19, 21, -2], rotation: [0, 0.42, 0] },
+  { position: [20, 26.5, -6], rotation: [0, -0.42, 0] },
 ]
 
-/** Almost complete darkness. One structure. Four words. */
+/**
+ * TRUST — a finished building in open daylight.
+ *
+ * No darkness and no glow: the section is a completed structure standing on a
+ * levelled plinth, with the four standards hung in the space around it.
+ */
 export function TrustScene({ quality }: { quality: QualitySettings }) {
   const { x, z } = TRUST_STRUCTURE
   const group = useChapterVisibility<THREE.Group>([x, 14, z], 220)
-  const glowRef = useRef<THREE.Mesh>(null)
   const near = useNearCamera([x, 14, z], 150)
-
-  const concrete = concreteMaterial('dark', 2.4, quality.textureSize)
-  const accent = emissiveMaterial(PALETTE.accent, 1.4)
-
-  useFrame(() => {
-    const t = beatLocal('trust', runtime.progress)
-    if (glowRef.current) {
-      const intensity = smoothstep((t - 0.15) / 0.4)
-      const material = glowRef.current.material as THREE.MeshStandardMaterial
-      material.emissiveIntensity = 0.4 + intensity * 2.2
-      glowRef.current.scale.x = Math.max(0.0001, intensity)
-    }
-  })
+  const plinth = concreteMaterial('light', 3, quality.textureSize)
 
   return (
     <group ref={group} position={[x, 0, z]}>
-      <Block size={[40, 1.2, 30]} position={[0, 0.6, 0]} material={concrete} />
-      <Block size={[4.4, 26, 4.4]} position={[-13, 13, -9]} material={concrete} />
-      <Block size={[4.4, 26, 4.4]} position={[13, 13, -9]} material={concrete} />
-      <Block size={[4.4, 26, 4.4]} position={[-13, 13, 9]} material={concrete} />
-      <Block size={[4.4, 26, 4.4]} position={[13, 13, 9]} material={concrete} />
-      <Block size={[34, 4.4, 26]} position={[0, 28.2, 0]} material={concrete} />
-      <Block size={[30, 0.2, 22]} position={[0, 26.1, 0]} material={concrete} />
-
-      <mesh ref={glowRef} position={[0, 25.4, 0]} material={accent}>
-        <boxGeometry args={[28, 0.16, 0.16]} />
+      <mesh receiveShadow position={[0, 0.35, 0]} material={plinth}>
+        <boxGeometry args={[46, 0.7, 38]} />
       </mesh>
 
-      <mesh rotation-x={-Math.PI / 2} position={[0, 0.08, 0]}>
-        <planeGeometry args={[80, 70]} />
-        <primitive object={decalMaterial('#000000', 0.7)} attach="material" />
-      </mesh>
+      <AssetModel id="residential-building" position={[0, 0.7, 0]} rotation={[0, 0.28, 0]} quality={quality} lod="auto" />
+
+      {/* site office and the two standards at the entrance */}
+      <AssetModel id="construction-shed" position={[26, 0.7, -14]} rotation={[0, -0.6, 0]} quality={quality} lod="auto" />
+      <Block size={[0.4, 2.2, 0.4]} position={[-20, 1.8, 16]} material={plinth} />
+      <Block size={[0.4, 2.2, 0.4]} position={[20, 1.8, 16]} material={plinth} />
+
+      <GroundPatch
+        surface="soilDry"
+        width={84}
+        length={74}
+        position={[0, 0.012, 0]}
+        seed={401}
+        dissolve={0.75}
+        strength={0.95}
+        opacity={0.8}
+        quality={quality}
+      />
 
       {near
         ? trustPillars.map((pillar, index) => (

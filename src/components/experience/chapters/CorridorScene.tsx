@@ -5,7 +5,7 @@ import { Html } from '@react-three/drei'
 import * as THREE from 'three'
 import { CORRIDOR } from '@/lib/world'
 import { clients } from '@/data/company'
-import { concreteMaterial, decalMaterial, emissiveMaterial, PALETTE } from '@/lib/materials'
+import { concreteMaterial, PALETTE } from '@/lib/materials'
 import type { QualitySettings } from '@/lib/quality'
 import { useChapterVisibility, useNearCamera } from '../hooks'
 import { Block, InstancedBoxes, type Item } from '../primitives'
@@ -15,12 +15,12 @@ const CENTER_Z = (CORRIDOR.from + CORRIDOR.to) / 2
 
 /** Client names are placed in the architecture — no logo wall, no cards. */
 export function CorridorScene({ quality }: { quality: QualitySettings }) {
-  const group = useChapterVisibility<THREE.Group>([0, 6, CENTER_Z], 260)
-  const near = useNearCamera([0, 6, CENTER_Z], 170)
+  const group = useChapterVisibility<THREE.Group>([CORRIDOR.x, 6, CENTER_Z], 260)
+  const near = useNearCamera([CORRIDOR.x, 6, CENTER_Z], 170)
 
   const concrete = concreteMaterial('mid', 1.6, quality.textureSize)
   const dark = concreteMaterial('dark', 3, quality.textureSize)
-  const lightStrip = emissiveMaterial('#efe6d2', 1.6)
+  const floor = concreteMaterial('light', 12, quality.textureSize)
 
   const { columns, strips } = useMemo(() => {
     const count = Math.floor(Math.abs(LENGTH) / 6)
@@ -51,7 +51,7 @@ export function CorridorScene({ quality }: { quality: QualitySettings }) {
   })
 
   return (
-    <group ref={group}>
+    <group ref={group} position={[CORRIDOR.x, 0, 0]}>
       <Block
         size={[CORRIDOR.width, 0.6, Math.abs(LENGTH) + 8]}
         position={[0, 0.3, CENTER_Z]}
@@ -60,19 +60,10 @@ export function CorridorScene({ quality }: { quality: QualitySettings }) {
       />
       <Block size={[CORRIDOR.width + 3, 0.9, Math.abs(LENGTH) + 8]} position={[0, CORRIDOR.height + 0.45, CENTER_Z]} material={dark} />
       <InstancedBoxes items={columns} material={concrete} />
-      <InstancedBoxes items={strips} material={lightStrip} castShadow={false} receiveShadow={false} />
-
-      {/* light at the end of the corridor */}
-      <mesh position={[0, 5.5, CORRIDOR.to - 1]} material={emissiveMaterial('#f2ead8', 1.1)}>
-        <planeGeometry args={[9, 11]} />
-      </mesh>
-      <mesh position={[0, 5.5, CORRIDOR.from + 1]} rotation-y={Math.PI} material={emissiveMaterial('#f2ead8', 0.35)}>
-        <planeGeometry args={[9, 11]} />
-      </mesh>
-
-      <mesh rotation-x={-Math.PI / 2} position={[0, 0.7, CENTER_Z]}>
+      {/* daylight between the columns does the lighting, no glowing strips */}
+      <mesh rotation-x={-Math.PI / 2} position={[0, 0.72, CENTER_Z]} receiveShadow>
         <planeGeometry args={[CORRIDOR.width, Math.abs(LENGTH)]} />
-        <primitive object={decalMaterial('#000000', 0.45)} attach="material" />
+        <primitive object={floor} attach="material" />
       </mesh>
 
       {near

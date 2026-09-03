@@ -12,6 +12,7 @@ import { ScrollContent } from '@/components/ui/ScrollContent'
 import { Hud } from '@/components/ui/Hud'
 import { MapOverlay } from '@/components/ui/MapOverlay'
 import { Overlays } from '@/components/ui/Overlays'
+import { DaylightDebug } from '@/components/ui/DaylightDebug'
 import { FlatExperience } from '@/components/ui/FlatExperience'
 import { AudioControl } from '@/components/ui/AudioControl'
 import { preloadProductionAssets } from '@/lib/glb'
@@ -62,6 +63,8 @@ export default function Page() {
 
       <Navigation />
       <AudioControl />
+      {/* dev tool: ?daylight=1 only, never shown in a normal session */}
+      <DaylightDebug quality={quality} />
       <Preloader />
     </>
   )
