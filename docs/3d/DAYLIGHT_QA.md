@@ -41,9 +41,10 @@ file directly — the report cannot drift from the site.
 | Tone mapping | ACES filmic | ACES filmic |
 | Hemisphere fill | 0.95 | 0.85 |
 | Ambient | 0.14 | 0.16 |
-| Environment (IBL) | **1.15** | 1.00 (implicit) |
+| Environment (IBL) | **1.30** | 1.00 (implicit) |
 | Background | 1.05 | 1.00 |
 | Fog | `#e2eae6`, d 0.0016 | `#cfd8d6`, d 0.0016 |
+| Sky zenith | **`#3f86d4`** | `#5b8fc4` |
 | SSAO intensity | **0.82 / 0.66** | 1.15 / 1.00 |
 | SSAO colour | `#332e26` | `#17140f` |
 | CSS vignette | **0.10 radial / 0.13 bottom** | 0.30 radial / 0.34 top / 0.40 bottom |
@@ -97,7 +98,21 @@ reflection, so opacity is now 0.56–0.68 across the six glazing call sites
 (including the hero tower), with roughness left low so the reflection is a sky
 rather than a haze.
 
-### 5. Exposure was set in three places
+### 5. Two materials were holes in the frame
+
+`rubberMaterial` was `#151516` — 0.006 in linear light, where sidewall rubber
+actually sits around 0.03–0.05. Every tyre on every vehicle was a black cut-out,
+three or four per car in the foreground. Now `#333436` (0.033), which under
+direct sun reads as dark grey at 0.31 sRGB with the tread still legible.
+
+Solar panels were `metalness: 0.9` over a near-black base colour. High metalness
+means the base colour *is* the reflectance, so a near-black metal reflects
+almost nothing: the arrays were holes in the ground. A PV module is dark blue
+glass over an absorber, so they are now glossy dielectrics (`#152a41`,
+metalness 0.40, roughness 0.11) that take the sun as a highlight and the sky as
+a sheen.
+
+### 6. Exposure was set in three places
 
 `Experience` set 1.12, `Lighting` set 1.00, and `Post` re-applied ACES inside
 the composer. Whichever mounted last won. There is now one constant,
@@ -115,29 +130,31 @@ sun elevation 52.0°   exposure 1.22   tone mapping aces
 sun intensity 5.2     ambient / hemi 0.14 / 0.95   env 1.15
 
 surface                       sRGB   hex      0-1
-sky zenith                    186    9bbfdf   0.73
-sky horizon                   221    d7dee4   0.87
-concrete, sunlit              223    e0dfdb   0.87
-concrete, shadowed            157    90a0ac   0.62
-render/plaster, sunlit        237    eeede9   0.93
-render/plaster, shadowed      192    b6c2c9   0.75
-asphalt road, sunlit          120    73797f   0.47
-asphalt road, shadowed         59    2c3d53   0.23
-soil, sunlit                  169    bca785   0.66
-foliage, sunlit               153    82a55f   0.60
-foliage, interior              80    2e5c34   0.31
-grass, sunlit                 172    9db577   0.67
-bark/trunk, shaded             53    403424   0.21
-steel, sunlit                 215    d6d8d7   0.84
+sky zenith                    173    84b4de   0.68
+sky horizon                   219    d5dce3   0.86
+concrete, sunlit              223    e0dfdc   0.88
+concrete, shadowed            159    91a1b1   0.62
+render/plaster, sunlit        237    eeedea   0.93
+render/plaster, shadowed      193    b7c3cc   0.76
+asphalt road, sunlit          120    737982   0.47
+asphalt road, shadowed         59    2b3d57   0.23
+soil, sunlit                  169    bca787   0.66
+foliage, sunlit               153    81a561   0.60
+foliage, interior              80    2d5d37   0.31
+grass, sunlit                 172    9db679   0.67
+bark/trunk, shaded             55    423626   0.22
+steel, sunlit                 216    d6d8d8   0.85
+tyre rubber, sunlit            79    4b5056   0.31   (was 0.13)
+solar glass, sunlit            53    0a3c6f   0.21   (diffuse only)
+dark metal, sunlit             91    535c68   0.36
 ```
 
 Sun-to-shade contrast on concrete is **2.4:1 in linear light** — enough to read
-as a sunny day while the shadow side keeps 0.62 sRGB of detail. Nothing
-clips: the brightest surface (sunlit render) sits at 0.93, below the 0.97
-ceiling. The sky keeps a 0.08 blue-over-red margin, so it is a sky, not a white
-wash.
+as a sunny day while the shadow side keeps 0.62 sRGB of detail. Nothing clips:
+the brightest surface (sunlit render) sits at 0.93, below the 0.97 ceiling. The
+sky keeps a 0.35 blue-over-red margin, so it is a sky, not a white wash.
 
-All 16 checks pass.
+All 18 checks pass.
 
 ## Per-shot frame statistics
 
@@ -146,22 +163,66 @@ measures the tone-mapped frame. The offline renderer is a Lambert approximation
 (no IBL, no specular except on metal and glass), so treat these as relative —
 but they answer the composition questions a screenshot would.
 
-| Beat | Mean | Crushed (<0.18) | Clipped (>0.97) | Sky | Foreground |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| ground (opening) | 0.740 | 0.0 % | 0.0 % | 44.2 % | 0.596 |
-| build | 0.792 | 0.0 % | 0.0 % | 51.4 % | 0.751 |
-| company | 0.770 | 0.0 % | 0.0 % | 54.4 % | 0.738 |
-| services-intro | 0.775 | 0.0 % | 0.0 % | 50.0 % | 0.676 |
-| service-civil | 0.782 | 0.0 % | 0.0 % | 49.4 % | 0.687 |
-| service-residential | 0.782 | 0.0 % | 0.0 % | 29.3 % | 0.756 |
-| service-infrastructure | 0.764 | 0.0 % | 0.0 % | 26.0 % | 0.751 |
-| service-solar | 0.768 | 0.0 % | 0.0 % | 11.1 % | 0.809 |
-| service-renovation | 0.792 | 0.0 % | 0.0 % | 46.7 % | 0.725 |
-| service-materials | 0.795 | 0.0 % | 0.0 % | 39.9 % | 0.785 |
-| material-world | 0.795 | 0.0 % | 0.0 % | 47.3 % | 0.745 |
+| Beat | Mean | Darkest pixel | Crushed | Clipped | Sky | Sky hex | Foreground |
+| --- | ---: | ---: | ---: | ---: | ---: | --- | ---: |
+| ground (opening) | 0.736 | 0.24 | 0.0 % | 0.0 % | 44.2 % | `#c8d6e3` | 0.597 |
+| build | 0.787 | 0.22 | 0.0 % | 0.0 % | 51.4 % | `#c6d5e2` | 0.752 |
+| company | 0.766 | 0.34 | 0.0 % | 0.0 % | 54.4 % | `#c7d0d7` | 0.739 |
+| services-intro | 0.771 | 0.17 | 0.0 % | 0.0 % | 50.0 % | `#ccd8e2` | 0.677 |
+| service-civil | 0.779 | 0.45 | 0.0 % | 0.0 % | 49.4 % | `#cdd8e1` | 0.687 |
+| service-residential | 0.780 | 0.29 | 0.0 % | 0.0 % | 29.3 % | `#ced7de` | 0.757 |
+| service-infrastructure | 0.763 | 0.23 | 0.0 % | 0.0 % | 26.0 % | `#ccd5dd` | 0.752 |
+| service-solar | 0.769 | 0.45 | 0.0 % | 0.0 % | 11.1 % | `#8b795d` | 0.809 |
+| service-renovation | 0.789 | 0.45 | 0.0 % | 0.0 % | 46.7 % | `#cdd5da` | 0.725 |
+| service-materials | 0.792 | 0.16 | 0.0 % | 0.0 % | 39.9 % | `#ced9e2` | 0.786 |
+| material-world | 0.792 | 0.33 | 0.0 % | 0.0 % | 47.3 % | `#cedae3` | 0.746 |
 
 Sky occupies 11–54 % of every covered frame; no beat has crushed shadows or
-clipped highlights; the foreground (bottom third) sits between 0.60 and 0.81.
+clipped highlights; the darkest single pixel anywhere is 0.16, and the
+foreground (bottom third) sits between 0.60 and 0.81.
+
+## Reading the frame (the screenshot test, §37)
+
+`TONES=1 npm run qa:shots -- <beat>` prints the rendered frame as a luminance
+ramp, which is the closest thing to looking at the picture without an image
+viewer. `LABELS=1` says *what* is in frame; this says *how bright* it is.
+
+The opening frame, `ground`:
+
+```
+################################################################################*##*########
+##################################################################################*#########
+###################################################################################****#####
+##############%####%%%##*###**#######################################################****###
+###*##########*++#########%##########################################################*######
+####**#############%%%#***##*########################################################*######
+###**###########%#%%%%%%####**#######################################################*###%%%
+####*######%#######%%%##*###**#########%######################%%%%%%%%%%%%##########***#%%%%
+%#%####*#%#%######*#%%%%#%%#**##%%%%%%%%%%%%%%%%%%%%%%%%%########%%%##%##%####*#####*+*%%%%%
+#########%%%##%######%%###%#*###%%%%%%%%%%%%%%%%%%%%%######%%###%%%###%##############+*%%%%%
+#####*#***#%################*###%%%%%%%%%%%%%%%%%%%%%%%#%%##%%%%%%%%%%%%%%%####%##%%#+*%%%##
+%%#***+**+*###%%##%##%%###%##*##%%%%%%%###%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%####%####**#%%%%
+%%%%#%#*######%###%%%%####%#*#%####%%%#####%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%########*##%##
+%%%%%##*####%%%%#%%%%%%###%#*#%######%####%%%%%%%%%%%%%%%%%%%%%%%%%%#%%%%%%%%##%#####**#####
+%%%%%%**%%#%%%%%#######%%%%%########%%%##%%%%%%%%%%%%%%%%%%%%%%%%%%##%##%%%%%%#%%%%##*+%%##%
+%#%#%%#*#*#####%##%##%%%#%########%%########****############################**########+#####
+*******######################%######****+++++**++++**########%%%###########*+#########*#*+**
+****************#**********####***++++++++++++++++++++++++***####*********************######
+*****************+++**####******##################++++++++++****######**+++++***************
+********+++****######**+++**#######################+++++++++++*******########***+++++*******
+++++====+++++++++++++++**+++++++++++++++++++++++++++++++++++++++++**##***++++++++*****++++++
+==========+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++=====++***#
+=====++++++++++++++++++++++++++++++++++++++++##++++++++++++++++++++++++++++++++++++++++=====
++++++++++++++++++++++++++++++++++++++++++++++%%+++++++++++++++++++++++++++++++++++++++++++++
+++++++++++++++++++++++++++++++++++++++++++++*%%*+++++++++++++++++++++++++++++++++++++++++++++
+```
+
+Read top to bottom: bright sky across the top (`#`, 0.7–0.8); the hero tower
+left of centre reading **brighter than the sky** (`%`, 0.8–0.9) — sunlit
+architecture, not a silhouette; the crane to its right at `*` (0.6–0.7), legible
+against the sky; the tree line and boundary wall in the middle distance
+(`*`/`#`); the carriageway across the bottom third at `+` (0.5–0.6). Not one
+character in the frame falls below `=` (0.4): there is no black anywhere.
 
 **Not covered offline:** trust, corridor, india, future, contact and the five
 process beats. Their geometry lives in React chapter components that the offline
@@ -197,6 +258,8 @@ must be checked on the live site.
 | India map daylight | ⚠️ | React component — live check required |
 | Renovation daylight | ✅ | 0.792 mean |
 | Audio unchanged | ✅ | master 0.34, no layer raised |
+| Tyres are dark grey, not black | ✅ | 0.31 sRGB (was 0.13) |
+| Solar panels receive sunlight | ✅ | glossy dielectric now, not near-black metal |
 | Mobile readable | ✅ | low tier shares the rig; only AO and textures drop |
 | `assets:build` / `typecheck` / `build` | ✅ | all pass |
 

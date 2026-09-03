@@ -258,9 +258,9 @@ function SolarField({ quality }: { quality: QualitySettings }) {
   const panelMaterial = useMemo(
     () =>
       new THREE.MeshStandardMaterial({
-        color: new THREE.Color('#0a1013'),
-        roughness: 0.16,
-        metalness: 0.88,
+        color: new THREE.Color('#152a41'),
+        roughness: 0.11,
+        metalness: 0.4,
         envMapIntensity: 1.5,
       }),
     [],

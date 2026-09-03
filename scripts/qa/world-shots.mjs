@@ -495,8 +495,13 @@ async function main() {
         if (luma.foreground < 0.28) flags.push('BLACK FOREGROUND')
       }
       console.log(
-        `    luma mean ${luma.mean.toFixed(3)}  dark ${pct(luma.dark)}  clipped ${pct(luma.clipped)}  sky ${pct(luma.sky)}  foreground ${luma.foreground.toFixed(3)}  ${flags.length ? flags.join(', ') : 'daylight OK'}`,
+        `    luma mean ${luma.mean.toFixed(3)}  darkest ${luma.darkest.toFixed(2)}  dark ${pct(luma.dark)}  clipped ${pct(luma.clipped)}  sky ${pct(luma.sky)} ${luma.skyHex}  foreground ${luma.foreground.toFixed(3)}  ${flags.length ? flags.join(', ') : 'daylight OK'}`,
       )
+    }
+    if (process.env.TONES === '1') {
+      renderer.render(camera)
+      console.log(renderer.tones(camera, Number(process.env.COLS ?? 96)))
+      console.log("    ramp: ' ' black  '.'  ':'  '-'  '='  '+'  '*'  '#'  '%'  '@' white")
     }
     if (process.env.LABELS === '1') {
       console.log(renderer.labels(camera, Number(process.env.COLS ?? 120)))

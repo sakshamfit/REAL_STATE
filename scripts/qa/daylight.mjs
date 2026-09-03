@@ -185,6 +185,12 @@ const surfaces = [
   ['grass, sunlit', PALETTE.grass, UP.clone(), true],
   ['bark/trunk, sunlit', PALETTE.bark, new THREE.Vector3(-SUN.x, 0.2, -SUN.z).normalize(), true],
   ['steel, sunlit', PALETTE.metal, UP.clone(), true],
+  // the two materials the brief calls out specifically, plus the one that used
+  // to be a hole in the frame
+  // the sidewall that faces the sun, not the one in its own shadow
+  ['tyre rubber, sunlit', '#333436', new THREE.Vector3(SUN.x, 0.45, SUN.z).normalize(), true],
+  ['solar glass, sunlit', '#152a41', new THREE.Vector3(SUN.x, 0.9, SUN.z).normalize(), true],
+  ['dark metal, sunlit', PALETTE.darkMetal, UP.clone(), true],
 ]
 
 console.log(`\nsun elevation      ${sunElevation.toFixed(1)}°   (daylight wants 40–70°)`)
@@ -270,6 +276,8 @@ const checks = [
   ['sunlit foliage is green-lit (0.42–0.72)', get('foliage, sunlit').value > 0.42 && get('foliage, sunlit').value < 0.72],
   ['foliage interior keeps detail (> 0.24)', get('foliage, interior').value > 0.24],
   ['sunlit render is not clipped (< 0.97)', get('render/plaster, sunlit').value < 0.97],
+  ['tyres are dark grey, not black (0.18–0.55)', get('tyre rubber, sunlit').value > 0.18 && get('tyre rubber, sunlit').value < 0.55],
+  ['solar glass is not a hole (> 0.2)', get('solar glass, sunlit').value > 0.2],
   ['no dark full-screen overlay (vignette ≤ 0.15)', overlay.darkest <= 0.15],
   ['grain is a whisper (≤ 0.06)', overlay.grain <= 0.06],
   ['exposure is not low (≥ 1.0)', CONFIG.exposure >= 1.0],

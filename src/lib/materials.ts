@@ -536,13 +536,21 @@ export function glassMaterial(tint = '#26343a', opacity = 0.58, roughness = 0.05
   )
 }
 
-/** Solar PV module: dark blue, glossy, anisotropic-looking sheen. */
+/**
+ * Solar PV module.
+ *
+ * A panel is dark blue glass over an absorber, not black metal: near-black
+ * base colour with high metalness reflects almost nothing, so the arrays read
+ * as holes in the ground. Kept as a glossy dielectric instead, so they take the
+ * sun as a specular highlight and the sky as a sheen — which is what a solar
+ * farm actually looks like at midday.
+ */
 export function panelMaterial() {
   return memo('panel-dark', () =>
     new THREE.MeshStandardMaterial({
-      color: new THREE.Color('#101a26'),
-      roughness: 0.16,
-      metalness: 0.6,
+      color: new THREE.Color('#152a41'),
+      roughness: 0.11,
+      metalness: 0.4,
       envMapIntensity: 1.5,
     }),
   )
@@ -558,11 +566,19 @@ export function paintMaterial(color: string, roughness = 0.28, size: 256 | 512 =
   })
 }
 
+/**
+ * Tyre rubber.
+ *
+ * #151516 is 0.006 in linear light — a hole. Real sidewall rubber sits around
+ * 0.03–0.05, which under direct sun reads as dark grey with the tread still
+ * legible; the old value read as a black cut-out under every vehicle and was
+ * part of why the scene felt underexposed.
+ */
 export function rubberMaterial() {
   return memo('rubber', () =>
     new THREE.MeshStandardMaterial({
-      color: new THREE.Color('#151516'),
-      roughness: 0.92,
+      color: new THREE.Color('#333436'),
+      roughness: 0.88,
       metalness: 0,
       envMapIntensity: 0.2,
     }),

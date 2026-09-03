@@ -70,9 +70,9 @@ export function FutureScene({ quality }: { quality: QualitySettings }) {
   const solarMaterial = useMemo(
     () =>
       new THREE.MeshStandardMaterial({
-        color: new THREE.Color('#0b1216'),
-        roughness: 0.18,
-        metalness: 0.9,
+        color: new THREE.Color('#152a41'),
+        roughness: 0.11,
+        metalness: 0.4,
         envMapIntensity: 1.5,
       }),
     [],

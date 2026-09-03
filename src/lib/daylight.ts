@@ -35,8 +35,12 @@ export const HEMI_INTENSITY = 0.95
 export const AMBIENT_COLOR = new THREE.Color('#d2dde2')
 export const AMBIENT_INTENSITY = 0.14
 
-/** IBL and backdrop: the sky contributes more than 1:1 in bright daylight. */
-export const ENVIRONMENT_INTENSITY = 1.15
+/**
+ * IBL and backdrop. Above 1:1 for two reasons — a deeper-blue sky carries less
+ * energy than a pale one, and the brief asks for the shadow side to stay
+ * readable, which is precisely what the sky's indirect contribution does.
+ */
+export const ENVIRONMENT_INTENSITY = 1.3
 export const BACKGROUND_INTENSITY = 1.05
 
 /**

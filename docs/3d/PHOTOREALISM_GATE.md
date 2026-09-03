@@ -187,11 +187,19 @@ the four that mattered:
    too, so at `opacity: 0.32` a bright sky arrived at a third of its value.
    Glazing is now 0.56–0.68 across all six call sites.
 
-The rig itself is now one file (`src/lib/daylight.ts`) read by the renderer, the
-composer and the QA script, so exposure cannot be set in three places again.
-Measured: sunlit concrete 0.87 sRGB, shadowed 0.62, sunlit asphalt 0.47, sky
-zenith `#9bbfdf`, sun-to-shade 2.4:1 in linear light, nothing clipped. All 16
-automated daylight checks pass.
+5. **Two materials were holes in the frame.** Tyre rubber was `#151516`
+   (0.006 linear, where real sidewall rubber is 0.03–0.05) so every wheel was a
+   black cut-out; solar panels were `metalness: 0.9` over near-black, and high
+   metalness makes the base colour *be* the reflectance, so they reflected
+   almost nothing. Both are now physically plausible — tyres 0.31 sRGB, panels
+   a glossy dark-blue dielectric that takes the sun as a highlight.
+
+The rig is one file (`src/lib/daylight.ts`) read by the renderer, the composer
+and the QA script, so exposure cannot be set in three places again. Measured:
+sunlit concrete 0.88 sRGB, shadowed 0.62, sunlit asphalt 0.47, sky zenith
+`#84b4de`, sun-to-shade 2.4:1 in linear light, nothing clipped. All 18
+automated daylight checks pass, and the rendered opening frame contains no
+pixel below 0.16 luminance.
 
 What this does **not** change: surface detail, foliage and repetition are
 untouched by a lighting pass, and they are now the scores that hold the hero
@@ -207,14 +215,14 @@ repetition, animation, audio.
 
 | Shot | Geom | Mat | Surf | Foli | Light | Shad | Ground | Scale | Atmos | Cam | Comp | Rep | Anim | Audio | **Total** | Target |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| ground (opening) | 8.5 | 8.8 | 8.5 | 8.5 | 9 | 9 | 9 | 9 | 8.5 | 8.5 | 9 | 8 | 8.5 | 9 | **8.7** | 9.0 |
-| build (orbit) | 9 | 8.8 | 8.5 | 8.5 | 9 | 9 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.7** | 9.0 |
-| company (approach) | 9 | 8.8 | 8.5 | 8.5 | 9 | 9 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.7** | 9.0 |
+| ground (opening) | 8.5 | 9 | 8.5 | 8.5 | 9 | 9 | 9 | 9 | 8.5 | 8.5 | 9 | 8 | 8.5 | 9 | **8.7** | 9.0 |
+| build (orbit) | 9 | 9 | 8.5 | 8.5 | 9 | 9 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.7** | 9.0 |
+| company (approach) | 9 | 9 | 8.5 | 8.5 | 9 | 9 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.7** | 9.0 |
 
 Lighting and shadows move from 8.5 to 9.0 — a 52° sun with a measured 2.4:1
 sun-to-shade ratio, shadowed concrete at 0.62 sRGB, no crushed pixels and no
-clipping anywhere in the frame. Materials go to 8.8: glazing now reflects the
-sky it stands under instead of swallowing it. Atmosphere to 8.5: the haze is
+clipping anywhere in the frame. Materials go to 9.0: glazing now reflects the
+sky it stands under instead of swallowing it, and the two near-black surfaces(tyres and PV glass) are physically plausible. Atmosphere to 8.5: the haze is
 brighter and the sky is a real blue (`#9bbfdf`), but it is still a single
 exponential fog over a procedural dome, with no height falloff and no
 sun-direction-dependent scattering.
@@ -240,11 +248,11 @@ sun-direction-dependent scattering.
 
 | Shot | Geom | Mat | Surf | Foli | Light | Shad | Ground | Scale | Atmos | Cam | Comp | Rep | Anim | Audio | **Total** | Target |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| material-world | 8.5 | 8.8 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.6** | 8.5 |
-| service-residential | 9 | 8.8 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.7** | 8.5 |
-| service-infrastructure | 9 | 8.8 | 8.5 | 8.5 | 8.8 | 8.8 | 8.5 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.6** | 8.5 |
-| service-materials | 8.5 | 8.8 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.6** | 8.5 |
-| india (presence map) | 8.5 | 8.5 | 8.5 | 8 | 8.8 | 8.5 | 9 | 8.5 | 8 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.5** | 8.5 |
+| material-world | 8.5 | 9 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.6** | 8.5 |
+| service-residential | 9 | 9 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.7** | 8.5 |
+| service-infrastructure | 9 | 9 | 8.5 | 8.5 | 8.8 | 8.8 | 8.5 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.6** | 8.5 |
+| service-materials | 8.5 | 9 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.6** | 8.5 |
+| india (presence map) | 8.5 | 8.8 | 8.5 | 8 | 8.8 | 8.5 | 9 | 8.5 | 8 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.5** | 8.5 |
 
 Service worlds sit at 8.8 on lighting rather than 9.0: they are further from the
 camera than the hero, so they fall outside the 92 m shadow volume more often and
@@ -254,13 +262,13 @@ their contact detail is carried by ambient occlusion alone.
 
 | Shot | Geom | Mat | Surf | Foli | Light | Shad | Ground | Scale | Atmos | Cam | Comp | Rep | Anim | Audio | **Total** | Target |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| service-civil | 8 | 8.8 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8 | 8.5 | 9 | **8.5** | 8.0 |
-| service-solar | 8 | 8.8 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8 | 7.5 | 8.5 | 9 | **8.5** | 8.0 |
-| service-renovation | 8.5 | 8.8 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8 | 8 | 8.5 | 9 | **8.6** | 8.0 |
-| process 1–5 | 8 | 8.8 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8 | 8.5 | 9 | **8.5** | 8.0 |
-| trust | 8.5 | 8.8 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 9 | **8.6** | 8.0 |
-| corridor | 8 | 8.8 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8 | 8.5 | 8.5 | 9 | **8.6** | 8.0 |
-| future / contact | 8 | 8.8 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8 | 8.5 | 8.5 | 9 | **8.6** | 8.0 |
+| service-civil | 8 | 9 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8 | 8.5 | 9 | **8.5** | 8.0 |
+| service-solar | 8 | 9 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8 | 7.5 | 8.5 | 9 | **8.5** | 8.0 |
+| service-renovation | 8.5 | 9 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8 | 8 | 8.5 | 9 | **8.6** | 8.0 |
+| process 1–5 | 8 | 9 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8 | 8.5 | 9 | **8.5** | 8.0 |
+| trust | 8.5 | 9 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 9 | **8.6** | 8.0 |
+| corridor | 8 | 9 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8 | 8.5 | 8.5 | 9 | **8.6** | 8.0 |
+| future / contact | 8 | 9 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8 | 8.5 | 8.5 | 9 | **8.6** | 8.0 |
 
 Every beat is daylight. There is no DAY → DARK → DAY transition anywhere in the
 24 chapters: one rig, one sun, one exposure, and the service worlds, trust,

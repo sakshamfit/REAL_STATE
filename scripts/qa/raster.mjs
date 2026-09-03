@@ -547,6 +547,9 @@ export class Renderer {
     let sky = 0
     let foreground = 0
     let foregroundCount = 0
+    let darkest = 1
+    const skyRGB = [0, 0, 0]
+    let skyCount = 0
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
         const i = (y * w + x) * 3
@@ -554,8 +557,13 @@ export class Renderer {
         sum += value
         if (value < 0.18) dark++
         if (value > 0.97) clipped++
+        if (value < darkest) darkest = value
         if (this.ids[y * w + x] === 'sky') {
           sky++
+          skyRGB[0] += pixels[i]
+          skyRGB[1] += pixels[i + 1]
+          skyRGB[2] += pixels[i + 2]
+          skyCount++
           continue
         }
         // bottom third of the frame: the road, the yard, the foreground
@@ -566,11 +574,16 @@ export class Renderer {
       }
     }
     const total = w * h
+    const hex = (v) => Math.round(v).toString(16).padStart(2, '0')
     return {
       mean: sum / total,
       dark: dark / total,
       clipped: clipped / total,
       sky: sky / total,
+      darkest,
+      skyHex: skyCount
+        ? `#${hex(skyRGB[0] / skyCount)}${hex(skyRGB[1] / skyCount)}${hex(skyRGB[2] / skyCount)}`
+        : 'n/a',
       foreground: foregroundCount ? foreground / foregroundCount : 0,
     }
   }
@@ -587,6 +600,43 @@ export class Renderer {
    * This is what makes composition reviewable without an image viewer — you can
    * read exactly which asset fills which part of the frame.
    */
+  /**
+   * Tonal map: the frame as a luminance ramp.
+   *
+   * The label map says *what* is in frame; this says *how bright* it is. It is
+   * the closest thing to looking at the screenshot: read it and you can see
+   * whether the sky is the brightest thing, whether the building is a
+   * silhouette, and whether the foreground has gone to black.
+   */
+  tones(camera, cols = 96) {
+    const w = this.width
+    const h = this.height
+    const pixels = this.render(camera)
+    const rows = Math.max(8, Math.round((cols * h) / w / 2.1))
+    const cellW = w / cols
+    const cellH = h / rows
+    const RAMP = ' .:-=+*#%@'
+    const lines = []
+    for (let ry = 0; ry < rows; ry++) {
+      let line = ''
+      for (let rx = 0; rx < cols; rx++) {
+        let sum = 0
+        let n = 0
+        for (let y = Math.floor(ry * cellH); y < Math.min(h, (ry + 1) * cellH); y++) {
+          for (let x = Math.floor(rx * cellW); x < Math.min(w, (rx + 1) * cellW); x++) {
+            const i = (y * w + x) * 3
+            sum += (0.2126 * pixels[i] + 0.7152 * pixels[i + 1] + 0.0722 * pixels[i + 2]) / 255
+            n++
+          }
+        }
+        const value = n ? sum / n : 0
+        line += RAMP[Math.min(RAMP.length - 1, Math.max(0, Math.round(value * (RAMP.length - 1))))]
+      }
+      lines.push(line)
+    }
+    return lines.join('\n')
+  }
+
   labels(camera, cols = 120) {
     const w = this.width
     const h = this.height
