@@ -43,10 +43,37 @@ export function punchedFacade(b, opts) {
 
   const random = rng(seed)
   const height = floors * floorHeight
+  /**
+   * Which way the facade looks. Every offset below is authored as "negative is
+   * into the building", which is only true when the outward normal points +z.
+   * A facade on the far side of the building (z < 0) faces the other way, and
+   * without this sign its glazing projects proud of the wall while its sun
+   * shades grow into the rooms — a mirrored facade.
+   */
+  const facing = plane === 'z' ? (z < 0 ? -1 : 1) : x < 0 ? -1 : 1
+
   const place = (w, h, d, cx, cy, off, material, rot = 0) => {
-    if (plane === 'z') b.box(w, h, d, { x: cx, y: cy, z: z + off, ry: rot }, material)
-    else b.box(d, h, w, { x: x + off, y: cy, z: cx, ry: rot }, material)
+    if (plane === 'z') b.box(w, h, d, { x: cx, y: cy, z: z + off * facing, ry: rot }, material)
+    else b.box(d, h, w, { x: x + off * facing, y: cy, z: cx, ry: rot }, material)
   }
+
+  /**
+   * The room behind the glass.
+   *
+   * A punched opening with nothing behind it is a hole: you look through the
+   * building and see the sky on the other side, which instantly reads as a
+   * hollow CGI shell. Real windows are dark — the interior is several stops
+   * below the sunlit facade — so every facade gets a solid, near-black volume
+   * behind the reveal. It is one box, but it is the difference between a
+   * window and a hole.
+   *
+   * Two constraints fix its size. It must never be larger than the facade
+   * itself, or it shows as a black fin past the building corner; and it must
+   * be deep enough that a glancing view down the reveal lands on it rather
+   * than past it, or the oblique angles stay hollow. Exactly the facade's
+   * footprint, 1.6 m deep.
+   */
+  place(length, height, 1.6, from + length / 2, baseY + height / 2, -(thickness * 0.5 + recess + 0.8), 'interior')
 
   // structural piers between bays (full height, they read as the frame)
   const edges = []

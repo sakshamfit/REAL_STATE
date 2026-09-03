@@ -211,48 +211,118 @@ Axes are the ones the brief names: geometry, material, surface detail, foliage,
 lighting, shadows, grounding, scale, atmosphere, camera, composition,
 repetition, animation, audio.
 
+---
+
+## V8 — real assets, anti-CGI
+
+The daylight engine was fixed in V7. What was left had nothing to do with
+exposure: the objects themselves carried the CGI fingerprint. V8 attacks the
+three things this document had been naming for two passes — foliage, surface
+detail and repetition. Full per-asset scoring in
+**[ANTI_AI_REALISM.md](ANTI_AI_REALISM.md)**.
+
+**Foliage is no longer alpha cards.** Every blade is folded along the midrib
+(three rows, creased at 0.55 × width) and twisted ±0.22–0.72 rad, so it catches
+light across a curved surface instead of as one plane. The leaf atlas draws
+real ovate leaves — `w(u) = 2.354·u^0.5·(1−u)^0.8`, peaked at 38 % of the
+length, serrated margin, antialiased coverage, holes punched near every margin
+— instead of ellipses at binary alpha. Clusters grow a tapered shoot. The crown
+is two-tone, because a real crown is: leaves inside 52 % of the crown radius use
+a darker, greener, rougher material; outer leaves use the bright atlas.
+
+**Surface texel density was the road's actual defect.** A 512² asphalt map over
+a 6.5 m tile is 12.7 mm per texel — coarser than the 5–12 mm aggregate it
+depicts, so close up the road was smooth noise. Tiles halved: 6.6 mm/texel on
+asphalt, 5.5 on gravel, 9.8 on the verge, 8.8 on terrain. That is the density
+of a 1024² map at no memory cost and no generation cost (1024² asphalt takes
+1.14 s of main thread; the load cannot absorb it).
+
+**Repetition is attacked at the placement layer.** Scatter is now
+density-weighted: a 48 m clumping field plus verge and boundary bias, with the
+minimum spacing tightening inside a clump. Measured over the 86 high-tier trees,
+nearest-neighbour distances run 5.0 / 12.5 / 18.0 / 32.5 / 75.2 m (min / p25 /
+median / p75 / max), spread sd/mean **0.59** — planted landscaping sits near
+0.2, natural stands above 0.5. Every instanced mesh also carries a per-instance
+tint, so no two trees or cars are the same colour.
+
+**The building was hollow.** You could look through a window and see the sky on
+the far side. Every facade now has a near-black interior panel 0.3 m behind the
+reveal — dark enough to stay below any exterior surface even where the sun
+finds the opening.
+
+Cost: LOD 0 trees 9,326 → 14,534 triangles, LOD 1 5,482 → 7,086, LOD 2
+unchanged (a crease is invisible at 150 m). Bounding boxes still agree across
+levels to within 3 %, so a swap never changes a tree's size.
+
+### What this does to the scores
+
+| Axis | V7 | V8 | Why |
+| --- | ---: | ---: | --- |
+| Surface detail | 8.5 | **8.8** | texel density now inside the real material grain; still procedural, still not scanned |
+| Foliage | 8.5 | **8.8** | folded blades, twigs, two-tone crown, real leaf silhouettes; still printed sprays at 1 m |
+| Repetition | 8.0 | **8.5** | clumped placement and per-instance tint; still four species and one wall segment |
+| Geometry | 8.5–9 | 8.5–9 | unchanged — V8 added detail to trees, not to buildings |
+
+Hero: **8.8** (was 8.7). Major 8.7–8.8. Secondary 8.6–8.7.
+
+**Why not 9.0**, and it is the same reason as before, only narrower: the world
+is built entirely from boxes and cards. The hero building is 25,548 triangles of
+axis-aligned boxes with mathematically perfect 90° edges — real cast concrete
+has chamfers, formwork lines and tolerances, and the builder has no chamfered
+primitive yet. That single fact is what stands between the building's 8.2 and
+the 9 the brief asks for. Behind it: six identical bays × twelve identical
+floors, cars without shutlines or interiors, and the warehouse / shed /
+scaffolding generators, which are the least detailed in the set at 7.7–7.8.
+
 ### Hero sequence
 
 | Shot | Geom | Mat | Surf | Foli | Light | Shad | Ground | Scale | Atmos | Cam | Comp | Rep | Anim | Audio | **Total** | Target |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| ground (opening) | 8.5 | 9 | 8.5 | 8.5 | 9 | 9 | 9 | 9 | 8.5 | 8.5 | 9 | 8 | 8.5 | 9 | **8.7** | 9.0 |
-| build (orbit) | 9 | 9 | 8.5 | 8.5 | 9 | 9 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.7** | 9.0 |
-| company (approach) | 9 | 9 | 8.5 | 8.5 | 9 | 9 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.7** | 9.0 |
+| ground (opening) | 8.5 | 9 | 8.8 | 8.8 | 9 | 9 | 9 | 9 | 8.5 | 8.5 | 9 | 8.5 | 8.5 | 9 | **8.8** | 9.0 |
+| build (orbit) | 9 | 9 | 8.8 | 8.8 | 9 | 9 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 9 | **8.8** | 9.0 |
+| company (approach) | 9 | 9 | 8.8 | 8.8 | 9 | 9 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 9 | **8.8** | 9.0 |
 
 Lighting and shadows move from 8.5 to 9.0 — a 52° sun with a measured 2.4:1
 sun-to-shade ratio, shadowed concrete at 0.62 sRGB, no crushed pixels and no
 clipping anywhere in the frame. Materials go to 9.0: glazing now reflects the
-sky it stands under instead of swallowing it, and the two near-black surfaces(tyres and PV glass) are physically plausible. Atmosphere to 8.5: the haze is
+sky it stands under instead of swallowing it, and the two near-black surfaces (tyres and PV glass) are physically plausible. Atmosphere to 8.5: the haze is
 brighter and the sky is a real blue (`#9bbfdf`), but it is still a single
 exponential fog over a procedural dome, with no height falloff and no
 sun-direction-dependent scattering.
 
+V8 moves Surf and Foli from 8.5 to 8.8: the road's texel density now sits
+inside the real aggregate size, and foliage is folded geometry with a real leaf
+silhouette rather than alpha clusters. Repetition goes 8.0 → 8.5 on clumped
+placement. Geometry does not move — V8 added detail to trees, not to buildings,
+and the buildings are where the remaining loss is.
+
 **Why not 9.0 — the reasons that remain, in order of cost.**
 
-1. **Surface detail 8.5.** Unchanged by a lighting pass, and now the largest
-   gap. The maps are synthesised: correct response, invented statistics. Daylight
-   is less forgiving of that than low-key lighting was, because there is
-   nowhere for a repeated aggregate pattern to hide. Closing it needs scanned
-   PBR data — an acquisition job.
-2. **Foliage 8.5.** Alpha clusters with a volumetric close level. In bright sun
-   the crown reads correctly from 8 m; from 1 m you would want leaf structure.
-3. **Repetition 8.0.** Four tree species instanced 22–86 times. A fifth and
-   sixth species would move this more than any other single change.
-4. **Atmosphere 8.5.** Single-exponential haze, no aerial perspective on the far
+1. **Geometry 8.5–9.** Everything in the world is boxes and cards. The hero
+   building is 25,548 triangles of axis-aligned boxes with perfect 90° edges;
+   real cast concrete has chamfers, formwork lines and tolerances. The builder
+   has no chamfered primitive yet, and that is the largest single gap left.
+2. **Surface detail 8.8.** The texel density is now right (6.6 mm on asphalt,
+   inside the real aggregate size) but the maps are still synthesised: correct
+   response, invented statistics. Closing it needs scanned PBR data.
+3. **Foliage 8.8.** Folded blades, shoots and a two-tone crown carry it from
+   8 m. At 1 m you would see that each blade is a printed spray of leaves
+   rather than individual leaves on a stem.
+4. **Repetition 8.5.** Clumped placement and per-instance tint break the
+   pattern; four tree species and one boundary-wall segment still sit under it.
+   A fifth and sixth species would move this more than any other single change.
+5. **Atmosphere 8.5.** Single-exponential haze, no aerial perspective on the far
    terrain beyond fog, no scattering model.
-5. **Geometry 8.5–9.** Buildings, vehicles and the crane are measured and
-   correct; the gaps are in what is *not* there — no site clutter beyond the
-   yard props, no overhead cables, no adjacent plots.
 
 ### Major scenes
 
 | Shot | Geom | Mat | Surf | Foli | Light | Shad | Ground | Scale | Atmos | Cam | Comp | Rep | Anim | Audio | **Total** | Target |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| material-world | 8.5 | 9 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.6** | 8.5 |
-| service-residential | 9 | 9 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.7** | 8.5 |
-| service-infrastructure | 9 | 9 | 8.5 | 8.5 | 8.8 | 8.8 | 8.5 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.6** | 8.5 |
-| service-materials | 8.5 | 9 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.6** | 8.5 |
-| india (presence map) | 8.5 | 8.8 | 8.5 | 8 | 8.8 | 8.5 | 9 | 8.5 | 8 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.5** | 8.5 |
+| material-world | 8.5 | 9 | 8.8 | 8.8 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 9 | **8.8** | 8.5 |
+| service-residential | 9 | 9 | 8.8 | 8.8 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 9 | **8.8** | 8.5 |
+| service-infrastructure | 9 | 9 | 8.8 | 8.8 | 8.8 | 8.8 | 8.5 | 9 | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 9 | **8.8** | 8.5 |
+| service-materials | 8.5 | 9 | 8.8 | 8.8 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 9 | **8.8** | 8.5 |
+| india (presence map) | 8.5 | 8.8 | 8.8 | 8.3 | 8.8 | 8.5 | 9 | 8.5 | 8 | 8.5 | 8.5 | 8.3 | 8.5 | 9 | **8.6** | 8.5 |
 
 Service worlds sit at 8.8 on lighting rather than 9.0: they are further from the
 camera than the hero, so they fall outside the 92 m shadow volume more often and
@@ -262,13 +332,13 @@ their contact detail is carried by ambient occlusion alone.
 
 | Shot | Geom | Mat | Surf | Foli | Light | Shad | Ground | Scale | Atmos | Cam | Comp | Rep | Anim | Audio | **Total** | Target |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| service-civil | 8 | 9 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8 | 8.5 | 9 | **8.5** | 8.0 |
-| service-solar | 8 | 9 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8 | 7.5 | 8.5 | 9 | **8.5** | 8.0 |
-| service-renovation | 8.5 | 9 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8 | 8 | 8.5 | 9 | **8.6** | 8.0 |
-| process 1–5 | 8 | 9 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8 | 8.5 | 9 | **8.5** | 8.0 |
-| trust | 8.5 | 9 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 9 | **8.6** | 8.0 |
-| corridor | 8 | 9 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8 | 8.5 | 8.5 | 9 | **8.6** | 8.0 |
-| future / contact | 8 | 9 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8 | 8.5 | 8.5 | 9 | **8.6** | 8.0 |
+| service-civil | 8 | 9 | 8.8 | 8.8 | 8.8 | 8.8 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8.5 | 8.5 | 9 | **8.7** | 8.0 |
+| service-solar | 8 | 9 | 8.8 | 8.8 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8 | 8 | 8.5 | 9 | **8.7** | 8.0 |
+| service-renovation | 8.5 | 9 | 8.8 | 8.8 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8 | 8.5 | 8.5 | 9 | **8.7** | 8.0 |
+| process 1–5 | 8 | 9 | 8.8 | 8.8 | 8.8 | 8.8 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8.5 | 8.5 | 9 | **8.7** | 8.0 |
+| trust | 8.5 | 9 | 8.8 | 8.8 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 9 | **8.7** | 8.0 |
+| corridor | 8 | 9 | 8.8 | 8.8 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8 | 8.5 | 8.5 | 9 | **8.7** | 8.0 |
+| future / contact | 8 | 9 | 8.8 | 8.8 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8 | 8.5 | 8.5 | 9 | **8.7** | 8.0 |
 
 Every beat is daylight. There is no DAY → DARK → DAY transition anywhere in the
 24 chapters: one rig, one sun, one exposure, and the service worlds, trust,
@@ -360,16 +430,18 @@ listening QA was performed and it was not made louder in V6.
 
 ## Verdict
 
-Major scenes **8.5–8.7** against an 8.5 target — met.
-Secondary scenes **8.5–8.6** against an 8.0 target — met.
-Hero **8.7** against a 9.0 target — **not met**.
+Major scenes **8.7–8.8** against an 8.5 target — met.
+Secondary scenes **8.6–8.7** against an 8.0 target — met.
+Hero **8.8** against a 9.0 target — **not met**.
 
-The daylight gap is closed: the world is a measured, bright, late-morning
-exterior and the numbers are in [DAYLIGHT_QA.md](DAYLIGHT_QA.md). What remains
-is no longer a lighting problem. Surface detail (synthesised, not scanned),
-foliage (alpha clusters) and repetition (four tree species) are the three axes
-holding the hero at 8.7, and two of the three need sourced data rather than
-code.
+The daylight gap is closed and the numbers are in
+[DAYLIGHT_QA.md](DAYLIGHT_QA.md). V8 closed most of the foliage, surface and
+repetition gaps; what remains is that the world is built from boxes and cards.
+The single highest-value change left is a chamfered-edge primitive in the
+builder, applied to the visible corners of the hero building — not more
+triangles, but edges that catch light the way cast concrete does. Per-asset
+scores, including the five assets under 8.0, are in
+[ANTI_AI_REALISM.md](ANTI_AI_REALISM.md).
 
 **The limit of this document, stated plainly:** I cannot see the rendered site.
 Every score above is traceable to a number, a label map or a code path, and the

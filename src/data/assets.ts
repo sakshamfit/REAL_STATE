@@ -107,7 +107,15 @@ export const ASSETS: AssetEntry[] = [
     lod: ['high', 'medium', 'low'] as ('high' | 'medium' | 'low')[],
     preload: true,
     cullDistance: 300,
-    materialMap: { wood: 'wood', leaf: 'leaf', leafB: 'leafB', leafDry: 'leafDry' },
+    materialMap: {
+      wood: 'wood',
+      leaf: 'leaf',
+      leafB: 'leafB',
+      leafDry: 'leafDry',
+      // shaded interior of the crown — chosen per leaf by the builder
+      leafDeep: 'leafDeep',
+      leafBDeep: 'leafBDeep',
+    },
   })),
   // Distance levels for the same four species. The silhouette and the bounding
   // box match the level-1 asset so a swap never reads as a pop: level 0 spends
@@ -135,7 +143,14 @@ export const ASSETS: AssetEntry[] = [
     // only fetched once a tree actually enters that distance band
     preload: false,
     cullDistance: 300,
-    materialMap: { wood: 'wood', leaf: 'leaf', leafB: 'leafB', leafDry: 'leafDry' },
+    materialMap: {
+      wood: 'wood',
+      leaf: 'leaf',
+      leafB: 'leafB',
+      leafDry: 'leafDry',
+      leafDeep: 'leafDeep',
+      leafBDeep: 'leafBDeep',
+    },
   })),
   {
     id: 'entrance-gate-leaf',

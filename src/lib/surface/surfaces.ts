@@ -232,6 +232,28 @@ export function grassSurface(size: SurfaceSize = 512, seed = 33): Surface {
  * 2x2 atlas of leaf clusters with alpha. Each quadrant holds a small spray of
  * leaves with its own hue, so instanced cards never look like clones.
  */
+/**
+ * Leaf atlas — four quadrants, each a spray of individually drawn leaves.
+ *
+ * The previous version drew ellipses with binary alpha. Ellipses are not
+ * leaves, binary alpha gives a cut-out sticker edge, and a solid spray with no
+ * gaps reads as a green sheet. Real foliage at close range is: ovate leaves
+ * with a pointed tip and a narrow base, a visible midrib and secondary veins,
+ * ragged edges with the odd hole, and sky showing through between them.
+ *
+ * Leaves are drawn as a width profile along the length rather than an ellipse:
+ *   w(u) = k · u^0.5 · (1 − u)^0.8      u = 0 at the stalk, 1 at the tip
+ * which peaks at ~38 % of the length — the ovate shape of a neem or rain-tree
+ * leaflet — with serration noise on the margin. Coverage is written as a real
+ * alpha ramp so the silhouette is antialiased instead of stepped.
+ */
+const LEAF_PROFILE_K = 2.354 // normalises max(u^0.5·(1−u)^0.8) to 1
+
+function leafWidth(u: number) {
+  if (u <= 0 || u >= 1) return 0
+  return LEAF_PROFILE_K * Math.pow(u, 0.5) * Math.pow(1 - u, 0.8)
+}
+
 export function leafAtlas(
   size: SurfaceSize = 256,
   seed = 51,
@@ -251,66 +273,79 @@ export function leafAtlas(
   for (let q = 0; q < 4; q++) {
     const ox = (q % 2) * half
     const oy = Math.floor(q / 2) * half
-    const leaves = opts.blade ? 11 + Math.floor(hash2(q, seed, 3) * 7) : 7 + Math.floor(hash2(q, seed, 3) * 5)
+    const leaves = opts.blade ? 11 + Math.floor(hash2(q, seed, 3) * 7) : 8 + Math.floor(hash2(q, seed, 3) * 6)
     for (let l = 0; l < leaves; l++) {
       const cx = ox + half * (0.16 + hash2(q * 31, l, seed) * 0.68)
       const cy = oy + half * (0.16 + hash2(q * 37, l, seed + 5) * 0.68)
       const angle = hash2(q * 41, l, seed + 9) * Math.PI * 2
-      const len = half * (opts.blade ? 0.3 + hash2(q * 43, l, seed + 13) * 0.3 : 0.16 + hash2(q * 43, l, seed + 13) * 0.2)
-      const wide = len * (opts.blade ? 0.1 + hash2(q * 47, l, seed + 17) * 0.09 : 0.34 + hash2(q * 47, l, seed + 17) * 0.22)
-      const shade = 0.62 + hash2(q * 53, l, seed + 19) * 0.5
+      const len = half * (opts.blade ? 0.3 + hash2(q * 43, l, seed + 13) * 0.3 : 0.18 + hash2(q * 43, l, seed + 13) * 0.22)
+      const wide = len * (opts.blade ? 0.1 + hash2(q * 47, l, seed + 17) * 0.09 : 0.3 + hash2(q * 47, l, seed + 17) * 0.2)
+      const shade = 0.6 + hash2(q * 53, l, seed + 19) * 0.55
+      // per-leaf hue jitter: a crown is never one green
+      const leafHue = (hash2(q * 59, l, seed + 23) - 0.5) * 0.22
+      // serration: how ragged this particular leaf's margin is
+      const serration = 0.02 + hash2(q * 61, l, seed + 29) * 0.07
+      const serrationFreq = 5 + hash2(q * 67, l, seed + 31) * 7
+      const serrationPhase = hash2(q * 71, l, seed + 37) * Math.PI * 2
+      const veinCount = 3 + Math.floor(hash2(q * 73, l, seed + 41) * 4)
       const cos = Math.cos(angle)
       const sin = Math.sin(angle)
       const radius = Math.ceil(len) + 2
+
       for (let y = Math.floor(cy - radius); y <= cy + radius; y++) {
         for (let x = Math.floor(cx - radius); x <= cx + radius; x++) {
           if (x < ox || y < oy || x >= ox + half || y >= oy + half) continue
           const dx = x - cx
           const dy = y - cy
-          // rotate into leaf space
-          const lx = (dx * cos + dy * sin) / (len * 0.5)
-          const ly = (-dx * sin + dy * cos) / (wide * 0.5)
-          const d = lx * lx + ly * ly
-          if (d > 1) continue
-          // leaf outline: pointed tip + a slight waist
-          const taper = 1 - Math.abs(lx) * 0.28
-          if (Math.abs(ly) > taper) continue
+          const lxRaw = (dx * cos + dy * sin) / (len * 0.5)
+          const lyRaw = (-dx * sin + dy * cos) / (wide * 0.5)
+          if (Math.abs(lxRaw) > 1 || Math.abs(lyRaw) > 1.4) continue
+
+          // u: 0 at the stalk, 1 at the tip. ly is the signed distance from
+          // the midrib in units of the leaf's half width.
+          const u = (lxRaw + 1) * 0.5
+          let w = leafWidth(u)
+          if (w <= 0) continue
+          // ragged margin
+          w *= 1 + serration * Math.sin(u * serrationFreq * Math.PI + serrationPhase)
+          if (Math.abs(lyRaw) > w) continue
+
+          // ragged holes near the margin — sky must get through the spray
+          const holeNoise = hash2(x * 1.7 + 0.5, y * 2.3 + 0.5, seed + 77)
+          if (holeNoise > 0.955 && Math.abs(lyRaw) > w * 0.45) continue
+
+          // antialiased coverage: ramp across roughly one texel
+          const dist = w - Math.abs(lyRaw)
+          const coverage = Math.min(1, dist * (wide * 0.5) * 0.9)
+
           const i = y * size + x
           const j = i * 4
-          // midrib shading
-          const rib = 1 - Math.exp(-Math.abs(ly) * 6)
-          const edge = 1 - d
-          const light = shade * (0.72 + edge * 0.3) + rib * 0.12
-          const hue = opts.hue ?? 0
+          if (coverage <= albedo[j + 3] / 255) continue
+
+          const aly = Math.abs(lyRaw)
+          const rib = Math.exp(-aly * 9)
+          // secondary veins sweeping forward from the midrib
+          const vein = Math.pow(Math.max(0, Math.sin((u * veinCount - aly * 2.1) * Math.PI)), 16) * 0.35
+          // tip catches more light than the shaded base
+          const alongLeaf = 0.86 + u * 0.2
+          const edge = 1 - Math.abs(lyRaw) / Math.max(0.001, w)
+          const light = shade * alongLeaf * (0.72 + edge * 0.3) + rib * 0.1 + vein
+          const hue = (opts.hue ?? 0) + leafHue
           const dry = opts.dry ?? 0
           const r = clamp01(lerp(0.16 + hue * 0.5, 0.42, dry) * light)
           const g = clamp01(lerp(0.3, 0.38, dry) * light * (1.0 + hue * 0.1))
           const b = clamp01(lerp(0.1, 0.18, dry) * light)
-          albedo[j] = Math.round(Math.max(albedo[j], r * 255))
-          albedo[j + 1] = Math.round(Math.max(albedo[j + 1], g * 255))
-          albedo[j + 2] = Math.round(Math.max(albedo[j + 2], b * 255))
-          albedo[j + 3] = 255
-          height[i] = Math.max(height[i], edge * 0.6 + rib * 0.4)
+
+          albedo[j] = Math.round(r * 255)
+          albedo[j + 1] = Math.round(g * 255)
+          albedo[j + 2] = Math.round(b * 255)
+          albedo[j + 3] = Math.round(coverage * 255)
+          height[i] = Math.max(height[i], (edge * 0.5 + rib * 0.5 + vein * 0.3) * coverage)
         }
-      }
-    }
-    // soft alpha from coverage so edges are not razor sharp
-    for (let y = oy; y < oy + half; y++) {
-      for (let x = ox; x < ox + half; x++) {
-        const i = y * size + x
-        if (albedo[i * 4 + 3] === 0) continue
-        let neighbours = 0
-        for (let k = 0; k < 4; k++) {
-          const nx = x + (k === 0 ? 1 : k === 1 ? -1 : 0)
-          const ny = y + (k === 2 ? 1 : k === 3 ? -1 : 0)
-          if (nx < ox || ny < oy || nx >= ox + half || ny >= oy + half) continue
-          if (albedo[(ny * size + nx) * 4 + 3] > 0) neighbours++
-        }
-        const a = albedo[i * 4 + 3]
-        albedo[i * 4 + 3] = neighbours >= 4 ? a : Math.round(a * 0.92)
       }
     }
   }
+
   const surface = finish(buf, size, size / 16)
   surface.alpha = true
   return surface

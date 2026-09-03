@@ -9,7 +9,7 @@
  * unless a prop is deliberately lifted onto something else.
  */
 
-import { prng, scatter, terrainHeight } from './terrain'
+import { fbm2, prng, scatter, terrainHeight } from './terrain'
 import { HERO_BUILDING } from './world'
 
 export type Placed = {
@@ -255,6 +255,17 @@ export function trees(tier: 'low' | 'mid' | 'high'): { id: string; items: Placed
       if (x > -62 && x < -18 && z > -132 && z < -74) return true // hero compound
       if (Math.abs(x) < 14 && z > -20 && z < 40) return true // gate approach
       return nearKeepClear(x, z)
+    },
+    /**
+     * Where trees actually grow: in stands, along the verge where nothing
+     * else is planted, and against the boundary where seed gets dropped.
+     * Not at even intervals across an open field.
+     */
+    density: (x, z) => {
+      const stand = Math.pow(fbm2(x * 0.019, z * 0.019, 907, 3), 1.7) * 1.45
+      const verge = Math.max(0, 1 - Math.abs(Math.abs(x) - 13) / 16) * 0.4
+      const boundary = Math.max(0, 1 - Math.abs(Math.abs(x) - 104) / 22) * 0.35
+      return Math.min(1, stand + verge + boundary + 0.06)
     },
   })
 

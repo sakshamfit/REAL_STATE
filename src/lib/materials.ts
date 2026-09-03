@@ -623,6 +623,48 @@ export function leafMaterial(variant: 'leaf' | 'leafWarm' | 'leafDry' = 'leaf', 
   })
 }
 
+/**
+ * The darkness inside a window.
+ *
+ * Rooms are several stops below a sunlit facade, so this is deliberately
+ * almost black in albedo terms (linear ≈ 0.005) — even where direct sun finds
+ * its way through an opening it stays darker than any exterior surface, which
+ * is what your eye expects from glass on a building.
+ */
+export function interiorMaterial() {
+  return memo('interior', () =>
+    new THREE.MeshStandardMaterial({
+      color: new THREE.Color('#0d0f10'),
+      roughness: 0.95,
+      metalness: 0,
+      envMapIntensity: 0.15,
+    }),
+  )
+}
+
+/**
+ * Leaves on the shaded side of the crown.
+ *
+ * A crown is never one green: the leaves that face the sun are bright
+ * yellow-green, the ones buried inside it are darker, greener and softer.
+ * Painting every leaf with the same albedo is a large part of why foliage reads
+ * as a synthetic mass. The builder picks this material for any leaf whose
+ * distance from the crown centre puts it in the interior, so the gradient is
+ * structural rather than a texture trick.
+ */
+export function leafDeepMaterial(variant: 'leaf' | 'leafWarm' | 'leafDry' = 'leaf', size: 256 | 512 = 256) {
+  return fromSurface(`leaf-deep-${variant}`, variant, size, {
+    color: 0xb4c09c,
+    roughness: 0.84,
+    metalness: 0,
+    envMapIntensity: 0.35,
+    alphaTest: 0.5,
+    side: THREE.DoubleSide,
+    normalScale: 0.5,
+    wind: 1,
+  })
+}
+
 export function foliageMaterial(color: string = PALETTE.foliage, size: 256 | 512 = 256) {
   return fromSurface(`foliage-${color}`, 'leaf', size, {
     color,
@@ -765,6 +807,12 @@ export function materialForKey(
       return glassMaterial(PALETTE.glass, 0.58)
     case 'glassDark':
       return glassMaterial(PALETTE.glassDark, 0.68, 0.09)
+    case 'leafDeep':
+      return leafDeepMaterial('leaf', size)
+    case 'leafBDeep':
+      return leafDeepMaterial('leafWarm', size)
+    case 'interior':
+      return interiorMaterial()
     case 'panelDark':
       return panelMaterial()
     case 'plastic':

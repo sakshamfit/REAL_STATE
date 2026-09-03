@@ -226,9 +226,20 @@ function buildSpill({
   return out
 }
 
-const ASPHALT_TILE = 6.5
-const GRAVEL_TILE = 5
-const SOIL_TILE = 9
+/**
+ * Tile sizes in metres. Read them together with the texture resolution:
+ * a 512² asphalt map over 6.5 m is 13 mm per texel, which is coarser than the
+ * 5–12 mm aggregate it is supposed to show, so close up the road reads as
+ * smooth noise rather than stone. Halving the tile puts the texel at 6 mm —
+ * inside the real aggregate size — for no extra memory or generation time.
+ *
+ * The cost is a shorter repeat period, which is paid for by the things that do
+ * not repeat: the per-vertex macro tint, the patch and dust-film overlays at
+ * their own scales, the markings, and the verge spill patches.
+ */
+const ASPHALT_TILE = 3.4
+const GRAVEL_TILE = 2.8
+const SOIL_TILE = 5
 const PAINT_TILE = 3
 
 /**

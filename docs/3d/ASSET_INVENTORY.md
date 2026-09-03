@@ -84,3 +84,28 @@ Streaming priority:
 
 `src/lib/asset-loader.ts` streams the priority set with `fetch` and reports the
 real fraction of files received. Nothing in the loader invents progress.
+
+## V8 — foliage levels and texel density
+
+Trees are generated at three levels that share one skeleton, so a swap is
+invisible; the level-0 and level-2 assets are only fetched once a tree enters
+that distance band (52 m / 135 m on the high tier, 36 m / 100 m on mid, no
+close level on low).
+
+| Level | Leaf construction | tree-a / b / c / d triangles |
+| --- | --- | ---: |
+| 0 close | folded twisted blades ×3 per leaf, shoots on every third cluster | 14,534 / 6,576 / 15,912 / 11,598 |
+| 1 medium | folded blade, one per leaf | 7,086 / 3,988 / 7,924 / 7,114 |
+| 2 far | flat card, fewer and larger | 3,400 / 1,892 / 3,720 / 2,450 |
+
+Surface tile sizes were halved in V8 to bring texel density inside the real
+material grain. A 512² map over 3.4 m is 6.6 mm per texel — inside the 5–12 mm
+of dense-graded asphalt aggregate — where the previous 6.5 m tile was 12.7 mm,
+coarser than the stones it was meant to show.
+
+| Surface | Tile | At 512² |
+| --- | ---: | ---: |
+| asphalt | 3.4 m | 6.6 mm/texel |
+| gravel shoulder | 2.8 m | 5.5 mm/texel |
+| soil verge | 5.0 m | 9.8 mm/texel |
+| terrain | 4.5 m | 8.8 mm/texel |

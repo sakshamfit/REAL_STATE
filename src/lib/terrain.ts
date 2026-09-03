@@ -190,11 +190,13 @@ export function buildTerrain({ width, length, centerZ, cell }: TerrainOptions) {
     target.normals[i3] = n.x
     target.normals[i3 + 1] = n.y
     target.normals[i3 + 2] = n.z
-    // 8 m per tile: a 4 m tile repeated across a kilometre of site reads as
-    // wallpaper. The fine detail that used to live in the tile is carried by
+    // 4.5 m per tile: at 512² that is 9 mm per texel, which is the scale of
+    // the gravel and clods in the ground. A coarser tile turns soil into a
+    // smooth brown plane the moment the camera comes down to eye level.
+    // The long-period variation that would otherwise be tiling is carried by
     // the per-vertex weathering below, which never repeats.
-    target.uvs[i2] = u / 8
-    target.uvs[i2 + 1] = vv / 8
+    target.uvs[i2] = u / 4.5
+    target.uvs[i2 + 1] = vv / 4.5
     target.colors[i3] = c.r
     target.colors[i3 + 1] = c.g
     target.colors[i3 + 2] = c.b
@@ -307,6 +309,8 @@ export function scatter(
     minDistance?: number
     avoid?: (x: number, z: number) => boolean
     jitter?: number
+    /** 0–1 acceptance weight; return 1 for uniform placement */
+    density?: (x: number, z: number) => number
   },
 ): { x: number; z: number; r: number }[] {
   const random = prng(seed)
@@ -314,17 +318,27 @@ export function scatter(
   const [x0, x1] = options.xRange
   const [z0, z1] = options.zRange
   const minDistance = options.minDistance ?? 2
-  const attempts = options.count * 12
+  const density = options.density
+  const attempts = options.count * (density ? 26 : 12)
   for (let i = 0; i < attempts && points.length < options.count; i++) {
     const x = x0 + random() * (x1 - x0)
     const z = z0 + random() * (z1 - z0)
     if (options.avoid?.(x, z)) continue
+
+    let weight = 1
+    if (density) {
+      weight = Math.min(1, Math.max(0.02, density(x, z)))
+      if (random() > weight) continue
+    }
+
     if (minDistance > 0) {
+      // tight spacing inside a clump, full spacing between them
+      const spacing = minDistance * (0.55 + 0.45 * (1 - weight))
       let ok = true
       for (const p of points) {
         const dx = p.x - x
         const dz = p.z - z
-        if (dx * dx + dz * dz < minDistance * minDistance) {
+        if (dx * dx + dz * dz < spacing * spacing) {
           ok = false
           break
         }

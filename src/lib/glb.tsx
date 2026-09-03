@@ -273,6 +273,7 @@ export function InstancedAsset({
   }, [gltf, asset])
 
   const dummy = useMemo(() => new THREE.Object3D(), [])
+  const tint = useMemo(() => new THREE.Color(1, 1, 1), [])
 
   useEffect(() => {
     return () => {
@@ -292,6 +293,7 @@ export function InstancedAsset({
           items={items}
           capacity={capacity ?? Math.max(1, items.length)}
           dummy={dummy}
+          tint={tint}
           castShadow={castShadow}
           receiveShadow={receiveShadow}
         />
@@ -300,12 +302,15 @@ export function InstancedAsset({
   )
 }
 
+const fract = (value: number) => value - Math.floor(value)
+
 function InstancedPart({
   geometry,
   material,
   items,
   capacity,
   dummy,
+  tint,
   castShadow,
   receiveShadow,
 }: {
@@ -314,6 +319,7 @@ function InstancedPart({
   items: InstanceItem[]
   capacity: number
   dummy: THREE.Object3D
+  tint: THREE.Color
   castShadow: boolean
   receiveShadow: boolean
 }) {
@@ -330,11 +336,25 @@ function InstancedPart({
       dummy.scale.set(sx, sy, sz)
       dummy.updateMatrix()
       mesh.setMatrixAt(index, dummy.matrix)
+
+      // Per-instance tint, derived from where the instance stands so it is
+      // stable across reloads. Identical clones are the fastest way to make a
+      // CGI scene look like a CGI scene: real trees differ in vigour, age and
+      // dust, and so do real cars under the same sun. The spread is small
+      // enough that it reads as variation rather than as a colour effect.
+      const [x, , z] = item.position
+      const a = fract(Math.sin(x * 12.9898 + z * 78.233) * 43758.5453)
+      const b = fract(Math.sin(x * 39.3468 + z * 11.135) * 24634.6345)
+      const brightness = 0.9 + a * 0.2
+      const warmth = (b - 0.5) * 0.06
+      tint.setRGB(brightness * (1 + warmth), brightness, brightness * (1 - warmth))
+      mesh.setColorAt(index, tint)
     })
     mesh.count = items.length
     mesh.instanceMatrix.needsUpdate = true
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
     mesh.computeBoundingSphere()
-  }, [items, dummy])
+  }, [items, dummy, tint])
 
   return (
     <instancedMesh

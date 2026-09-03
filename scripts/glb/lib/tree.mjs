@@ -142,6 +142,9 @@ export function buildTree(b, options = {}) {
    */
   const lod = options.lod ?? 1
   const blades = lod === 0 ? 3 : 1
+  // folded blades at the two levels the camera can actually inspect; the far
+  // level stays a flat card because at 150 m a crease is invisible
+  const folded = lod !== 2
   const leafScale = lod === 2 ? 1.32 : lod === 0 ? 0.94 : 1
   const leafDensity = lod === 0 ? 0.55 : lod === 2 ? 0.55 : 1
   const maxLeaves = options.maxLeaves ?? (lod === 0 ? 700 : lod === 2 ? 340 : 1100)
@@ -325,7 +328,9 @@ export function buildTree(b, options = {}) {
   const leaves = []
   // leaves grow on the outside of the crown, so cards face roughly outwards
   const crownCentre = V(0, height * 0.62, 0)
+  let clusterIndex = 0
   const pushCluster = (point, dir, scale) => {
+    clusterIndex++
     const count = Math.max(2, Math.round(species.leavesPerCluster * (0.7 + random() * 0.7) * scale * leafDensity))
     const clusterOffset = new THREE.Vector3(
       (random() - 0.5) * species.leafSize * 2.2,
@@ -333,8 +338,26 @@ export function buildTree(b, options = {}) {
       (random() - 0.5) * species.leafSize * 2.2,
     )
     const centre = point.clone().add(clusterOffset)
+
+    // A shoot for the cluster to hang on. Foliage cards floating in mid-air is
+    // one of the strongest tells there is: real leaves grow on twigs. Only the
+    // close level pays for them, and only where the shoot is long enough to see.
+    if (lod === 0 && clusterOffset.length() > species.leafSize * 0.35 && clusterIndex % 3 === 0) {
+      const length = clusterOffset.length()
+      const mid = point.clone().addScaledVector(clusterOffset, 0.55).add(V(0, -length * 0.12, 0))
+      b.tube(
+        [point.clone(), mid, centre.clone()],
+        (t) => Math.max(0.006, trunkRadius * 0.09 * (1 - t * 0.55)),
+        {},
+        barkMaterial,
+        { segments: 3, noise: 0.18, noiseScale: 8, seed: seed * 71 + clusterIndex, uvScale: 0.6 },
+      )
+    }
+
     for (let i = 0; i < count; i++) {
-      const size = species.leafSize * leafScale * (0.62 + random() * 0.7)
+      // wide size spread: many small clusters and a few big ones, never a
+      // field of identical blobs
+      const size = species.leafSize * leafScale * (0.42 + random() * 0.95)
       const delta = point.clone().sub(crownCentre)
       const outward = delta.lengthSq() < 1e-6 ? V(0, 1, 0) : delta.normalize()
       const axis = outward
@@ -376,31 +399,85 @@ export function buildTree(b, options = {}) {
     leaves.push(...kept)
   }
 
+  // Crown radius, so a leaf knows whether it is in the shaded interior or out
+  // in the sun. Real crowns are two-tone: dark and desaturated inside, bright
+  // and yellow-green where the light gets in.
+  let crownRadius = 1
+  for (const leaf of leaves) crownRadius = Math.max(crownRadius, leaf.c.distanceTo(crownCentre))
+  const deepLeaf = `${leafMaterial}Deep`
+
   for (const leaf of leaves) {
     const { c, u, v } = leaf
     const [u0, v0] = leaf.quad
     const n = new THREE.Vector3().crossVectors(u, v).normalize()
+    const depth = Math.min(1, c.distanceTo(crownCentre) / crownRadius)
+    const material = depth < 0.52 ? deepLeaf : leafMaterial
+    const uLen = u.length() || 1
+    const vLen = v.length() || 1
+    const uh = u.clone().multiplyScalar(1 / uLen)
+    const vh = v.clone().multiplyScalar(1 / vLen)
+    // fold along the midrib and a slight twist: a leaf is not a plane, and a
+    // plane that only ever catches one light direction is what gives foliage
+    // away. Two creases turn a billboard into a surface.
+    const foldDepth = vLen * 0.55
+    const twist = (random() * 0.5 + 0.22) * (random() < 0.5 ? -1 : 1)
 
     const emit = (spin, along) => {
-      // rotate the blade inside its own plane, then push it along the cluster
-      // axis so a single leaf position becomes a small volume
-      const uLen = u.length() || 1
-      const vLen = v.length() || 1
-      const uh = u.clone().multiplyScalar(1 / uLen)
-      const vh = v.clone().multiplyScalar(1 / vLen)
       const cos = Math.cos(spin)
       const sin = Math.sin(spin)
-      // rotate the blade pair inside their own plane (also used for the
-      // single-blade path with spin = 0, which is the identity)
-      const ru = uh.multiplyScalar(cos).addScaledVector(vh, sin).multiplyScalar(uLen)
+      const ru = uh
+        .clone()
+        .multiplyScalar(cos)
+        .addScaledVector(vh, sin)
+        .multiplyScalar(uLen)
       const rv = uh.clone().multiplyScalar(-sin).addScaledVector(vh, cos).multiplyScalar(vLen)
       const centre = c.clone().addScaledVector(n, along)
+
+      // three rows along the blade: base, middle, tip
+      const row = (t) => {
+        const theta = twist * t
+        const rc = rv.clone().multiplyScalar(Math.cos(theta)).addScaledVector(n, vLen * Math.sin(theta))
+        const off = foldDepth * (t * t - 0.33)
+        const at = centre.clone().addScaledVector(ru, t).addScaledVector(n, off)
+        return {
+          left: at.clone().addScaledVector(rc, -0.5),
+          right: at.clone().addScaledVector(rc, 0.5),
+        }
+      }
+
+      if (folded) {
+        const r0 = row(-1)
+        const r1 = row(0)
+        const r2 = row(1)
+        const vMid = v0 + 0.25
+        const vEnd = v0 + 0.5
+        b.quad(
+          r0.left,
+          r0.right,
+          r1.right,
+          r1.left,
+          [u0, v0, u0 + 0.5, v0, u0 + 0.5, vMid, u0, vMid],
+          {},
+          material,
+        )
+        b.quad(
+          r1.left,
+          r1.right,
+          r2.right,
+          r2.left,
+          [u0, vMid, u0 + 0.5, vMid, u0 + 0.5, vEnd, u0, vEnd],
+          {},
+          material,
+        )
+        return
+      }
+
       const bend = n.clone().multiplyScalar(centre.length() * 0.0004)
       const a = centre.clone().addScaledVector(ru, -1).addScaledVector(rv, -0.5)
       const bb = centre.clone().addScaledVector(ru, 1).addScaledVector(rv, -0.5)
       const cc = centre.clone().addScaledVector(ru, 1).addScaledVector(rv, 0.5).add(bend)
       const dd = centre.clone().addScaledVector(ru, -1).addScaledVector(rv, 0.5).add(bend)
-      b.quad(a, bb, cc, dd, [u0, v0, u0 + 0.5, v0, u0 + 0.5, v0 + 0.5, u0, v0 + 0.5], {}, leafMaterial)
+      b.quad(a, bb, cc, dd, [u0, v0, u0 + 0.5, v0, u0 + 0.5, v0 + 0.5, u0, v0 + 0.5], {}, material)
     }
 
     if (blades === 1) {

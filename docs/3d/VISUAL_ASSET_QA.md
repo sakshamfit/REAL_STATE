@@ -4,6 +4,12 @@
 
 **Read this table as a technical proxy, not as a photorealism verdict.**
 
+The Silhouette, Geometry and Overall columns are *computed from structural statistics* — component
+separation, normal richness, mass distribution, measured scale. They are defect detectors, not realism
+scores, and they must never be quoted as one: a 216-triangle wall scoring 8.3 on "Geometry" is a statement
+about how evenly its triangles are distributed, not about how it looks. The realism verdict for every asset
+is `ANTI_AI_REALISM.md`, which scores what the camera can actually see.
+
 File validity, triangle counts, material separation and bounding boxes cannot tell you whether an object looks real
 — a technically perfect low-poly tree is still a bad tree. This pass exists to catch defects that are cheap to detect
 (degenerate scale, floating or sunken origins, missing normals, missing UVs, non-finite data). The realism verdict for
@@ -26,26 +32,26 @@ by `scripts/qa/world-shots.mjs` (`LABELS=1`), which show what actually occupies 
 | entrance-gate.glb | 20.6 kB | 424 | 14.70×6.00×4.38 | ✅ | 10.0 | 10.0 | 8.0 | 8.4 | 8.8 | 7.5 | APPROVED |
 | excavator.glb | 58.8 kB | 1,516 | 12.45×5.90×3.76 | ✅ | 10.0 | 10.0 | 8.7 | 8.4 | 9.0 | 7.5 | APPROVED |
 | grass-tuft.glb | 3.8 kB | 40 | 0.88×0.71×0.83 | ✅ | 6.9 | 7.1 | 8.0 | 8.4 | 7.8 | 7.5 | APPROVED |
-| hero-building.glb | 1136.7 kB | 25,524 | 25.20×47.02×22.88 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 8.5 | APPROVED |
+| hero-building.glb | 1138.7 kB | 25,548 | 25.20×47.02×22.88 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 8.5 | APPROVED |
 | material-stack.glb | 49.0 kB | 1,204 | 8.48×1.67×7.86 | ✅ | 10.0 | 10.0 | 4.0 | 8.4 | 7.5 | 7.5 | APPROVED |
 | rebar-stack.glb | 22.7 kB | 1,064 | 3.90×0.66×3.76 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
-| residential-building.glb | 618.3 kB | 13,972 | 25.10×23.40×18.18 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 8 | APPROVED |
+| residential-building.glb | 620.1 kB | 13,996 | 25.10×23.40×18.18 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 8 | APPROVED |
 | scaffolding.glb | 74.2 kB | 2,268 | 11.95×12.32×1.44 | ✅ | 10.0 | 10.0 | 8.0 | 8.4 | 8.8 | 7.5 | APPROVED |
 | shrub-dry.glb | 29.1 kB | 584 | 1.59×1.51×1.58 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
 | solar-panel.glb | 35.6 kB | 828 | 8.83×2.16×8.60 | ✅ | 8.6 | 9.0 | 8.0 | 8.4 | 8.4 | 7.5 | APPROVED |
 | street-light.glb | 11.1 kB | 240 | 3.59×7.70×0.62 | ✅ | 10.0 | 10.0 | 8.4 | 8.4 | 8.9 | 7.5 | APPROVED |
-| tree-a-close.glb | 342.0 kB | 9,326 | 20.71×19.81×23.66 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
-| tree-a-far.glb | 94.6 kB | 3,400 | 20.34×19.72×23.38 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
-| tree-a.glb | 173.7 kB | 5,482 | 20.61×20.38×23.90 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
-| tree-b-close.glb | 162.4 kB | 4,248 | 16.43×21.88×13.81 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
-| tree-b-far.glb | 64.5 kB | 1,892 | 16.53×21.88×13.97 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
-| tree-b.glb | 102.1 kB | 2,854 | 15.94×21.65×13.55 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
-| tree-c-close.glb | 375.5 kB | 10,428 | 20.43×13.40×14.93 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
-| tree-c-far.glb | 97.5 kB | 3,720 | 20.17×13.41×14.93 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
-| tree-c.glb | 193.3 kB | 6,180 | 19.36×13.71×14.87 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
-| tree-d-close.glb | 289.1 kB | 7,296 | 10.48×9.27×8.67 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
-| tree-d-far.glb | 72.8 kB | 2,450 | 10.54×9.30×8.09 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
-| tree-d.glb | 184.4 kB | 4,938 | 10.72×9.21×7.89 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
+| tree-a-close.glb | 637.2 kB | 14,534 | 20.95×20.11×24.14 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
+| tree-a-far.glb | 95.2 kB | 3,400 | 20.31×19.69×23.37 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
+| tree-a.glb | 284.2 kB | 7,086 | 20.94×20.62×23.96 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
+| tree-b-close.glb | 303.5 kB | 6,576 | 16.56×22.22×13.84 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
+| tree-b-far.glb | 65.3 kB | 1,892 | 16.52×21.89×13.91 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
+| tree-b.glb | 181.3 kB | 3,988 | 15.97×21.94×13.69 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
+| tree-c-close.glb | 691.4 kB | 15,912 | 20.84×13.59×15.29 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
+| tree-c-far.glb | 97.7 kB | 3,720 | 20.13×13.41×14.93 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
+| tree-c.glb | 313.4 kB | 7,924 | 19.66×13.76×15.27 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
+| tree-d-close.glb | 550.7 kB | 11,598 | 10.66×9.60×8.70 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
+| tree-d-far.glb | 73.2 kB | 2,450 | 10.53×9.30×8.03 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
+| tree-d.glb | 334.0 kB | 7,114 | 11.08×9.40×8.14 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
 | truck-a.glb | 113.1 kB | 3,994 | 4.82×2.17×2.05 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
 | warehouse.glb | 267.6 kB | 7,004 | 48.50×15.09×41.90 | ✅ | 10.0 | 10.0 | 8.0 | 8.4 | 8.8 | 8 | APPROVED |
 
