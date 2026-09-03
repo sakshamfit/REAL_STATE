@@ -22,7 +22,7 @@ export function FutureScene({ quality }: { quality: QualitySettings }) {
 
   const light = concreteMaterial('light', 1.4, quality.textureSize)
   const dark = concreteMaterial('dark', 2, quality.textureSize)
-  const glass = glassMaterial('#101b20', 0.32)
+  const glass = glassMaterial('#16242b', 0.58)
   const steel = metalMaterial('dark', 3, quality.textureSize)
   const accent = metalMaterial('accent', 2, quality.textureSize)
 

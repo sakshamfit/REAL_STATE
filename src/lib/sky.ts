@@ -21,15 +21,22 @@ export type SkyOptions = {
   cloudiness: number
 }
 
+/**
+ * Late morning, ~11:30. The sun sits at 52° — high enough that horizontal
+ * surfaces (the carriageway, the yard, every roof and every leaf) receive
+ * about 0.79 of the direct beam instead of the 0.56 a low 34° sun gives them,
+ * which is the difference between a road that reads as asphalt and one that
+ * reads as a shadow. Bearing is kept off-camera-right so facades are front-lit
+ * rather than silhouetted.
+ */
 export const DEFAULT_SKY: SkyOptions = {
-  // mid-morning sun, high enough for readable shadows, warm but not golden
-  sunDirection: new THREE.Vector3(-0.42, 0.56, 0.72).normalize(),
-  zenith: new THREE.Color('#5b8fc4'),
-  horizon: new THREE.Color('#cfd8d6'),
-  ground: new THREE.Color('#7a6c56'),
-  sunColor: new THREE.Color('#fff3dc'),
-  turbidity: 3.4,
-  cloudiness: 0.55,
+  sunDirection: new THREE.Vector3(-0.31, 0.788, 0.532).normalize(),
+  zenith: new THREE.Color('#5a95d8'),
+  horizon: new THREE.Color('#e2eae6'),
+  ground: new THREE.Color('#948268'),
+  sunColor: new THREE.Color('#fff6e3'),
+  turbidity: 3.1,
+  cloudiness: 0.46,
 }
 
 /** 32-bit float equirectangular sky (HDR: the sun is much brighter than 1). */
@@ -53,8 +60,14 @@ export function buildSkyTexture(options: SkyOptions = DEFAULT_SKY, width = 512):
       let b: number
 
       if (dir.y >= -0.02) {
-        // sky gradient: dense horizon haze opening up towards the zenith
-        const t = Math.pow(Math.min(1, dir.y), 0.42)
+        // sky gradient: dense horizon haze opening up towards the zenith.
+        // `dir.y` goes slightly negative inside this branch (down to -0.02),
+        // and a negative base with a fractional exponent is NaN — one whole
+        // row of NaN at the horizon. The map is the scene background *and* the
+        // source for PMREM, so those NaNs propagate through the irradiance
+        // convolution and the entire environment contribution dies with them.
+        // Clamped at zero before the exponent, never after.
+        const t = Math.pow(Math.max(0, Math.min(1, dir.y)), 0.42)
         const band = Math.pow(1 - Math.min(1, dir.y), 6) * 0.35
         r = THREE.MathUtils.lerp(options.horizon.r, options.zenith.r, t) * (1 + band)
         g = THREE.MathUtils.lerp(options.horizon.g, options.zenith.g, t) * (1 + band)
@@ -112,7 +125,8 @@ export function buildCloudTexture(seed = 5, width = 1024, cloudiness = 0.55): TH
       alpha *= Math.min(1, Math.max(0, (0.5 - Math.abs(v - 0.46)) * 6))
       alpha = Math.pow(Math.min(1, alpha), 1.5)
 
-      const shade = 0.78 + detail * 0.4
+      // sunlit cumulus: bright tops, soft bases, never grey
+      const shade = 0.86 + detail * 0.34
       const i = (y * width + x) * 4
       data[i] = Math.round(Math.min(1, shade) * 255)
       data[i + 1] = Math.round(Math.min(1, shade * 0.99) * 255)

@@ -119,7 +119,7 @@ export function HeroBuilding({ quality }: { quality: QualitySettings }) {
 
 function FallbackTower({ quality }: { quality: QualitySettings }) {
   const concrete = concreteMaterial('mid', 1.6, quality.textureSize)
-  const glass = glassMaterial('#34535b', 0.34)
+  const glass = glassMaterial('#3b5c64', 0.6)
   return (
     <group>
       <mesh position={[0, height / 2, 1]} material={concrete} castShadow receiveShadow>

@@ -1085,15 +1085,22 @@ button {
    Overlays
    ============================================================ */
 
+/**
+ * Vignette — deliberately near-invisible.
+ *
+ * It used to darken the frame by 30 % at the edges and 34–40 % across the top
+ * and bottom, which is why a correctly exposed daylight render read as evening.
+ * What is left is a whisper: enough to seat the type at the very edge of the
+ * frame, not enough to tint the sky or the foreground. Daylight wins.
+ */
 .vignette {
   position: fixed;
   inset: 0;
   z-index: var(--z-overlay);
   pointer-events: none;
   background:
-    /* photographic falloff, not a game filter */
-    radial-gradient(125% 95% at 50% 45%, rgba(16, 19, 18, 0) 58%, rgba(16, 19, 18, 0.3) 100%),
-    linear-gradient(180deg, rgba(16, 19, 18, 0.34) 0%, rgba(16, 19, 18, 0) 24%, rgba(16, 19, 18, 0) 76%, rgba(16, 19, 18, 0.4) 100%);
+    radial-gradient(130% 100% at 50% 45%, rgba(16, 19, 18, 0) 74%, rgba(16, 19, 18, 0.1) 100%),
+    linear-gradient(180deg, rgba(16, 19, 18, 0.1) 0%, rgba(16, 19, 18, 0) 18%, rgba(16, 19, 18, 0) 84%, rgba(16, 19, 18, 0.13) 100%);
 }
 
 .grain {

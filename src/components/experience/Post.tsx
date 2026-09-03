@@ -5,6 +5,7 @@ import { useThree } from '@react-three/fiber'
 import { EffectComposer, N8AO, ToneMapping } from '@react-three/postprocessing'
 import { ToneMappingMode } from 'postprocessing'
 import type { QualitySettings } from '@/lib/quality'
+import { DAYLIGHT_EXPOSURE } from './Lighting'
 
 /**
  * Post — restrained tone mapping and ambient occlusion.
@@ -29,15 +30,26 @@ import type { QualitySettings } from '@/lib/quality'
  * `gl.toneMappingExposure`, which three uploads as a common uniform.
  */
 
-const AO_COLOR = '#17140f'
+/**
+ * Occlusion colour and strength.
+ *
+ * In daylight, ambient occlusion is a small correction — the sky fills the
+ * crevices, so the darkening under a truck or inside a parapet is a few
+ * percent, not a black halo. Black AO was tolerable in the old low-key look;
+ * under a bright sun it reads as dirt, so the colour is warm dust and the
+ * intensity is roughly two thirds of what it was.
+ */
+const AO_COLOR = '#332e26'
 
 export function Post({ quality }: { quality: QualitySettings }) {
   const gl = useThree((state) => state.gl)
 
   useEffect(() => {
-    gl.toneMappingExposure = 1.0
+    // the composer's tone-mapping effect reads the same uniform the renderer
+    // does, so daylight exposure is set in exactly one place
+    gl.toneMappingExposure = DAYLIGHT_EXPOSURE
     return () => {
-      gl.toneMappingExposure = 1.0
+      gl.toneMappingExposure = DAYLIGHT_EXPOSURE
     }
   }, [gl])
 
@@ -48,9 +60,9 @@ export function Post({ quality }: { quality: QualitySettings }) {
   return (
     <EffectComposer multisampling={high ? 4 : 0} enableNormalPass={false}>
       <N8AO
-        aoRadius={high ? 1.4 : 1.15}
-        distanceFalloff={0.72}
-        intensity={high ? 1.15 : 1.0}
+        aoRadius={high ? 1.25 : 1.05}
+        distanceFalloff={0.78}
+        intensity={high ? 0.82 : 0.66}
         quality={high ? 'medium' : 'low'}
         aoSamples={high ? 16 : 8}
         denoiseSamples={high ? 4 : 2}

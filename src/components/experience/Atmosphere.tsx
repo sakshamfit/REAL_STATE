@@ -6,6 +6,7 @@ import * as THREE from 'three'
 import type { QualitySettings } from '@/lib/quality'
 import { dustSprite } from '@/lib/textures'
 import { HORIZON_COLOR } from './Sky'
+import { FOG } from '@/lib/world'
 
 /**
  * Atmosphere.
@@ -16,7 +17,8 @@ import { HORIZON_COLOR } from './Sky'
  */
 
 export function Atmosphere({ quality }: { quality: QualitySettings }) {
-  const fog = useMemo(() => new THREE.FogExp2(HORIZON_COLOR.getHex(), 0.0016), [])
+  // bright daylight haze, matched to the horizon band of the sky dome
+  const fog = useMemo(() => new THREE.FogExp2(FOG.color, FOG.density), [])
   return (
     <>
       <primitive object={fog} attach="fog" />
@@ -84,9 +86,9 @@ function Dust({ quality }: { quality: QualitySettings }) {
         sizeAttenuation
         map={sprite}
         alphaMap={sprite}
-        color="#e6dcc4"
+        color="#efe6cf"
         transparent
-        opacity={0.16}
+        opacity={0.13}
         depthWrite={false}
         blending={THREE.NormalBlending}
       />

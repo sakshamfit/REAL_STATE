@@ -8,6 +8,7 @@ import * as THREE from 'three'
 import type { QualitySettings } from '@/lib/quality'
 import { useExperience } from '@/lib/store'
 import { Scene } from './Scene'
+import { DAYLIGHT_EXPOSURE } from './Lighting'
 
 /**
  * One canvas, one continuous shot. Fixed behind the HTML typography layer.
@@ -34,10 +35,11 @@ export default function Experience({ quality }: { quality: QualitySettings }) {
         }}
         onCreated={({ gl }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping
-          // single source of truth: `Lighting` owns exposure, and `Post`
-          // re-applies ACES inside the composer on the same 1.0
-          gl.toneMappingExposure = 1.0
-          gl.setClearColor(new THREE.Color('#a9c0cb'), 1)
+          // single source of truth: `Lighting` owns daylight exposure, and
+          // `Post` re-applies the same value inside the composer
+          gl.toneMappingExposure = DAYLIGHT_EXPOSURE
+          // daylight fallback for the frame before the sky dome mounts
+          gl.setClearColor(new THREE.Color('#cfdde3'), 1)
         }}
         onPointerMissed={() => {
           const state = useExperience.getState()

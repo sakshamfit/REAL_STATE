@@ -304,7 +304,9 @@ export function plinthMaterial(size: 256 | 512 = 256) {
  */
 export function roadAsphaltMaterial(size: 256 | 512 = 512) {
   return fromSurface('road-asphalt', 'asphalt', size, {
-    color: 0x55565a,
+    // weathered and dusted: fresh asphalt is near-black, a working Indian
+    // carriageway after a few seasons is not
+    color: 0x63646a,
     roughness: 0.92,
     metalness: 0.03,
     envMapIntensity: 0.28,
@@ -503,7 +505,23 @@ export function woodMaterial(size: 256 | 512 = 256) {
   })
 }
 
-export function glassMaterial(tint = '#26343a', opacity = 0.32, roughness = 0.06) {
+/**
+ * Glazing.
+ *
+ * Alpha blending scales everything the material produces, including the sky
+ * reflection — at 0.32 opacity a bright sky bounced off the facade arrived at
+ * a third of its value, which is why the towers read as dark glass. Real
+ * architectural glazing is mostly *reflection*: you see the sky and a hint of
+ * the interior behind it. Opacity is therefore high enough for the reflection
+ * to survive the blend, and roughness stays low so the reflection is a sky,
+ * not a haze.
+ *
+ * Note: three overrides `envMapIntensity` with `scene.environmentIntensity`
+ * whenever a standard material has no explicit `envMap` (which is our case —
+ * the environment comes from `scene.environment`), so the reflection strength
+ * is set once, in `src/lib/daylight.ts`.
+ */
+export function glassMaterial(tint = '#26343a', opacity = 0.58, roughness = 0.05) {
   return memo(`glass-${tint}-${opacity}-${roughness}`, () =>
     new THREE.MeshStandardMaterial({
       color: new THREE.Color(tint),
@@ -728,9 +746,9 @@ export function materialForKey(
     case 'rust':
       return metalMaterial('rust', 1, size)
     case 'glass':
-      return glassMaterial(PALETTE.glass, 0.34)
+      return glassMaterial(PALETTE.glass, 0.58)
     case 'glassDark':
-      return glassMaterial(PALETTE.glassDark, 0.55, 0.1)
+      return glassMaterial(PALETTE.glassDark, 0.68, 0.09)
     case 'panelDark':
       return panelMaterial()
     case 'plastic':

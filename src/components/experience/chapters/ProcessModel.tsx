@@ -22,7 +22,7 @@ export function ProcessModel({ quality }: { quality: QualitySettings }) {
   const concrete = concreteMaterial('mid', 1, quality.textureSize)
   const dark = concreteMaterial('dark', 2, quality.textureSize)
   const steel = metalMaterial('dark', 2, quality.textureSize)
-  const glass = glassMaterial('#0f1a1e', 0.3)
+  const glass = glassMaterial('#16242b', 0.56)
 
   const survey = useMemo(() => {
     const items: Item[] = []

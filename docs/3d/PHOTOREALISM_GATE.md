@@ -164,6 +164,39 @@ where the budget actually goes.
 
 ---
 
+---
+
+## V7 — daylight
+
+The gate above was scored on a world that was, on paper, correctly exposed and
+in practice looked like evening. V7 audits every stage that decides brightness
+and fixes the causes. Full measurement in **[DAYLIGHT_QA.md](DAYLIGHT_QA.md)**;
+the four that mattered:
+
+1. **The sky map contained a row of NaN.** `buildSkyTexture` took a fractional
+   power of a value that goes slightly negative at the horizon, so one whole row
+   of the equirect map was NaN — and that same texture is what `PMREMGenerator`
+   turns into `scene.environment`. The image-based lighting was dead. Not an
+   exposure problem.
+2. **A full-screen dark sheet over a correct render.** `.vignette` was darkening
+   the frame by 30–40 % at the top and bottom — the sky and the foreground, the
+   two things the brief insists stay bright. Now 0.10 radial / 0.13 bottom.
+3. **A 34° sun.** Horizontal surfaces received 0.56 of the beam. The road and
+   the ground were dark while the facades were fine. Now 52°: 0.79.
+4. **Glass threw away its own reflection.** Alpha blending scales the specular
+   too, so at `opacity: 0.32` a bright sky arrived at a third of its value.
+   Glazing is now 0.56–0.68 across all six call sites.
+
+The rig itself is now one file (`src/lib/daylight.ts`) read by the renderer, the
+composer and the QA script, so exposure cannot be set in three places again.
+Measured: sunlit concrete 0.87 sRGB, shadowed 0.62, sunlit asphalt 0.47, sky
+zenith `#9bbfdf`, sun-to-shade 2.4:1 in linear light, nothing clipped. All 16
+automated daylight checks pass.
+
+What this does **not** change: surface detail, foliage and repetition are
+untouched by a lighting pass, and they are now the scores that hold the hero
+down.
+
 ## Scores — 14 axes
 
 Axes are the ones the brief names: geometry, material, surface detail, foliage,
@@ -174,66 +207,64 @@ repetition, animation, audio.
 
 | Shot | Geom | Mat | Surf | Foli | Light | Shad | Ground | Scale | Atmos | Cam | Comp | Rep | Anim | Audio | **Total** | Target |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| ground (opening) | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 9 | 9 | 8 | 8.5 | 9 | 8 | 8.5 | 9 | **8.6** | 9.0 |
-| build (orbit) | 9 | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 9 | 9 | 8 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.6** | 9.0 |
-| company (approach) | 9 | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 9 | 9 | 8 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.6** | 9.0 |
+| ground (opening) | 8.5 | 8.8 | 8.5 | 8.5 | 9 | 9 | 9 | 9 | 8.5 | 8.5 | 9 | 8 | 8.5 | 9 | **8.7** | 9.0 |
+| build (orbit) | 9 | 8.8 | 8.5 | 8.5 | 9 | 9 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.7** | 9.0 |
+| company (approach) | 9 | 8.8 | 8.5 | 8.5 | 9 | 9 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.7** | 9.0 |
 
-Scored on the same 14 axes *before* V6 the hero measured **8.5** (surface 8.0,
-foliage 8.0, shadows 8.0, grounding 8.5). V6 moved those four by a half point
-each and left the rest where they were — which is why the total moves to 8.6
-and not further: the axes that were previously absorbing the weakness are now
-scored openly, and the axes that were never the bottleneck (atmosphere,
-repetition) are now the floor.
+Lighting and shadows move from 8.5 to 9.0 — a 52° sun with a measured 2.4:1
+sun-to-shade ratio, shadowed concrete at 0.62 sRGB, no crushed pixels and no
+clipping anywhere in the frame. Materials go to 8.8: glazing now reflects the
+sky it stands under instead of swallowing it. Atmosphere to 8.5: the haze is
+brighter and the sky is a real blue (`#9bbfdf`), but it is still a single
+exponential fog over a procedural dome, with no height falloff and no
+sun-direction-dependent scattering.
 
-**Why not 9.0 — the real reasons, in order of how much they cost.**
+**Why not 9.0 — the reasons that remain, in order of cost.**
 
-1. **Surface detail 8.5.** The maps are still synthesised, not scanned. There is
-   now no repeat you can put your finger on — macro drift, meso mottle and micro
-   normals are on different wavelengths and none of them tile at a visible
-   period — but the aggregate size distribution, the crack statistics and the
-   wear pattern are invented. Standing 1 m from the asphalt you would see
-   pattern rather than grains. Closing this needs scanned or photogrammetric
-   PBR data, which is an acquisition job, not a code change.
-2. **Foliage 8.5.** Alpha-cluster cards, now with a volumetric close level. From
-   1 m a real canopy resolves to individual leaves and twig structure; at 8 m
-   this one does not resolve further and reads correctly. The gap is only
-   visible in a shot that puts the camera in the crown, and none of the beats
-   do.
-3. **Shadows 8.5.** One 2048² directional map over a 92 m extent plus N8AO.
-   Beyond the shadow volume the tree line casts nothing, and contact occlusion
-   above ~1.4 m radius is carried by the AO pass alone. **The AO is verified by
-   construction, not by looking at it** — I cannot see the site. If the live
-   page shows haloing, this number goes down, not up.
-4. **Atmosphere 8.0.** A single exponential haze and a sky dome. No height
-   falloff, no sun-direction-dependent scattering, no separate aerial
-   perspective on the far terrain.
-5. **Repetition 8.0.** Four tree species instanced 22–86 times with per-instance
-   scale, rotation, lean and tint. The species count is the limit; a fifth and
+1. **Surface detail 8.5.** Unchanged by a lighting pass, and now the largest
+   gap. The maps are synthesised: correct response, invented statistics. Daylight
+   is less forgiving of that than low-key lighting was, because there is
+   nowhere for a repeated aggregate pattern to hide. Closing it needs scanned
+   PBR data — an acquisition job.
+2. **Foliage 8.5.** Alpha clusters with a volumetric close level. In bright sun
+   the crown reads correctly from 8 m; from 1 m you would want leaf structure.
+3. **Repetition 8.0.** Four tree species instanced 22–86 times. A fifth and
    sixth species would move this more than any other single change.
+4. **Atmosphere 8.5.** Single-exponential haze, no aerial perspective on the far
+   terrain beyond fog, no scattering model.
+5. **Geometry 8.5–9.** Buildings, vehicles and the crane are measured and
+   correct; the gaps are in what is *not* there — no site clutter beyond the
+   yard props, no overhead cables, no adjacent plots.
 
 ### Major scenes
 
 | Shot | Geom | Mat | Surf | Foli | Light | Shad | Ground | Scale | Atmos | Cam | Comp | Rep | Anim | Audio | **Total** | Target |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| material-world | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 9 | 9 | 8 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.6** | 8.5 |
-| service-residential | 9 | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 9 | 9 | 8 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.6** | 8.5 |
-| service-infrastructure | 9 | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 9 | 8 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.6** | 8.5 |
-| service-materials | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 9 | 9 | 8 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.6** | 8.5 |
-| india (presence map) | 8.5 | 8.5 | 8.5 | 8 | 8.5 | 8.5 | 9 | 8.5 | 8 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.5** | 8.5 |
+| material-world | 8.5 | 8.8 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.6** | 8.5 |
+| service-residential | 9 | 8.8 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.7** | 8.5 |
+| service-infrastructure | 9 | 8.8 | 8.5 | 8.5 | 8.8 | 8.8 | 8.5 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.6** | 8.5 |
+| service-materials | 8.5 | 8.8 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.6** | 8.5 |
+| india (presence map) | 8.5 | 8.5 | 8.5 | 8 | 8.8 | 8.5 | 9 | 8.5 | 8 | 8.5 | 8.5 | 8 | 8.5 | 9 | **8.5** | 8.5 |
+
+Service worlds sit at 8.8 on lighting rather than 9.0: they are further from the
+camera than the hero, so they fall outside the 92 m shadow volume more often and
+their contact detail is carried by ambient occlusion alone.
 
 ### Secondary scenes
 
 | Shot | Geom | Mat | Surf | Foli | Light | Shad | Ground | Scale | Atmos | Cam | Comp | Rep | Anim | Audio | **Total** | Target |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| service-civil | 8 | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 9 | 8.5 | 8 | 8.5 | 8 | 8 | 8.5 | 9 | **8.5** | 8.0 |
-| service-solar | 8 | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 9 | 9 | 8 | 8.5 | 8 | 7.5 | 8.5 | 9 | **8.5** | 8.0 |
-| service-renovation | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 9 | 9 | 8 | 8.5 | 8 | 8 | 8.5 | 9 | **8.6** | 8.0 |
-| process 1–5 | 8 | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 9 | 8.5 | 8 | 8.5 | 8 | 8 | 8.5 | 9 | **8.5** | 8.0 |
-| trust | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 9 | 9 | 8 | 8.5 | 8.5 | 8.5 | 8.5 | 9 | **8.6** | 8.0 |
-| corridor | 8 | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 9 | 9 | 8 | 8.5 | 8 | 8.5 | 8.5 | 9 | **8.6** | 8.0 |
-| future / contact | 8 | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 9 | 9 | 8 | 8.5 | 8 | 8.5 | 8.5 | 9 | **8.6** | 8.0 |
+| service-civil | 8 | 8.8 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8 | 8.5 | 9 | **8.5** | 8.0 |
+| service-solar | 8 | 8.8 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8 | 7.5 | 8.5 | 9 | **8.5** | 8.0 |
+| service-renovation | 8.5 | 8.8 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8 | 8 | 8.5 | 9 | **8.6** | 8.0 |
+| process 1–5 | 8 | 8.8 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 8.5 | 8.5 | 8.5 | 8 | 8 | 8.5 | 9 | **8.5** | 8.0 |
+| trust | 8.5 | 8.8 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8.5 | 8.5 | 8.5 | 9 | **8.6** | 8.0 |
+| corridor | 8 | 8.8 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8 | 8.5 | 8.5 | 9 | **8.6** | 8.0 |
+| future / contact | 8 | 8.8 | 8.5 | 8.5 | 8.8 | 8.8 | 9 | 9 | 8.5 | 8.5 | 8 | 8.5 | 8.5 | 9 | **8.6** | 8.0 |
 
-All major and secondary scenes meet their targets.
+Every beat is daylight. There is no DAY → DARK → DAY transition anywhere in the
+24 chapters: one rig, one sun, one exposure, and the service worlds, trust,
+renovation and the India map all run on it.
 
 ---
 
@@ -247,9 +278,10 @@ All major and secondary scenes meet their targets.
 | 4 | Does the building look like a real building? | **Yes** | 25.2 × 47.0 × 22.9 m, 13 storeys at 3.6 m, slabs, recessed glazing, balcony and parapet massing, differentiated concrete / glass / metal / paint / stone materials. |
 | 5 | Does the car look like a real car? | **Yes** | Measured 4.74 × 2.07 × 2.01 m (sedan), extruded side profiles with tumblehome, lathed tyres with sidewall bulge, dished rims and spokes, lights, mirrors, wipers, plates. |
 | 6 | Does the construction equipment look real? | **Yes** | Crane 35.8 × 41.2 × 7.2 m with lattice mast, jib, counterweight, cab, cables, hoist; excavator 12.5 × 5.9 × 3.8 m; rebar, cement bags, material stacks, scaffolding. |
-| 7 | Does the lighting resemble natural photography? | **Yes** | One sun at a fixed world direction, sky-dome IBL on every tier, hemisphere bounce, ACES tone mapping at a single exposure of 1.0, no bloom, no rim lights, no emissive decoration left in the world. |
+| 7 | Does the lighting resemble natural photography? | **Yes** | One sun at 52° (late morning), sky-dome IBL on every tier, hemisphere bounce, ACES at a single exposure of 1.22. Measured: sunlit concrete 0.87 sRGB, shadowed 0.62, 2.4:1 sun-to-shade in linear light, zero crushed pixels, zero clipped highlights. |
 | 8 | Does the environment have realistic depth? | **Yes** | Distance haze, atmospheric perspective, N8AO distance falloff, and label maps confirm foreground / midground / background occupancy in every hero shot. |
 | 9 | Does anything look like a primitive? | **No visible primitives in hero paths** | Every building, tree, vehicle, crane and gate is a GLB. Remaining boxes are slabs, the wall plinth course, plinth edges and colonnade members — geometry that is genuinely rectangular. |
+| 10a | Is it daylight? | **Yes, by measurement** | `npm run qa:daylight` computes the pipeline end to end from the app's own constants and passes 16/16: sun elevation, sky brightness and hue, sunlit/shadowed surfaces, contrast, and a parse of `globals.css` proving no dark overlay. Per-shot frame statistics (`LUMA=1`) show mean 0.74–0.80 with 0 % crushed and 0 % clipped across every covered beat. |
 | 10 | Does anything immediately reveal "Three.js"? | **No systematic tell** | Removed in V5: growing-out-of-the-ground animation, dissolving buildings, glowing rings, emissive blueprint tables, neon bollards and road dashes, floating black decal plates, the dark "template" trust scene, the floating hologram map. V6 adds no effects beyond a restrained AO pass. |
 
 ---
@@ -320,13 +352,19 @@ listening QA was performed and it was not made louder in V6.
 
 ## Verdict
 
-Major scenes **8.5–8.6** against an 8.5 target — met.
+Major scenes **8.5–8.7** against an 8.5 target — met.
 Secondary scenes **8.5–8.6** against an 8.0 target — met.
-Hero **8.6** against a 9.0 target — **not met**, and the reason is stated above
-rather than scored away: the surfaces are still synthesised rather than scanned,
-foliage is still alpha clusters, and the occlusion pass is verified by
-construction rather than by looking at it.
+Hero **8.7** against a 9.0 target — **not met**.
 
-The three V6 changes are the largest realism gains available without new
-sourced data. What remains is an acquisition job — scanned PBR sets for
-asphalt, concrete and soil, and two more tree species — not a code change.
+The daylight gap is closed: the world is a measured, bright, late-morning
+exterior and the numbers are in [DAYLIGHT_QA.md](DAYLIGHT_QA.md). What remains
+is no longer a lighting problem. Surface detail (synthesised, not scanned),
+foliage (alpha clusters) and repetition (four tree species) are the three axes
+holding the hero at 8.7, and two of the three need sourced data rather than
+code.
+
+**The limit of this document, stated plainly:** I cannot see the rendered site.
+Every score above is traceable to a number, a label map or a code path, and the
+live page is the final authority. If the opening frame reads hotter or cooler
+than intended, the two knobs are `DAYLIGHT_EXPOSURE` in `src/lib/daylight.ts`
+and the SSAO intensity in `Post.tsx`.

@@ -105,7 +105,7 @@ function Residence({ quality }: { quality: QualitySettings }) {
   const group = useChapterVisibility<THREE.Group>([x, 6, z], 200)
   const light = concreteMaterial('light', 1.4, quality.textureSize)
   const dark = concreteMaterial('dark', 2, quality.textureSize)
-  const glass = glassMaterial('#0f161a', 0.3)
+  const glass = glassMaterial('#16242b', 0.56)
   const warm = concreteMaterial('light', 1.2, quality.textureSize)
   const water = metalMaterial('dark', 2, quality.textureSize)
 

@@ -43,7 +43,7 @@ function Gate({
       : gate.material === 'steel'
         ? metalMaterial('brushed', 4, quality.textureSize)
         : gate.material === 'glass'
-          ? glassMaterial('#121c22', 0.42)
+          ? glassMaterial('#182730', 0.62)
           : concreteMaterial('stone', 2.4, quality.textureSize)
 
   void ref

@@ -73,4 +73,9 @@ export const INDIA_MAP = {
 /** Futuristic building (THE FUTURE). */
 export const FUTURE_BUILDING = { x: 0, z: -1150, width: 30, depth: 30, height: 58 } as const
 
-export const FOG = { color: '#c9d6d6', density: 0.0061 } as const
+/**
+ * Daylight haze. Kept in sync with `Atmosphere` (which is what actually sets
+ * `scene.fog`): bright, blue-white, thin enough that the far terrain stays
+ * legible instead of turning into a wall of grey.
+ */
+export const FOG = { color: '#e2eae6', density: 0.0016 } as const

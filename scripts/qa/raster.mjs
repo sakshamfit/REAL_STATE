@@ -530,6 +530,51 @@ export class Renderer {
     return out
   }
 
+  /**
+   * Brightness statistics for the tone-mapped frame.
+   *
+   * The screenshot test, done numerically: how bright is the picture, how much
+   * of it is crushed to near-black, how much is clipped, and — the thing the
+   * brief actually asks about — is the *foreground* readable.
+   */
+  luma(camera) {
+    const pixels = this.render(camera)
+    const w = this.width
+    const h = this.height
+    let sum = 0
+    let dark = 0
+    let clipped = 0
+    let sky = 0
+    let foreground = 0
+    let foregroundCount = 0
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 3
+        const value = (0.2126 * pixels[i] + 0.7152 * pixels[i + 1] + 0.0722 * pixels[i + 2]) / 255
+        sum += value
+        if (value < 0.18) dark++
+        if (value > 0.97) clipped++
+        if (this.ids[y * w + x] === 'sky') {
+          sky++
+          continue
+        }
+        // bottom third of the frame: the road, the yard, the foreground
+        if (y > h * 0.66) {
+          foreground += value
+          foregroundCount++
+        }
+      }
+    }
+    const total = w * h
+    return {
+      mean: sum / total,
+      dark: dark / total,
+      clipped: clipped / total,
+      sky: sky / total,
+      foreground: foregroundCount ? foreground / foregroundCount : 0,
+    }
+  }
+
   save(file, camera) {
     const pixels = this.render(camera)
     fs.mkdirSync(path.dirname(file), { recursive: true })

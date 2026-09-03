@@ -33,7 +33,18 @@ import {
 } from '../../src/lib/layout.ts'
 import { GATE, PLOT } from '../../src/lib/layout.ts'
 import { HERO_BUILDING, SERVICE_WORLDS } from '../../src/lib/world.ts'
+import { DEFAULT_SKY } from '../../src/lib/sky.ts'
+import {
+  DAYLIGHT_EXPOSURE,
+  ENVIRONMENT_INTENSITY,
+  FILL_BOUNCE,
+  FILL_SKY,
+  HEMI_INTENSITY,
+  SUN_INTENSITY,
+} from '../../src/lib/daylight.ts'
+import { buildSkyTexture } from '../../src/lib/sky.ts'
 import { beatTimings } from '../../src/lib/chapters.ts'
+import { skyIrradiance } from './sky-irradiance.mjs'
 import { sampleCamera } from '../../src/lib/camera-path.ts'
 import {
   asphaltSurface,
@@ -340,22 +351,43 @@ function grassTuft(spec) {
 
 /* ---------------------------------------------------------------- sky + sun */
 
-const SUN_DIR = new THREE.Vector3(-0.42, 0.56, 0.72).normalize()
-const HORIZON = new THREE.Color('#cfd8d6')
-const ZENITH = new THREE.Color('#5b8fc4')
-const SUN_COLOR = new THREE.Color('#fff3dc')
+// The rasteriser reads the same rig the site does, so a label map rendered
+// here reflects the daylight actually shipped — including the sun's elevation.
+const SUN_DIR = DEFAULT_SKY.sunDirection.clone().normalize()
+const HORIZON = DEFAULT_SKY.horizon.clone()
+const ZENITH = DEFAULT_SKY.zenith.clone()
+const GROUND_BOUNCE = DEFAULT_SKY.ground.clone()
+const SUN_COLOR = DEFAULT_SKY.sunColor.clone()
 
 function skyFn(dir) {
   if (dir.y >= -0.02) {
-    const t = Math.pow(Math.min(1, dir.y), 0.42)
+    const t = Math.pow(Math.max(0, Math.min(1, dir.y)), 0.42)
     const c = HORIZON.clone().lerp(ZENITH, t)
     const cos = Math.max(0, dir.dot(SUN_DIR))
     const halo = Math.pow(cos, 26) * 0.5 + Math.pow(cos, 3) * 0.1
     return [c.r + SUN_COLOR.r * halo, c.g + SUN_COLOR.g * halo * 0.94, c.b + SUN_COLOR.b * halo * 0.9]
   }
-  const ground = new THREE.Color('#7a6c56').multiplyScalar(0.45)
-  return [ground.r, ground.g, ground.b]
+  return [GROUND_BOUNCE.r * 0.45, GROUND_BOUNCE.g * 0.45, GROUND_BOUNCE.b * 0.45]
 }
+
+/* ------------------------------------------------------- rig, in raster units */
+
+/**
+ * The offline renderer shades `albedo · lighting · 2.2 / π`; the browser shades
+ * `albedo · lighting / π` (BRDF_Lambert). Rather than let the two drift, the
+ * rig is converted once, so a frame rendered here sits at the same exposure as
+ * the same frame on the site.
+ */
+const RASTER_SCALE = 1 / 2.2 // π cancels: (2.2/π) in the rasteriser vs (1/π) in three
+const SKY_MAP = buildSkyTexture(DEFAULT_SKY, 256)
+const E_UP = skyIrradiance(SKY_MAP, new THREE.Vector3(0, 1, 0))
+const E_DOWN = skyIrradiance(SKY_MAP, new THREE.Vector3(0, -1, 0))
+const fillUp = E_UP.map(
+  (c, i) => (c * ENVIRONMENT_INTENSITY + [FILL_SKY.r, FILL_SKY.g, FILL_SKY.b][i] * HEMI_INTENSITY) * RASTER_SCALE,
+)
+const fillDown = E_DOWN.map(
+  (c, i) => (c * ENVIRONMENT_INTENSITY + [FILL_BOUNCE.r, FILL_BOUNCE.g, FILL_BOUNCE.b][i] * HEMI_INTENSITY) * RASTER_SCALE,
+)
 
 /* -------------------------------------------------------------------- shots */
 
@@ -404,15 +436,16 @@ async function main() {
       materials: MATERIALS,
       sunDir: [SUN_DIR.x, SUN_DIR.y, SUN_DIR.z],
       sunColor: [SUN_COLOR.r, SUN_COLOR.g, SUN_COLOR.b],
-      sunEnergy: 2.9,
-      skyColor: [0.42, 0.52, 0.62],
-      groundColor: [0.44, 0.38, 0.29],
+      sunEnergy: SUN_INTENSITY * RASTER_SCALE,
+      // sky dome + image based lighting, integrated from the real sky map
+      skyColor: fillUp,
+      groundColor: fillDown,
       haze: 0.0016,
       hazeColor: [HORIZON.r, HORIZON.g, HORIZON.b],
       shadowMapSize: 2048,
       shadowExtent: 70,
       shadowCenter: [look.x, 0, look.z],
-      exposure: 1.0,
+      exposure: DAYLIGHT_EXPOSURE,
       sky: skyFn,
     })
     for (const instance of near) renderer.add(instance)
@@ -443,6 +476,27 @@ async function main() {
       const tally = new Map()
       for (const id of renderer.ids) tally.set(id, (tally.get(id) ?? 0) + 1)
       console.log([...tally.entries()].sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k}:${v}`).join('  '))
+    }
+    if (process.env.LUMA === '1') {
+      renderer.render(camera)
+      const luma = renderer.luma(camera)
+      const pct = (v) => `${(v * 100).toFixed(1)}%`
+      // chapters whose geometry lives in a React component (India map, trust
+      // structure, process model, future tower) are not in the offline scene
+      // graph; an empty frame here says nothing about the site
+      const uncovered = luma.sky > 0.92
+      const flags = []
+      if (uncovered) flags.push('NOT COVERED OFFLINE — chapter is a React component')
+      else {
+        if (luma.mean < 0.42) flags.push('TOO DARK')
+        if (luma.dark > 0.2) flags.push('CRUSHED SHADOWS')
+        if (luma.clipped > 0.06) flags.push('CLIPPED HIGHLIGHTS')
+        if (luma.sky < 0.08) flags.push('NO SKY')
+        if (luma.foreground < 0.28) flags.push('BLACK FOREGROUND')
+      }
+      console.log(
+        `    luma mean ${luma.mean.toFixed(3)}  dark ${pct(luma.dark)}  clipped ${pct(luma.clipped)}  sky ${pct(luma.sky)}  foreground ${luma.foreground.toFixed(3)}  ${flags.length ? flags.join(', ') : 'daylight OK'}`,
+      )
     }
     if (process.env.LABELS === '1') {
       console.log(renderer.labels(camera, Number(process.env.COLS ?? 120)))
