@@ -87,4 +87,4 @@ export const FUTURE_BUILDING = { x: 0, z: -1150, width: 30, depth: 30, height: 5
  * `scene.fog`): bright, blue-white, thin enough that the far terrain stays
  * legible instead of turning into a wall of grey.
  */
-export const FOG = { color: '#e2eae6', density: 0.0016 } as const
+export const FOG = { color: '#e0eaf4', density: 0.0016 } as const

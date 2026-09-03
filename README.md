@@ -9,6 +9,7 @@ interactive **3D India presence map** at its core.
 * Design brief: [`docs/DESIGN.md`](./docs/DESIGN.md)
 * Map specification: [`docs/INDIA_MAP.md`](./docs/INDIA_MAP.md)
 * What the site contains, scene by scene: [`docs/SITE-CONTENTS.md`](./docs/SITE-CONTENTS.md)
+* **Give us your real 3D models** (buildings, JCB, cars, solar…): [`docs/MODEL_SLOTS.md`](./docs/MODEL_SLOTS.md)
 
 ---
 

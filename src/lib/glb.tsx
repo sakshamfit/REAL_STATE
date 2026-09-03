@@ -6,7 +6,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import type { Object3D } from 'three'
-import { assetById, preloadAssetIds, type AssetEntry } from '@/data/assets'
+import { assetById, preloadAssetIds, resolveRoleSlot, type AssetEntry } from '@/data/assets'
 import { materialForKey } from './materials'
 import { applyExternalMaterials, bodyColourFor } from './external-materials'
 import type { QualitySettings } from './quality'
@@ -109,8 +109,23 @@ export function AssetModel({
   onObject,
   fallback,
 }: AssetModelProps) {
-  const asset = assetById.get(id)
+  /**
+   * Named slots first: `hero-building`, `residential-building`, `warehouse`
+   * and `solar-panel` are roles that an external GLB of the matching class
+   * takes over automatically (see `resolveRoleSlot` / docs/MODEL_SLOTS.md).
+   * Any other id resolves to itself, so this seam is invisible to callers.
+   */
+  const slot = useMemo(() => resolveRoleSlot(id), [id])
+  const asset = slot.entry
   if (!asset) return null
+
+  // external replacements are uniformly scaled onto the footprint the
+  // built-in model occupied, keeping framing and plinths valid
+  const resolvedScale = useMemo<[number, number, number] | undefined>(() => {
+    if (slot.fitScale === 1) return scale
+    const base = scale ?? [1, 1, 1]
+    return [base[0] * slot.fitScale, base[1] * slot.fitScale, base[2] * slot.fitScale]
+  }, [scale, slot])
 
   return (
     <AssetErrorBoundary fallback={fallback ?? null}>
@@ -118,7 +133,7 @@ export function AssetModel({
         asset={asset}
         position={position}
         rotation={rotation}
-        scale={scale}
+        scale={resolvedScale}
         quality={quality}
         visible={visible}
         castShadow={castShadow}

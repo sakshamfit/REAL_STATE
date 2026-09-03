@@ -39,7 +39,7 @@ export default function Experience({ quality }: { quality: QualitySettings }) {
           // `Post` re-applies the same value inside the composer
           gl.toneMappingExposure = DAYLIGHT_EXPOSURE
           // daylight fallback for the frame before the sky dome mounts
-          gl.setClearColor(new THREE.Color('#cfdde3'), 1)
+          gl.setClearColor(new THREE.Color('#dcebf6'), 1)
         }}
         onPointerMissed={() => {
           const state = useExperience.getState()

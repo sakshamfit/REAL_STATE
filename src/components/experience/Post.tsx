@@ -28,6 +28,10 @@ import { DAYLIGHT_EXPOSURE } from './Lighting'
  * skips in-material tone mapping when rendering to a target), so the ACES
  * operator is re-applied here as an effect. Exposure still comes from
  * `gl.toneMappingExposure`, which three uploads as a common uniform.
+ *
+ * The AO pass runs at half resolution on every tier — depth-aware upsampling
+ * keeps contact edges clean and the pass costs roughly a quarter of the fill
+ * rate it did at full resolution.
  */
 
 /**
@@ -62,13 +66,13 @@ export function Post({ quality }: { quality: QualitySettings }) {
       <N8AO
         aoRadius={high ? 1.25 : 1.05}
         distanceFalloff={0.78}
-        intensity={high ? 0.82 : 0.66}
+        intensity={high ? 0.8 : 0.66}
         quality={high ? 'medium' : 'low'}
-        aoSamples={high ? 16 : 8}
+        aoSamples={high ? 10 : 8}
         denoiseSamples={high ? 4 : 2}
         denoiseRadius={12}
         color={AO_COLOR}
-        halfRes={!high}
+        halfRes
         depthAwareUpsampling
         screenSpaceRadius
       />

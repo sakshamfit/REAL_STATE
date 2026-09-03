@@ -164,6 +164,70 @@ export const CLASSES = {
     instanced: false,
     substitution: 'never',
   },
+  'infrastructure-solar': {
+    label: 'Solar panel / array',
+    category: 'infrastructure',
+    // A single domestic panel is ~1.9 × 1.1 m; a utility row or tracker runs
+    // tens of metres. The band is deliberately wide and `ground: 'base'`
+    // seats it on whatever frame the asset ships with.
+    length: [0.8, 70.0],
+    width: [0.6, 70.0],
+    height: [0.25, 8.0],
+    target: null,
+    orient: 'none',
+    ground: 'base',
+    profile: {},
+    keepAnimations: false,
+    maxTriangles: 120000,
+    instanced: false,
+    substitution: 'replace',
+  },
+  'architecture-hero': {
+    label: 'Flagship / office building',
+    category: 'architecture',
+    length: [4.0, 90.0],
+    width: [4.0, 90.0],
+    height: [3.0, 150.0],
+    target: null,
+    orient: 'none',
+    ground: 'base',
+    profile: {},
+    keepAnimations: false,
+    maxTriangles: 320000,
+    instanced: false,
+    // a real flagship tower replaces the hero composition, not the whole site
+    substitution: 'replace',
+  },
+  'architecture-residential': {
+    label: 'Residential / commercial building',
+    category: 'architecture',
+    length: [4.0, 70.0],
+    width: [4.0, 70.0],
+    height: [3.0, 80.0],
+    target: null,
+    orient: 'none',
+    ground: 'base',
+    profile: {},
+    keepAnimations: false,
+    maxTriangles: 260000,
+    instanced: false,
+    substitution: 'replace',
+  },
+  'architecture-warehouse': {
+    label: 'Warehouse / industrial building',
+    category: 'architecture',
+    length: [4.0, 130.0],
+    width: [4.0, 130.0],
+    height: [3.0, 60.0],
+    target: null,
+    orient: 'none',
+    ground: 'base',
+    profile: {},
+    keepAnimations: false,
+    maxTriangles: 260000,
+    instanced: false,
+    substitution: 'replace',
+  },
   'infrastructure-lamp': {
     label: 'Street light / lamp post',
     category: 'infrastructure',
@@ -229,25 +293,31 @@ const RULES = [
   // ignored, and "lamp-post" contains "post". Matching infrastructure before
   // vegetation and props keeps those out of the wrong envelope.
   [/street[-_ ]?light|street[-_ ]?lamp|streetlamp|lamp[-_ ]?post|lamppost|lantern/i, 'infrastructure-lamp'],
+  // Solar hardware has its own slot (the solar service world + future skin),
+  // so it is matched before the generic infrastructure rule it used to fall into.
+  [/solar[-_ ]?(panel|array|farm|field|cell|module|rack|string|tile)?|photovoltaic|\bpv[-_ ]?panel/i, 'infrastructure-solar'],
   [
-    /pylon|hydrant|bollard|bench|traffic[-_ ]?light|bridge|culvert|transformer|substation|solar|antenna|utility[-_ ]?pole|power[-_ ]?pole/i,
+    /pylon|hydrant|bollard|bench|traffic[-_ ]?light|bridge|culvert|transformer|substation|antenna|utility[-_ ]?pole|power[-_ ]?pole/i,
     'infrastructure',
   ],
   [/\b(suv|crossover|jeep|4x4|4wd)\b|suv/i, 'vehicle-suv'],
   [/truck|lorry|\bvan\b|\bbus\b|tipper|tanker|trailer|pickup|\bute\b/i, 'vehicle-truck'],
   [
-    /excavat|digger|backhoe|loader|bulldoz|dozer|mixer|roller|compactor|grader|forklift|telehandler|dumper|crane|generator|genset|compressor/i,
+    /excavat|digger|backhoe|\bjcb\b|poclain|earthmover|skid[-_ ]?steer|track[-_ ]?loader|loader|bulldoz|dozer|mixer|roller|compactor|grader|forklift|telehandler|dumper|crane|generator|genset|compressor/i,
     'construction-plant',
   ],
   [
-    /barrier|barricade|cone|scaffold|pallet|pipe|container|cabin|portacabin|jersey|hoarding|fence|drum|barrel|toolbox|rebar|cement|brick|sandbag|formwork|wheelbarrow|ladder|signboard/i,
+    /barrier|barricade|cone|scaffold|pallet|pipe|container|cabin|portacabin|site[-_ ]?office|office[-_ ]?cabin|welfare|labour[-_ ]?hut|\bshed\b|jersey|hoarding|fence|drum|barrel|toolbox|rebar|cement|brick|sandbag|formwork|wheelbarrow|ladder|signboard/i,
     'construction-prop',
   ],
   [/tree|palm|neem|banyan|bush|shrub|hedge|plant|foliage|bamboo/i, 'vegetation'],
-  [
-    /building|tower|house|apartment|villa|office|warehouse|shed|highrise|high-rise|facade|skyscraper|bungalow|hotel|mall/i,
-    'architecture',
-  ],
+  // Building sub-types first: the flagship tower, the warehouse and the
+  // residential/commercial mid-rise each own a distinct scene slot, so a
+  // dropped model replaces the right composition instead of every building.
+  [/hero|flagship|office|corporate|headquarters?|skyscraper|high[-_ ]?rise/i, 'architecture-hero'],
+  [/warehouse|godown|storehouse|factory|mill|industrial|depot/i, 'architecture-warehouse'],
+  [/residential|apartment|\bhouse\b|villa|bungalow|duplex|housing|cottage|commercial|building|facade|hotel|mall/i, 'architecture-residential'],
+  [/edifice|monument|memorial|institution/i, 'architecture'],
   [/\bcar\b|sedan|hatchback|coupe|saloon|rickshaw|scooter|motorbike|taxi|vehicle/i, 'vehicle-car'],
 ]
 
