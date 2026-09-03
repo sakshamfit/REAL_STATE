@@ -15,3 +15,10 @@ data/raw
 # raw generated GLBs (regenerate with `npm run assets:generate`)
 assets/raw
 .qa
+
+# Normalised external assets. These are build output, but they are also what
+# the browser actually downloads, so they ship alongside public/assets/glb/
+# rather than being regenerated on deploy. The `build` rule above would
+# otherwise swallow them.
+!public/assets/external/build/
+!public/assets/external/build/**

@@ -20,7 +20,7 @@ by `scripts/qa/world-shots.mjs` (`LABELS=1`), which show what actually occupies 
 | --- | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
 | barrier.glb | 12.1 kB | 240 | 4.56×1.10×0.96 | ✅ | 9.0 | 9.8 | 8.0 | 8.4 | 8.6 | 7.5 | APPROVED |
 | boundary-wall.glb | 9.2 kB | 216 | 12.52×3.09×0.52 | ✅ | 8.3 | 8.9 | 8.0 | 8.4 | 8.3 | 7.5 | APPROVED |
-| bridge.glb | 390.2 kB | 7,540 | 72.01×24.75×19.00 | ✅ | 10.0 | 10.0 | 4.0 | 8.4 | 7.5 | 8 | REQUIRES RENDER REVIEW |
+| bridge.glb | 489.5 kB | 9,524 | 72.60×24.68×24.91 | ✅ | 10.0 | 10.0 | 4.0 | 8.4 | 7.5 | 8 | REQUIRES RENDER REVIEW |
 | bush.glb | 28.9 kB | 600 | 1.71×1.67×1.50 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
 | car-a.glb | 120.4 kB | 4,260 | 4.74×2.07×2.05 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
 | car-b.glb | 124.1 kB | 4,344 | 4.94×2.14×2.16 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
@@ -32,10 +32,10 @@ by `scripts/qa/world-shots.mjs` (`LABELS=1`), which show what actually occupies 
 | entrance-gate.glb | 20.6 kB | 424 | 14.70×6.00×4.38 | ✅ | 10.0 | 10.0 | 8.0 | 8.4 | 8.8 | 7.5 | APPROVED |
 | excavator.glb | 58.8 kB | 1,516 | 12.45×5.90×3.76 | ✅ | 10.0 | 10.0 | 8.7 | 8.4 | 9.0 | 7.5 | APPROVED |
 | grass-tuft.glb | 3.8 kB | 40 | 0.88×0.71×0.83 | ✅ | 6.9 | 7.1 | 8.0 | 8.4 | 7.8 | 7.5 | APPROVED |
-| hero-building.glb | 2690.5 kB | 55,840 | 25.20×47.02×22.93 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 8.5 | APPROVED |
+| hero-building.glb | 3043.4 kB | 62,180 | 29.20×45.93×33.10 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 8.5 | APPROVED |
 | material-stack.glb | 49.0 kB | 1,204 | 8.48×1.67×7.86 | ✅ | 10.0 | 10.0 | 4.0 | 8.4 | 7.5 | 7.5 | APPROVED |
 | rebar-stack.glb | 22.7 kB | 1,064 | 3.90×0.66×3.76 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
-| residential-building.glb | 1398.9 kB | 28,884 | 25.10×23.40×18.18 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 8 | APPROVED |
+| residential-building.glb | 1514.2 kB | 30,984 | 22.40×26.64×15.03 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 8 | APPROVED |
 | scaffolding.glb | 187.6 kB | 6,028 | 12.00×12.34×1.45 | ✅ | 10.0 | 10.0 | 8.4 | 8.4 | 8.9 | 7.5 | APPROVED |
 | shrub-dry.glb | 29.1 kB | 584 | 1.59×1.51×1.58 | ✅ | 10.0 | 10.0 | 9.2 | 8.4 | 9.2 | 7.5 | APPROVED |
 | solar-panel.glb | 194.9 kB | 3,644 | 8.87×2.16×8.60 | ✅ | 10.0 | 10.0 | 8.5 | 8.4 | 9.0 | 7.5 | APPROVED |

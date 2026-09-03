@@ -115,9 +115,19 @@ function Residence({ quality }: { quality: QualitySettings }) {
         <Block size={[36, 0.8, 24]} position={[0, 0.4, 0]} material={dark} />
 
         {/* real residential GLB massing; procedural pavilion is the fallback */}
+        {/*
+          Rotated to face the road.
+
+          The block's balconies and entrance are on its +z elevation, but this
+          world sits at x = +50 — east of the corridor — so unrotated it
+          presents its blank service flank to every camera that passes. A
+          quarter turn puts the balcony stack and the stair core towards the
+          approach, which is the whole reason the building was modelled.
+        */}
         <AssetModel
           id="residential-building"
           position={[0, 0, 0]}
+          rotation={[0, -Math.PI / 2, 0]}
           quality={quality}
           fallback={
             <>

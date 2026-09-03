@@ -11,13 +11,17 @@
     "typecheck": "tsc --noEmit",
     "data:india": "node scripts/build-map-data.mjs",
     "assets:build": "node scripts/glb/build.mjs",
+    "assets:external": "node scripts/glb/external/build-external.mjs",
+    "assets:external:check": "node scripts/glb/external/build-external.mjs --check",
+    "assets:external:qa": "node scripts/glb/external/qa-external.mjs",
     "assets:generate": "node scripts/glb/generate-assets.mjs",
     "assets:optimize": "node scripts/glb/optimize-assets.mjs",
     "assets:inspect": "node scripts/glb/inspect-assets.mjs",
     "assets:validate": "node scripts/glb/validate-assets.mjs",
     "assets:visual-qa": "node scripts/glb/visual-qa.mjs",
     "qa:daylight": "node --experimental-strip-types --import ./scripts/qa/ts-hook.mjs scripts/qa/daylight.mjs",
-    "qa:shots": "node --experimental-strip-types --import ./scripts/qa/ts-hook.mjs scripts/qa/world-shots.mjs"
+    "qa:shots": "node --experimental-strip-types --import ./scripts/qa/ts-hook.mjs scripts/qa/world-shots.mjs",
+    "qa:placement": "node --experimental-strip-types --import ./scripts/qa/ts-hook.mjs scripts/qa/placement.mjs"
   },
   "dependencies": {
     "@fontsource/inter": "^5.3.0",

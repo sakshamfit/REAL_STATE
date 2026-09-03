@@ -80,7 +80,7 @@ export function HeroBuilding({ quality }: { quality: QualitySettings }) {
 
       <AssetModel
         id="hero-building"
-        position={[0, 0, -8.5]}
+        position={[0, 0, HERO_BUILDING.modelZOffset]}
         quality={quality}
         lod="high"
         fallback={<FallbackTower quality={quality} />}

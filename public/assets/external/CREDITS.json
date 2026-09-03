@@ -1,0 +1,47 @@
+{
+  "_readme": [
+    "Licence register for developer-supplied 3D assets.",
+    "",
+    "One entry per file you drop into this folder. The key is the filename.",
+    "The build refuses any asset whose licence does not permit commercial use,",
+    "and holds back any asset with no entry here until you add one.",
+    "",
+    "  title    what the thing is",
+    "  author   who made it (required for CC-BY attribution)",
+    "  source   where you downloaded it from",
+    "  license  SPDX id where possible: CC0-1.0, CC-BY-4.0, MIT, ...",
+    "  notes    anything worth remembering",
+    "",
+    "Accepted: CC0-1.0, CC-BY-4.0, CC-BY-SA-4.0, MIT, Apache-2.0, BSD-3-Clause,",
+    "public-domain, royalty-free, proprietary-licensed.",
+    "Refused: anything non-commercial (NC) or no-derivatives (ND)."
+  ],
+  "car-sedan.glb": {
+    "title": "Car Concept",
+    "author": "Eric Chadwick (Khronos Group), from a public-domain model by Unity Fan",
+    "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CarConcept",
+    "license": "CC-BY-4.0",
+    "notes": "Complete exterior with shutlines, wheels, tyres, glass, headlights, mirrors, full interior with dashboard and seats. Khronos logos removed from the shipped build is not required \u2014 they are non-copyrightable marks under the model's own licence file."
+  },
+  "truck-delivery.glb": {
+    "title": "Cesium Milk Truck",
+    "author": "Cesium",
+    "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CesiumMilkTruck",
+    "license": "CC-BY-4.0",
+    "notes": "Light delivery truck. Low triangle count, single texture atlas \u2014 cheap enough to instance along the corridor."
+  },
+  "street-lamp-old.glb": {
+    "title": "Lantern",
+    "author": "sbtron (Microsoft), Draco compression by Frank Galligan",
+    "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/Lantern",
+    "license": "CC0-1.0",
+    "notes": "Weathered wooden lamp post with full PBR set (base colour, normal, metallic-roughness, emissive)."
+  },
+  "barrier-cone.glb": {
+    "title": "Traffic Cone",
+    "author": "hinndia",
+    "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/TrafficCone",
+    "license": "CC-BY-4.0",
+    "notes": "Photoscanned-quality traffic cone with reflective banding. Originally published on Sketchfab under CC BY 4.0."
+  }
+}

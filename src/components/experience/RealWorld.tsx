@@ -7,11 +7,12 @@ import type { QualitySettings } from '@/lib/quality'
 import { AssetModel, InstancedAsset, type InstanceItem } from '@/lib/glb'
 import {
   LANE,
-  TRAFFIC,
   boundaryWalls,
+  externalSiteProps,
   groundPatches,
   parkedVehicles,
   streetLights,
+  traffic,
   yardBarriers,
   yardProps,
   type Placed,
@@ -90,6 +91,8 @@ export function RealWorld({ quality }: { quality: QualitySettings }) {
   const vehicles = useMemo(() => parkedVehicles(), [])
   const vehiclePoints = useMemo(() => vehicles.flatMap((group) => group.items), [vehicles])
   const patches = useMemo(() => groundPatches(), [])
+  // Real site kit (cones, drums, pallets), only when the developer supplied one.
+  const siteProps = useMemo(() => externalSiteProps(), [])
 
   return (
     <group>
@@ -132,6 +135,16 @@ export function RealWorld({ quality }: { quality: QualitySettings }) {
         <InstancedAsset key={group.id} id={group.id} items={toInstances(group.items)} quality={quality} />
       ))}
 
+      {siteProps.map((group) => (
+        <InstancedAsset
+          key={group.id}
+          id={group.id}
+          items={toInstances(group.items)}
+          quality={quality}
+          castShadow={quality.tier !== 'low'}
+        />
+      ))}
+
       <Traffic quality={quality} />
     </group>
   )
@@ -143,10 +156,10 @@ export function RealWorld({ quality }: { quality: QualitySettings }) {
  * it is out of frame or dissolved in haze.
  */
 function Traffic({ quality }: { quality: QualitySettings }) {
-  const cars = useMemo(
-    () => (quality.tier === 'low' ? TRAFFIC.slice(0, 1) : quality.tier === 'mid' ? TRAFFIC.slice(0, 2) : TRAFFIC),
-    [quality.tier],
-  )
+  const cars = useMemo(() => {
+    const all = traffic()
+    return quality.tier === 'low' ? all.slice(0, 1) : quality.tier === 'mid' ? all.slice(0, 2) : all
+  }, [quality.tier])
   const refs = useRef<(THREE.Group | null)[]>([])
   const positions = useRef<number[]>(cars.map((car) => car.start))
 

@@ -15,6 +15,15 @@ export const HERO_BUILDING = {
   depth: 24,
   height: 46,
   floors: 13,
+  /**
+   * The tower is set back from its group origin so the entrance forecourt has
+   * room between the podium and the compound's south wall. The chapter
+   * component and the offline QA renderer both read this, so a change here
+   * cannot leave the two disagreeing about where the building is — they did
+   * disagree by 8.5 m, which meant the QA frames were quietly of a scene that
+   * did not exist.
+   */
+  modelZOffset: -8.5,
 } as const
 
 /** Six service worlds. */
