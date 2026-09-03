@@ -3,12 +3,16 @@
 The REAL_STATE experience uses a repeatable 3D production pipeline:
 
 ```
-DESIGN
-   ↓
-GENERATE      scripts/glb/generate-assets.mjs
-   ↓
-OPTIMIZE      scripts/glb/optimize-assets.mjs
-   ↓
+DESIGN                             DOWNLOAD (external GLB)
+   ↓                                  ↓
+GENERATE      scripts/glb/         DROP INTO public/assets/external/
+              generate-assets.mjs     ↓
+   ↓                               EXTERNAL   scripts/glb/external/
+OPTIMIZE      scripts/glb/                    build-external.mjs
+              optimize-assets.mjs     ↓
+   ↓                                  ↓
+   └──────────────┬───────────────────┘
+                  ↓
 TECHNICAL QA  inspect → validate        (measured, not declared)
    ↓
 VISUAL QA     scripts/glb/visual-qa.mjs (technical proxy — see caveat)
@@ -23,6 +27,24 @@ PHOTOREALISM GATE   docs/3d/PHOTOREALISM_GATE.md
    ↓
 AUDIO / MOBILE / PERFORMANCE QA
 ```
+
+## 0. External assets
+
+`npm run assets:external` runs `scripts/glb/external/build-external.mjs`.
+
+Assets that already exist in the real world are better downloaded than
+modelled. The developer workflow is deliberately three steps — download a GLB,
+drop it in `public/assets/external/`, record its licence in `CREDITS.json`, run
+`npm run assets:build`. The filename is the only instruction the pipeline gets;
+everything else is measured.
+
+The stage discovers, classifies, validates, isolates, normalises and registers
+each file, then writes `docs/3d/EXTERNAL_ASSETS.md` and
+`src/data/external-manifest.json`. See that document for the licence register
+and per-asset detail, and `EXTERNAL_ASSETS.md` for the full workflow.
+
+Assets whose licence forbids commercial use are refused outright; assets with
+no recorded licence are built but held out of the runtime registry.
 
 ## 1. Generate
 
@@ -136,7 +158,7 @@ output: check those numerically (face-normal probe) or in the browser.
 
 ## 8. Test
 
-- `npm run assets:build` runs the whole chain.
+- `npm run assets:build` runs the whole chain (7 stages, external included).
 - `npm run build` and `npm run typecheck` gate release.
 - `npx next start` then walk the beats: hero, scroll, trees, road, ground,
   building, cars, construction, services, map, audio, mobile, loading.

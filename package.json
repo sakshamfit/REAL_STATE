@@ -2,7 +2,7 @@
   "name": "rudra-experience",
   "version": "1.0.0",
   "private": true,
-  "description": "RUDRA Constructions & Suppliers \u2014 cinematic 3D web experience with an interactive 3D India presence map.",
+  "description": "RUDRA Constructions & Suppliers — cinematic 3D web experience with an interactive 3D India presence map.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -11,6 +11,9 @@
     "typecheck": "tsc --noEmit",
     "data:india": "node scripts/build-map-data.mjs",
     "assets:build": "node scripts/glb/build.mjs",
+    "assets:external": "node scripts/glb/external/build-external.mjs",
+    "assets:external:check": "node scripts/glb/external/build-external.mjs --check",
+    "assets:external:qa": "node scripts/glb/external/qa-external.mjs",
     "assets:generate": "node scripts/glb/generate-assets.mjs",
     "assets:optimize": "node scripts/glb/optimize-assets.mjs",
     "assets:inspect": "node scripts/glb/inspect-assets.mjs",

@@ -11,6 +11,7 @@
 
 import { fbm2, prng, scatter, terrainHeight } from './terrain'
 import { HERO_BUILDING } from './world'
+import { resolveAssetIds } from '@/data/assets'
 
 export type Placed = {
   id: string
@@ -85,14 +86,33 @@ export function boundaryWalls(): Placed[] {
 
 /* ------------------------------------------------------------ street lights */
 
+/**
+ * Street lighting along the corridor.
+ *
+ * The pool may hold more than one column type once the developer drops an
+ * external lamp in. Real roads are not re-lit all at once, so an older or
+ * heritage column appears occasionally among the standard ones rather than
+ * replacing the whole run — that is what `augment` means in the asset registry,
+ * and it is the difference between "we added a nice model" and "every lamp on
+ * this Indian arterial road is Victorian".
+ */
 export function streetLights(spacing = 46): Placed[] {
+  const pool = resolveAssetIds({ external: ['infrastructure-lamp'], project: ['street-light'] })
+  const primary = pool[0]
+  const alternates = pool.slice(1)
   const list: Placed[] = []
+  let index = 0
+
   for (let z = -8; z > -940; z -= spacing) {
     const side = Math.round(z / spacing) % 2 === 0 ? -1 : 1
     // no column where the site entrance meets the road
     if (side === -1 && z < -46 && z > -74) continue
     const x = side * (ROAD_EDGE - 0.6)
-    list.push({ id: 'street-light', x, z, rotation: side < 0 ? 0 : Math.PI, y: seat(x, z) })
+    // roughly one column in five is an older survivor
+    const id =
+      alternates.length && index % 5 === 3 ? alternates[Math.floor(index / 5) % alternates.length] : primary
+    list.push({ id, x, z, rotation: side < 0 ? 0 : Math.PI, y: seat(x, z) })
+    index += 1
   }
   return list
 }
@@ -102,13 +122,19 @@ export function streetLights(spacing = 46): Placed[] {
 /** Working yard inside the compound: plant, materials, shed, barriers. */
 export function yardProps(): Placed[] {
   const b = HERO_BUILDING
+  // Construction plant and site props are exactly the objects the brief (§11)
+  // says benefit most from real modelling, so external assets win these slots
+  // whenever the developer has supplied one.
+  const [plant] = resolveAssetIds({ external: ['construction-plant'], project: ['excavator'] })
+  const [lorry] = truckPool()
+
   const props: [string, number, number, number][] = [
     ['construction-shed', b.x - 15, b.z - 18, 0.42],
     ['material-stack', b.x - 15, b.z + 16, 0.9],
     ['cement-bags', b.x + 14, b.z + 20, -0.3],
     ['rebar-stack', b.x - 11, b.z - 16, 0.4],
-    ['excavator', b.x + 9, b.z - 16, -1.1],
-    ['truck-a', b.x + 14, b.z - 4, Math.PI / 2],
+    [plant, b.x + 9, b.z - 16, -1.1],
+    [lorry, b.x + 14, b.z - 4, Math.PI / 2],
     // material stock staged along the corridor for the service worlds
     ['material-stack', -40, -318, 2.1],
     ['cement-bags', 46, -470, 1.4],
@@ -123,6 +149,51 @@ export function yardBarriers(): Placed[] {
     const z = GATE.z + i * 3.2
     return { id: 'barrier', x, z, rotation: -Math.PI / 2, scale: 0.92, y: seat(x, z) }
   })
+}
+
+/**
+ * Loose site props scattered around the gate and the yard edge.
+ *
+ * Only rendered when the developer has actually supplied an external prop —
+ * cones, drums, pallets. There is no procedural fallback here on purpose: an
+ * invented box on the verge adds nothing, whereas a real cone reads instantly
+ * as a working site (brief §11, §16).
+ */
+export function externalSiteProps(): { id: string; items: Placed[] }[] {
+  const pool = resolveAssetIds({ external: ['construction-prop'], project: [] })
+  if (!pool.length) return []
+
+  // Cones and drums line the open edge of the compound and taper away from the
+  // gate, the way a real site marks its working boundary.
+  const spots: [number, number][] = [
+    [PLOT.x1 + 1.4, GATE.z - 8.4],
+    [PLOT.x1 + 1.9, GATE.z - 5.1],
+    [PLOT.x1 + 2.2, GATE.z + 5.6],
+    [PLOT.x1 + 1.6, GATE.z + 8.9],
+    [-9.6, GATE.z - 12.5],
+    [-9.9, GATE.z + 13.1],
+    [HERO_BUILDING.x + 19, HERO_BUILDING.z - 9],
+    [HERO_BUILDING.x + 17, HERO_BUILDING.z + 6],
+  ]
+
+  const random = prng(9311)
+  const groups = new Map<string, Placed[]>()
+  spots.forEach(([x, z], index) => {
+    const id = pool[index % pool.length]
+    const item: Placed = {
+      id,
+      x: x + (random() - 0.5) * 0.8,
+      z: z + (random() - 0.5) * 0.8,
+      rotation: random() * Math.PI * 2,
+      // knocked-about site kit is never uniform
+      scale: 0.9 + random() * 0.25,
+      y: seat(x, z),
+    }
+    const bucket = groups.get(id) ?? []
+    bucket.push(item)
+    groups.set(id, bucket)
+  })
+  return [...groups.entries()].map(([id, items]) => ({ id, items }))
 }
 
 /** Ground patches: compacted yard, spill marks, dust drift. */
@@ -169,31 +240,75 @@ export function groundPatches(): Patch[] {
 
 /* --------------------------------------------------------- parked vehicles */
 
+/**
+ * The car pool, resolved through the asset priority ladder.
+ *
+ *     real external GLB  →  existing project GLB  →  procedural geometry
+ *
+ * When the developer has dropped a realistic car into
+ * `public/assets/external/`, the parked and moving traffic use it. When they
+ * have not, the project's own `car-a` / `car-b` / `car-c` fill the same slots
+ * and nothing about the scene changes. No component needs to know which
+ * happened (brief §1, §7, §13).
+ */
+export function carPool(): string[] {
+  return resolveAssetIds({
+    external: ['vehicle-car', 'vehicle-suv'],
+    project: ['car-a', 'car-b', 'car-c'],
+  })
+}
+
+/** Larger vehicles for the yard and the freight end of the corridor. */
+export function truckPool(): string[] {
+  return resolveAssetIds({ external: ['vehicle-truck'], project: ['truck-a'] })
+}
+
+/**
+ * Kerbside parking.
+ *
+ * Positions are fixed so the offline QA renderer and the browser agree, but
+ * which model stands in each bay is drawn from the pool, and the orientation
+ * jitters a little either side of square: cars parked by people are never all
+ * at exactly the same angle (brief §8).
+ */
 export function parkedVehicles(): { id: string; items: Placed[] }[] {
-  const carsA = [-34, -150, -402, -676].map((z, index) => ({
-    id: 'car-a',
-    x: index % 2 === 0 ? -6.6 : 6.8,
-    z,
-    rotation: index % 2 === 0 ? Math.PI / 2 : -Math.PI / 2,
-    y: 0,
-  }))
-  const carsB = [-96, -292, -640].map((z, index) => ({
-    id: 'car-c',
-    x: index % 2 === 0 ? 6.6 : -6.5,
-    z,
-    rotation: index % 2 === 0 ? -Math.PI / 2 : Math.PI / 2,
-    y: 0,
-  }))
-  return [
-    { id: 'car-a', items: carsA },
-    { id: 'car-c', items: carsB },
+  const pool = carPool()
+  const bays: [number, number][] = [
+    [-34, -6.6],
+    [-96, 6.6],
+    [-150, 6.8],
+    [-292, -6.5],
+    [-402, -6.7],
+    [-640, 6.6],
+    [-676, 6.9],
   ]
+
+  const random = prng(7717)
+  const groups = new Map<string, Placed[]>()
+
+  bays.forEach(([z, x], index) => {
+    const id = pool[index % pool.length]
+    const facing = x < 0 ? Math.PI / 2 : -Math.PI / 2
+    const item: Placed = {
+      id,
+      x: x + (random() - 0.5) * 0.5,
+      z: z + (random() - 0.5) * 2.4,
+      // ±5° of slop: nobody parks perfectly parallel to a kerb
+      rotation: facing + (random() - 0.5) * 0.17,
+      y: 0,
+    }
+    const bucket = groups.get(id) ?? []
+    bucket.push(item)
+    groups.set(id, bucket)
+  })
+
+  return [...groups.entries()].map(([id, items]) => ({ id, items }))
 }
 
 /* ------------------------------------------------------------------ traffic */
 
 export type TrafficCar = {
-  id: 'car-b' | 'car-c'
+  id: string
   /** -1 travels north (-z) in the -x lane, +1 travels south (+z) */
   direction: -1 | 1
   speed: number
@@ -201,12 +316,28 @@ export type TrafficCar = {
   laneOffset: number
 }
 
-export const TRAFFIC: TrafficCar[] = [
-  { id: 'car-b', direction: -1, speed: 12.5, start: -20, laneOffset: 0 },
-  { id: 'car-c', direction: 1, speed: 10.5, start: -220, laneOffset: 0.1 },
-  { id: 'car-b', direction: -1, speed: 14, start: -430, laneOffset: -0.15 },
-  { id: 'car-c', direction: 1, speed: 11.5, start: -640, laneOffset: 0.05 },
+/**
+ * Live traffic.
+ *
+ * The lane discipline, speeds and spacing are fixed; the models are drawn from
+ * the car pool so external vehicles take over automatically when present. Four
+ * slots are cycled through however many models exist, so a single dropped car
+ * still works and three dropped cars produce no visible repeat within a shot.
+ */
+const TRAFFIC_SLOTS: Omit<TrafficCar, 'id'>[] = [
+  { direction: -1, speed: 12.5, start: -20, laneOffset: 0 },
+  { direction: 1, speed: 10.5, start: -220, laneOffset: 0.1 },
+  { direction: -1, speed: 14, start: -430, laneOffset: -0.15 },
+  { direction: 1, speed: 11.5, start: -640, laneOffset: 0.05 },
 ]
+
+export function traffic(): TrafficCar[] {
+  const pool = carPool()
+  return TRAFFIC_SLOTS.map((slot, index) => ({ ...slot, id: pool[index % pool.length] }))
+}
+
+/** Back-compatible eager view, for callers that only read the list once. */
+export const TRAFFIC: TrafficCar[] = traffic()
 
 /* --------------------------------------------------------------- vegetation */
 

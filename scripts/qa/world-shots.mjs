@@ -32,6 +32,7 @@ import {
   yardProps,
 } from '../../src/lib/layout.ts'
 import { GATE, PLOT } from '../../src/lib/layout.ts'
+import { assetById } from '../../src/data/assets.ts'
 import { HERO_BUILDING, SERVICE_WORLDS } from '../../src/lib/world.ts'
 import { DEFAULT_SKY } from '../../src/lib/sky.ts'
 import {
@@ -160,21 +161,48 @@ const MATERIAL_KEY = {
 
 const glbCache = new Map()
 
+/**
+ * Locate an asset's GLB by registry id.
+ *
+ * Project assets live in `public/assets/glb/<id>.glb`; developer-supplied ones
+ * are built to `public/assets/external/build/`. Resolving through the shared
+ * registry means the offline renderer draws exactly the models the browser
+ * loads — including external ones — instead of silently skipping them and
+ * reporting a scene that does not exist.
+ */
+function fileForAsset(id) {
+  const entry = assetById.get(id)
+  if (entry) {
+    const fromRegistry = path.join(ROOT, 'public', entry.path.replace(/^\//, ''))
+    if (fs.existsSync(fromRegistry)) return fromRegistry
+  }
+  const legacy = path.join(GLB_DIR, `${id}.glb`)
+  return fs.existsSync(legacy) ? legacy : null
+}
+
 async function prims(id) {
   if (!glbCache.has(id)) {
-    const file = path.join(GLB_DIR, `${id}.glb`)
-    if (!fs.existsSync(file)) {
+    const file = fileForAsset(id)
+    if (!file) {
+      console.warn(`  ! no GLB on disk for asset "${id}" — it will not appear in these frames`)
       glbCache.set(id, [])
       return glbCache.get(id)
     }
+    const entry = assetById.get(id)
     const { prims: loaded } = await loadGLB(file)
     glbCache.set(
       id,
-      loaded.map((prim) => ({
-        ...prim,
-        material: MATERIAL_KEY[prim.material] ?? prim.material,
-        alphaTest: ['leaf', 'leafDry'].includes(MATERIAL_KEY[prim.material] ?? '') ? 0.5 : 0,
-      })),
+      loaded.map((prim) => {
+        // External assets carry their own material names; map them through the
+        // registry's hint map first, then through the rasteriser's surface table.
+        const hinted = entry?.materialMap?.[prim.material] ?? prim.material
+        const material = MATERIAL_KEY[hinted] ?? MATERIAL_KEY[prim.material] ?? hinted
+        return {
+          ...prim,
+          material,
+          alphaTest: ['leaf', 'leafDry'].includes(material) ? 0.5 : 0,
+        }
+      }),
     )
   }
   return glbCache.get(id)

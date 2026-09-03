@@ -15,6 +15,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { Document, NodeIO } from '@gltf-transform/core'
+import { ALL_EXTENSIONS } from '@gltf-transform/extensions'
 import * as THREE from 'three'
 import { encodePNG } from './png.mjs'
 
@@ -45,7 +46,11 @@ function readVec(accessor, components) {
 }
 
 export async function loadGLB(file) {
-  const io = new NodeIO()
+  // External assets arrive with whatever extensions their author used —
+  // quantised meshes, KHR materials, punctual lights. Registering the full set
+  // means the offline renderer reads the same file the browser does instead of
+  // refusing it.
+  const io = new NodeIO().registerExtensions(ALL_EXTENSIONS)
   const doc = await io.read(file)
   const root = doc.getRoot()
   const meshes = []

@@ -8,6 +8,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import type { Object3D } from 'three'
 import { assetById, preloadAssetIds, type AssetEntry } from '@/data/assets'
 import { materialForKey } from './materials'
+import { applyExternalMaterials, bodyColourFor } from './external-materials'
 import type { QualitySettings } from './quality'
 
 /** ----------------------------------------------------------------- preload */
@@ -30,7 +31,31 @@ export function getAsset(id: string): AssetEntry | undefined {
   return assetById.get(id)
 }
 
-function applyAssetMaterials(root: Object3D, asset: AssetEntry, quality: QualitySettings) {
+function applyAssetMaterials(
+  root: Object3D,
+  asset: AssetEntry,
+  quality: QualitySettings,
+  tint?: THREE.Color,
+) {
+  /**
+   * External assets keep their own PBR wherever they shipped real textures;
+   * only measurable defects are corrected. Project assets are authored bare and
+   * take their whole surface from the shared material library. Both paths end
+   * with the same shadow and culling policy so the two kinds of object sit in
+   * the scene identically (brief §6, §19).
+   */
+  if (asset.external && asset.externalMaterials) {
+    applyExternalMaterials(root as THREE.Object3D, asset.externalMaterials, quality.textureSize, {
+      shadows: quality.shadows,
+      tint,
+    })
+    root.traverse((object) => {
+      const mesh = object as unknown as { isMesh?: boolean; frustumCulled: boolean }
+      if (mesh.isMesh) mesh.frustumCulled = false
+    })
+    return
+  }
+
   root.traverse((object) => {
     const mesh = object as unknown as { isMesh?: boolean; material?: unknown; castShadow: boolean; receiveShadow: boolean; frustumCulled: boolean }
     if (!mesh.isMesh) return
@@ -145,13 +170,18 @@ function AssetModelInner({
   })
 
   useEffect(() => {
-    applyAssetMaterials(clone, asset, quality)
+    // Body colour varies by where the vehicle stands, so two external cars in
+    // the same frame are never the same colour (brief §8) and the choice is
+    // stable across reloads.
+    const [px, , pz] = position ?? [0, 0, 0]
+    const tint = asset.external && asset.category === 'vehicle' ? bodyColourFor(px, pz) : undefined
+    applyAssetMaterials(clone, asset, quality, tint)
     onObject?.(clone)
     if (!fired.current) {
       fired.current = true
       onLoaded?.()
     }
-  }, [clone, asset, quality, onObject, onLoaded])
+  }, [clone, asset, quality, onObject, onLoaded, position])
 
   if (lod === 'auto' && !near) return null
 
@@ -236,15 +266,34 @@ export function InstancedAsset({
 
   const groups = useMemo(() => {
     if (!asset) return []
-    const buckets = new Map<string, THREE.BufferGeometry[]>()
+    /**
+     * Bucket geometry by the material it will actually be drawn with.
+     *
+     * For project assets that is the shared library key, so five tree variants
+     * collapse into two draw calls. For an external asset that shipped its own
+     * PBR the bucket is the source material itself — merging those under a
+     * library key would throw away the textures that made the asset worth
+     * using in the first place (brief §6).
+     */
+    const preserve = Boolean(asset.external && asset.preserveMaterials)
+    if (asset.external && asset.externalMaterials) {
+      // Correct the source materials once, in place. `applyExternalMaterials`
+      // is idempotent, so sharing the cached GLTF scene between the instanced
+      // and non-instanced paths is safe.
+      applyExternalMaterials(gltf.scene, asset.externalMaterials, quality.textureSize, {
+        shadows: quality.shadows,
+      })
+    }
+    const buckets = new Map<string, { geometries: THREE.BufferGeometry[]; material: THREE.Material | null; key: string }>()
     gltf.scene.updateMatrixWorld(true)
     gltf.scene.traverse((object) => {
       const mesh = object as THREE.Mesh
       if (!mesh.isMesh || !mesh.geometry) return
       const source = mesh.geometry as THREE.BufferGeometry
-      const original = mesh.material as { name?: string }
+      const original = mesh.material as THREE.Material & { name?: string }
       const name = typeof original?.name === 'string' ? original.name : ''
       const key = asset.materialMap[name] ?? (name || 'concrete')
+      const bucketKey = preserve ? (original?.uuid ?? key) : key
       const geometry = source.clone()
       geometry.applyMatrix4(mesh.matrixWorld)
       const clean = geometry.index ? geometry.toNonIndexed() : geometry
@@ -259,18 +308,19 @@ export function InstancedAsset({
         const count = clean.attributes.position.count
         clean.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(count * 2), 2))
       }
-      const bucket = buckets.get(key)
-      if (bucket) bucket.push(clean)
-      else buckets.set(key, [clean])
+      const bucket = buckets.get(bucketKey)
+      if (bucket) bucket.geometries.push(clean)
+      else buckets.set(bucketKey, { geometries: [clean], material: preserve ? original : null, key })
     })
 
-    return [...buckets.entries()].map(([key, geometries]) => {
+    return [...buckets.entries()].map(([bucketKey, bucket]) => {
+      const { geometries } = bucket
       const merged = geometries.length === 1 ? geometries[0] : mergeGeometries(geometries, false)
       if (merged !== geometries[0]) geometries.forEach((geometry) => geometry.dispose())
       merged.computeBoundingSphere()
-      return { key, geometry: merged }
+      return { key: bucketKey, materialKey: bucket.key, geometry: merged, material: bucket.material }
     })
-  }, [gltf, asset])
+  }, [gltf, asset, quality.textureSize, quality.shadows])
 
   const dummy = useMemo(() => new THREE.Object3D(), [])
   const tint = useMemo(() => new THREE.Color(1, 1, 1), [])
@@ -289,7 +339,7 @@ export function InstancedAsset({
         <InstancedPart
           key={group.key}
           geometry={group.geometry}
-          material={materialForKey(group.key, { textureSize: quality.textureSize })}
+          material={group.material ?? materialForKey(group.materialKey, { textureSize: quality.textureSize })}
           items={items}
           capacity={capacity ?? Math.max(1, items.length)}
           dummy={dummy}
