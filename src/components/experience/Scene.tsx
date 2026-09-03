@@ -8,7 +8,9 @@ import { Lighting } from './Lighting'
 import { Atmosphere } from './Atmosphere'
 import { Sky } from './Sky'
 import { RealWorld } from './RealWorld'
-import { WindSystem } from './WindSystem'
+import { Ground } from './Ground'
+import { Road } from './Road'
+import { Vegetation, WindClock } from './Vegetation'
 import { EntranceGate } from './EntranceGate'
 import { HeroBuilding } from './chapters/HeroBuilding'
 import { ServicesWorlds } from './chapters/ServicesWorlds'
@@ -27,8 +29,11 @@ export function Scene({ quality }: { quality: QualitySettings }) {
       <Lighting quality={quality} />
       <Atmosphere quality={quality} />
       <Sky quality={quality} />
+      <Ground quality={quality} />
+      <Road quality={quality} />
+      <Vegetation quality={quality} />
+      <WindClock />
       <RealWorld quality={quality} />
-      <WindSystem quality={quality} />
       <EntranceGate quality={quality} />
 
       <HeroBuilding quality={quality} />

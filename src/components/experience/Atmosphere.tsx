@@ -4,89 +4,48 @@ import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import type { QualitySettings } from '@/lib/quality'
-import { asphaltMaterial, foliageMaterial, PALETTE } from '@/lib/materials'
 import { dustSprite } from '@/lib/textures'
-import { DEFAULT_ENVIRONMENT } from '@/data/environments'
+import { HORIZON_COLOR } from './Sky'
 
 /**
- * The physical envelope: natural soil/grass ground, atmospheric haze and
- * subtle drifting particles. The road, vegetation and buildings are layered on
- * top by the other chapter components.
+ * Atmosphere.
+ *
+ * Distance haze (subtle, exponential, matched to the horizon) plus a very
+ * light dust drift. The haze is what gives the world depth; the dust is only
+ * there to catch the light near the ground in the construction stretches.
  */
-export function Atmosphere({ quality }: { quality: QualitySettings }) {
-  const ground = useMemo(() => foliageMaterial(PALETTE.foliage, quality.textureSize), [quality.textureSize])
-  const groundFar = useMemo(() => foliageMaterial('#7f8f67', quality.textureSize), [quality.textureSize])
-  const asphalt = asphaltMaterial(quality.textureSize)
-  const preset = DEFAULT_ENVIRONMENT
 
+export function Atmosphere({ quality }: { quality: QualitySettings }) {
+  const fog = useMemo(() => new THREE.FogExp2(HORIZON_COLOR.getHex(), 0.0016), [])
   return (
     <>
-      <fogExp2 attach="fog" args={[preset.fog.color, preset.fog.density]} />
-
-      {/* soil base */}
-      <mesh rotation-x={-Math.PI / 2} position={[0, -0.05, -650]} receiveShadow>
-        <planeGeometry args={[2400, 2400]} />
-        <primitive object={groundFar} attach="material" />
-      </mesh>
-
-      {/* compacted earth corridor around the road */}
-      <mesh rotation-x={-Math.PI / 2} position={[0, 0.14, -650]} receiveShadow>
-        <planeGeometry args={[260, 1600]} />
-        <primitive object={ground} attach="material" />
-      </mesh>
-
-      {/* asphalt ribbon — the road the visitor travels along */}
-      <mesh rotation-x={-Math.PI / 2} position={[0, 0.2, -650]} receiveShadow>
-        <planeGeometry args={[7.4, 1600]} />
-        <primitive object={asphalt} attach="material" />
-      </mesh>
-
-      {/* edge lines */}
-      <RoadLine x={-3.5} />
-      <RoadLine x={3.5} />
-
+      <primitive object={fog} attach="fog" />
       <Dust quality={quality} />
     </>
   )
 }
 
-function RoadLine({ x }: { x: number }) {
-  const material = useMemo(
-    () =>
-      new THREE.MeshStandardMaterial({
-        color: new THREE.Color('#e9e5d9'),
-        roughness: 0.8,
-        metalness: 0,
-      }),
-    [],
-  )
-  return (
-    <mesh rotation-x={-Math.PI / 2} position={[x, 0.22, -650]} material={material}>
-      <planeGeometry args={[0.1, 1600]} />
-    </mesh>
-  )
-}
-
 function Dust({ quality }: { quality: QualitySettings }) {
   const points = useRef<THREE.Points>(null)
-  const count = Math.max(40, Math.round(quality.dust * 0.35))
+  const count = Math.max(30, Math.round(quality.dust * 0.22))
+  const bounds = useMemo(() => new THREE.Vector3(150, 30, 150), [])
 
-  const { geometry, drift, size } = useMemo(() => {
+  const { geometry, drift } = useMemo(() => {
     const positions = new Float32Array(count * 3)
-    const drift = new Float32Array(count)
-    const size = new THREE.Vector3(180, 46, 180)
+    const drift = new Float32Array(count * 2)
     for (let i = 0; i < count; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * size.x
-      positions[i * 3 + 1] = Math.random() * size.y
-      positions[i * 3 + 2] = (Math.random() - 0.5) * size.z
-      drift[i] = 0.08 + Math.random() * 0.34
+      positions[i * 3] = (Math.random() - 0.5) * bounds.x
+      positions[i * 3 + 1] = Math.random() * bounds.y
+      positions[i * 3 + 2] = (Math.random() - 0.5) * bounds.z
+      drift[i * 2] = 0.06 + Math.random() * 0.22
+      drift[i * 2 + 1] = Math.random() * Math.PI * 2
     }
     const geometry = new THREE.BufferGeometry()
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-    return { geometry, drift, size }
-  }, [count])
+    return { geometry, drift }
+  }, [count, bounds])
 
-  const sprite = useMemo(() => dustSprite(48), [])
+  const sprite = useMemo(() => dustSprite(), [])
 
   useFrame((state, delta) => {
     const mesh = points.current
@@ -99,21 +58,21 @@ function Dust({ quality }: { quality: QualitySettings }) {
 
     for (let i = 0; i < count; i++) {
       const i3 = i * 3
-      array[i3 + 1] += drift[i] * dt
-      array[i3] += Math.sin(time * 0.22 + i) * 0.006
-      array[i3 + 2] += Math.sin(time * 0.16 + i * 1.3) * 0.004
+      array[i3] += (Math.sin(time * 0.13 + drift[i * 2 + 1]) * 0.12 + drift[i * 2]) * dt
+      array[i3 + 1] += Math.sin(time * 0.21 + i) * 0.012 * dt * 10
+      array[i3 + 2] += Math.cos(time * 0.11 + drift[i * 2 + 1]) * 0.09 * dt
 
       let dx = array[i3] - camera.x
-      if (dx > size.x / 2) array[i3] -= size.x
-      else if (dx < -size.x / 2) array[i3] += size.x
+      if (dx > bounds.x / 2) array[i3] -= bounds.x
+      else if (dx < -bounds.x / 2) array[i3] += bounds.x
 
       let dy = array[i3 + 1] - camera.y
-      if (dy > size.y / 2) array[i3 + 1] -= size.y
-      else if (dy < -size.y / 2) array[i3 + 1] += size.y
+      if (dy > bounds.y / 2) array[i3 + 1] -= bounds.y
+      else if (dy < -bounds.y / 2) array[i3 + 1] += bounds.y
 
       let dz = array[i3 + 2] - camera.z
-      if (dz > size.z / 2) array[i3 + 2] -= size.z
-      else if (dz < -size.z / 2) array[i3 + 2] += size.z
+      if (dz > bounds.z / 2) array[i3 + 2] -= bounds.z
+      else if (dz < -bounds.z / 2) array[i3 + 2] += bounds.z
     }
     attribute.needsUpdate = true
   })
@@ -121,26 +80,16 @@ function Dust({ quality }: { quality: QualitySettings }) {
   return (
     <points ref={points} geometry={geometry} frustumCulled={false}>
       <pointsMaterial
-        size={0.07}
+        size={0.05}
         sizeAttenuation
         map={sprite}
         alphaMap={sprite}
-        color="#e9e0c5"
+        color="#e6dcc4"
         transparent
-        opacity={0.22}
+        opacity={0.16}
         depthWrite={false}
         blending={THREE.NormalBlending}
       />
     </points>
-  )
-}
-
-/** Thin natural horizon band. */
-export function Horizon() {
-  return (
-    <mesh position={[0, 0.05, -1400]}>
-      <planeGeometry args={[2600, 60]} />
-      <meshBasicMaterial color="#a9b9b6" transparent opacity={0.62} />
-    </mesh>
   )
 }

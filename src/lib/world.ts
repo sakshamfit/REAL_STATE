@@ -7,8 +7,10 @@ export const GROUND_Y = 0
 
 /** Hero building — assembled in THE BUILD, orbited in THE COMPANY. */
 export const HERO_BUILDING = {
-  x: 0,
-  z: -74,
+  /** West of the road corridor: the plot sits behind a boundary wall, the way a
+   *  real site fronts its access road. */
+  x: -40,
+  z: -104,
   width: 24,
   depth: 24,
   height: 46,
@@ -16,18 +18,22 @@ export const HERO_BUILDING = {
 } as const
 
 /** Six service worlds. */
+/**
+ * Six service worlds, alternating either side of the road corridor so the
+ * camera can drive past each one rather than through it.
+ */
 export const SERVICE_WORLDS = {
-  civil: { x: 0, z: -206 },
-  residential: { x: 32, z: -262 },
-  infrastructure: { x: -26, z: -300 },
-  solar: { x: 28, z: -360 },
-  renovation: { x: -46, z: -412 },
-  materials: { x: -14, z: -451 },
+  civil: { x: -48, z: -206 },
+  residential: { x: 50, z: -262 },
+  infrastructure: { x: -48, z: -300 },
+  solar: { x: 50, z: -360 },
+  renovation: { x: -48, z: -412 },
+  materials: { x: 50, z: -451 },
 } as const
 
 /** Miniature construction environment (HOW WE BUILD). */
 export const PROCESS_MODEL = {
-  x: 0,
+  x: -50,
   zFrom: -498,
   zTo: -552,
   width: 36,
@@ -44,16 +50,17 @@ export const MATERIAL_GATES = [
 ] as const
 
 /** Trust structure. */
-export const TRUST_STRUCTURE = { x: 0, z: -744 } as const
+export const TRUST_STRUCTURE = { x: -38, z: -744 } as const
 
 /** Client corridor. */
-export const CORRIDOR = { from: -762, to: -880, width: 16, height: 13 } as const
+export const CORRIDOR = { x: 44, from: -762, to: -880, width: 16, height: 13 } as const
 
 /** India map. */
 export const INDIA_MAP = {
   x: 0,
   z: -1000,
-  y: 14,
+  /** the map is a physical model on a plinth, not a floating hologram */
+  y: 1.2,
   /** Baked extrusion depth; each state scales this for its thickness. */
   depth: 1.45,
   baseDepthScale: 0.17,

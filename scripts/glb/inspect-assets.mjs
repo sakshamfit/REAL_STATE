@@ -11,6 +11,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { NodeIO } from '@gltf-transform/core'
+import { boundsForFile } from './bounds.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.resolve(__dirname, '../..')
@@ -34,7 +35,6 @@ for (const file of fs.readdirSync(ASSET_DIR).filter((f) => f.endsWith('.glb')).s
   let hasUvs = true
   let hasNaN = false
   let hasInfinity = false
-  let bounds = { min: [Infinity, Infinity, Infinity], max: [-Infinity, -Infinity, -Infinity] }
 
   for (const mesh of meshes) {
     for (const prim of mesh.listPrimitives()) {
@@ -44,24 +44,17 @@ for (const file of fs.readdirSync(ASSET_DIR).filter((f) => f.endsWith('.glb')).s
       vertices += pos.getCount()
       hasNormals = hasNormals && inputs.includes('NORMAL')
       hasUvs = hasUvs && inputs.includes('TEXCOORD_0')
-      const array = pos.getArray()
-      if (array) {
-        for (let i = 0; i < array.length; i++) {
-          const value = array[i]
-          if (Number.isNaN(value)) hasNaN = true
-          if (!Number.isFinite(value)) hasInfinity = true
-          const component = i % 3
-          if (component === 0) bounds.min[0] = Math.min(bounds.min[0], value)
-          if (component === 1) bounds.min[1] = Math.min(bounds.min[1], value)
-          if (component === 2) bounds.min[2] = Math.min(bounds.min[2], value)
-          if (component === 0) bounds.max[0] = Math.max(bounds.max[0], value)
-          if (component === 1) bounds.max[1] = Math.max(bounds.max[1], value)
-          if (component === 2) bounds.max[2] = Math.max(bounds.max[2], value)
-        }
-      }
+      // finite-ness is checked on the de-quantised world-space vertices
+      void pos
     }
   }
 
+  // world-space measurement (de-quantised, node transforms applied)
+  const bounds = boundsForFile(path.join(ASSET_DIR, file))
+  for (const value of bounds.points) {
+    if (Number.isNaN(value)) hasNaN = true
+    if (!Number.isFinite(value)) hasInfinity = true
+  }
   const size = fs.statSync(path.join(ASSET_DIR, file)).size
   rows.push({
     file,

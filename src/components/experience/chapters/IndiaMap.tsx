@@ -14,7 +14,7 @@ import { useIndiaFeatures } from '@/lib/use-india'
 import { isPresenceState, locationsForState, stateId } from '@/data/presence'
 import type { PresenceLocation } from '@/data/presence'
 import type { QualitySettings } from '@/lib/quality'
-import { decalMaterial, emissiveMaterial, stateBaseMaterial } from '@/lib/materials'
+import { concreteMaterial, metalMaterial, stateBaseMaterial } from '@/lib/materials'
 import { latLngToXZ } from '@/lib/projection'
 import { useChapterVisibility } from '../hooks'
 
@@ -217,13 +217,13 @@ export function IndiaMap({ quality }: { quality: QualitySettings }) {
       const base = entry.presence ? COLOR_PRESENCE : COLOR_BASE
       material.color.copy(base).lerp(COLOR_ACTIVE, anim.glow).lerp(COLOR_DIM, anim.dim * 0.7)
       material.emissive.set('#d7c7aa')
-      material.emissiveIntensity = entry.presence ? 0.04 + anim.glow * 0.32 : anim.glow * 0.24
-      material.metalness = 0.14 + anim.glow * 0.18
-      material.roughness = 0.84 - anim.glow * 0.24
+      material.emissiveIntensity = entry.presence ? 0.03 + anim.glow * 0.06 : anim.glow * 0.05
+      material.metalness = 0.14 + anim.glow * 0.06
+      material.roughness = 0.84 - anim.glow * 0.1
 
       const border = entry.border
       border.color.copy(COLOR_BORDER).lerp(COLOR_BORDER_ACTIVE, Math.max(anim.glow, isHovered ? 0.5 : 0))
-      border.opacity = 0.18 + anim.glow * 0.75 - anim.dim * 0.1
+      border.opacity = 0.18 + anim.glow * 0.5 - anim.dim * 0.1
     })
 
     // markers ride on top of the selected state's surface
@@ -239,13 +239,17 @@ export function IndiaMap({ quality }: { quality: QualitySettings }) {
 
   return (
     <group ref={groupRef} position={[INDIA_MAP.x, INDIA_MAP.y, INDIA_MAP.z]}>
-      {/* survey plane */}
-      <mesh rotation-x={-Math.PI / 2} position={[0, -0.05, 0]}>
-        <planeGeometry args={[120, 120]} />
-        <primitive object={decalMaterial('#000000', 0.75)} attach="material" />
+      {/* the model sits on a real stone plinth at ground level */}
+      <mesh position={[0, -0.66, 0]} receiveShadow>
+        <boxGeometry args={[126, 1.2, 126]} />
+        <primitive object={concreteMaterial('mid', 24, quality.textureSize)} attach="material" />
       </mesh>
-      <lineSegments geometry={rings} position={[0, -0.02, 0]}>
-        <lineBasicMaterial color={"#b9ab93"} transparent opacity={0.16} depthWrite={false} />
+      <mesh rotation-x={-Math.PI / 2} position={[0, -0.04, 0]} receiveShadow>
+        <planeGeometry args={[124, 124]} />
+        <primitive object={concreteMaterial('light', 30, quality.textureSize)} attach="material" />
+      </mesh>
+      <lineSegments geometry={rings} position={[0, 0.01, 0]}>
+        <lineBasicMaterial color={'#8f8570'} transparent opacity={0.12} depthWrite={false} />
       </lineSegments>
 
       {states.map((entry, index) => (
@@ -346,25 +350,19 @@ function CityMarker({
     })
   }, [index, reducedMotion])
 
-  useFrame((state) => {
-    if (!ring.current) return
-    const pulse = (state.clock.elapsedTime * 0.6 + index * 0.4) % 1
-    ring.current.scale.setScalar(0.6 + pulse * 1.8)
-    const material = ring.current.material as THREE.MeshBasicMaterial
-    material.opacity = (1 - pulse) * 0.55
-  })
+  void index
 
   return (
     <group ref={group} position={[x, 0, z]}>
-      <mesh position={[0, 1.15, 0]} material={emissiveMaterial('#b9aa8e', 0.6)}>
-        <cylinderGeometry args={[0.035, 0.035, 2.3, 6]} />
+      <mesh position={[0, 1.15, 0]} castShadow material={metalMaterial('accent', 1, 256)}>
+        <cylinderGeometry args={[0.045, 0.045, 2.3, 8]} />
       </mesh>
-      <mesh position={[0, 2.42, 0]} material={emissiveMaterial('#cabb9d', 0.9)}>
-        <octahedronGeometry args={[0.19, 0]} />
+      <mesh position={[0, 2.42, 0]} castShadow material={metalMaterial('accent', 1, 256)}>
+        <sphereGeometry args={[0.17, 12, 8]} />
       </mesh>
       <mesh ref={ring} rotation-x={-Math.PI / 2} position={[0, 0.06, 0]}>
-        <ringGeometry args={[0.42, 0.5, 40]} />
-        <meshBasicMaterial color="#c3b49a" transparent opacity={0.5} depthWrite={false} />
+        <ringGeometry args={[0.4, 0.44, 40]} />
+        <meshBasicMaterial color="#8f8570" transparent opacity={0.32} depthWrite={false} />
       </mesh>
       <Html transform position={[0, 3.1, 0]} distanceFactor={13} style={{ pointerEvents: 'none' }}>
         <span

@@ -1,11 +1,8 @@
 'use client'
 
-import { useEffect, useMemo, useRef, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { beatLocal } from '@/lib/chapters'
-import { runtime } from '@/lib/store'
-import { smoothstep } from '@/lib/math'
 
 export type Item = {
   position: [number, number, number]
@@ -51,50 +48,6 @@ export function InstancedBoxes({
       castShadow={castShadow}
       receiveShadow={receiveShadow}
     />
-  )
-}
-
-/**
- * Grows its children out of the ground as a beat plays — the assembly language
- * of the whole world.
- */
-export function Grow({
-  beat,
-  start = 0,
-  duration = 0.4,
-  drop = 0,
-  axis = 'y',
-  position,
-  rotation,
-  children,
-}: {
-  beat: string
-  start?: number
-  duration?: number
-  drop?: number
-  axis?: 'y' | 'all'
-  position?: [number, number, number]
-  rotation?: [number, number, number]
-  children: ReactNode
-}) {
-  const ref = useRef<THREE.Group>(null)
-  const baseY = position?.[1] ?? 0
-
-  useFrame(() => {
-    const group = ref.current
-    if (!group) return
-    const t = beatLocal(beat, runtime.progress)
-    const a = smoothstep((t - start) / duration)
-    if (axis === 'y') group.scale.set(1, Math.max(0.0001, a), 1)
-    else group.scale.setScalar(Math.max(0.0001, a))
-    group.position.y = baseY + (1 - a) * drop
-    group.visible = a > 0.002
-  })
-
-  return (
-    <group ref={ref} position={position} rotation={rotation}>
-      {children}
-    </group>
   )
 }
 

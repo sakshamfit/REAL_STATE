@@ -1,282 +1,170 @@
-import * as THREE from 'three'
-
 /**
- * Procedural textures — everything is generated in a canvas at runtime so the
- * experience ships zero image assets and still gets real material detail.
- * All generators are memoised and resolution-aware (mobile gets half res).
+ * Runtime texture layer.
+ *
+ * Wraps the procedural surfaces in `src/lib/surface/` as three.js
+ * DataTextures. Generation is lazy and chunked so the browser never blocks on
+ * a 500 ms texture build while the world is on screen.
  */
 
-type TextureSet = {
+import * as THREE from 'three'
+import {
+  asphaltSurface,
+  barkSurface,
+  brickSurface,
+  concreteSurface,
+  grassSurface,
+  leafAtlas,
+  metalSurface,
+  paintSurface,
+  renderSurface,
+  roadPaintSurface,
+  soilSurface,
+  stoneSurface,
+  type Surface,
+  type SurfaceSize,
+} from './surface/surfaces'
+
+export type TextureSet = {
   map: THREE.Texture
   normalMap: THREE.Texture
   roughnessMap: THREE.Texture
 }
 
-const cache = new Map<string, unknown>()
+type SurfaceFactory = (size: SurfaceSize) => Surface
 
-function memo<T>(key: string, make: () => T): T {
-  const hit = cache.get(key)
-  if (hit) return hit as T
-  const value = make()
-  cache.set(key, value)
-  return value
+/**
+ * Surface registry. `tile` is the world size one repeat covers in metres; the
+ * GLB generator bakes the same texel density into every asset's UVs.
+ */
+export const SURFACES: Record<string, { make: SurfaceFactory; tile: number }> = {
+  asphalt: { make: (s) => asphaltSurface(s, 11), tile: 4 },
+  roadPaint: { make: (s) => roadPaintSurface(s, 3), tile: 3 },
+  asphaltPatch: { make: (s) => asphaltSurface(s, 211), tile: 3 },
+  soil: { make: (s) => soilSurface(s, 21, { gravel: 0.5, dry: 0.55 }), tile: 6 },
+  soilDry: { make: (s) => soilSurface(s, 37, { gravel: 0.62, dry: 0.85 }), tile: 5 },
+  gravel: { make: (s) => soilSurface(s, 53, { gravel: 1.1, dry: 0.9 }), tile: 3 },
+  grass: { make: (s) => grassSurface(s, 33), tile: 3 },
+  leaf: { make: (s) => leafAtlas(s, 51), tile: 1 },
+  leafWarm: { make: (s) => leafAtlas(s, 67, { hue: 0.12 }), tile: 1 },
+  leafDry: { make: (s) => leafAtlas(s, 83, { dry: 0.85 }), tile: 1 },
+  blades: { make: (s) => leafAtlas(s, 137, { blade: true }), tile: 1 },
+  bladesDry: { make: (s) => leafAtlas(s, 149, { blade: true, dry: 0.9 }), tile: 1 },
+  concrete: { make: (s) => concreteSurface(s, 61, { tint: 0.66 }), tile: 3 },
+  concreteDark: { make: (s) => concreteSurface(s, 71, { tint: 0.42, pore: 0.7, streak: 0.7 }), tile: 3 },
+  concreteLight: { make: (s) => concreteSurface(s, 79, { tint: 0.78, pore: 0.35, streak: 0.4 }), tile: 3 },
+  render: { make: (s) => renderSurface(s, 71, { tint: 0.84, wear: 0.55 }), tile: 2.5 },
+  renderWarm: { make: (s) => renderSurface(s, 89, { tint: 0.8, wear: 0.7 }), tile: 2.5 },
+  renderOld: { make: (s) => renderSurface(s, 97, { tint: 0.66, wear: 1 }), tile: 2.5 },
+  stone: { make: (s) => stoneSurface(s, 83, { tint: 0.6 }), tile: 2.5 },
+  stoneBlock: { make: (s) => stoneSurface(s, 91, { tint: 0.58, blocks: 1 }), tile: 4 },
+  metal: { make: (s) => metalSurface(s, 97, { brushed: 1 }), tile: 1.5 },
+  metalRust: { make: (s) => metalSurface(s, 101, { rust: 0.7, brushed: 0.4 }), tile: 2 },
+  metalDark: { make: (s) => metalSurface(s, 103, { rust: 0.25, brushed: 0.6 }), tile: 1.5 },
+  bark: { make: (s) => barkSurface(s, 103), tile: 1.2 },
+  paint: { make: (s) => paintSurface(s, 113), tile: 2 },
+  brick: { make: (s) => brickSurface(s, 127), tile: 2.5 },
 }
 
-function canvas2d(size: number) {
-  const canvas = document.createElement('canvas')
-  canvas.width = size
-  canvas.height = size
-  const ctx = canvas.getContext('2d')!
-  return { canvas, ctx, image: ctx.createImageData(size, size) }
+const surfaceCache = new Map<string, Surface>()
+const textureCache = new Map<string, TextureSet>()
+
+let defaultSize: SurfaceSize = 256
+
+export function setSurfaceSize(size: SurfaceSize) {
+  defaultSize = size
 }
 
-function hash(x: number, y: number, seed: number) {
-  let h = x * 374761393 + y * 668265263 + seed * 1274126177
-  h = (h ^ (h >>> 13)) * 1274126177
-  return ((h ^ (h >>> 16)) & 0x7fffffff) / 0x7fffffff
+function getSurface(name: string, size: SurfaceSize): Surface | null {
+  const key = `${name}-${size}`
+  const hit = surfaceCache.get(key)
+  if (hit) return hit
+  const entry = SURFACES[name]
+  if (!entry) return null
+  const surface = entry.make(size)
+  surfaceCache.set(key, surface)
+  return surface
 }
 
-const fade = (t: number) => t * t * (3 - 2 * t)
-
-function valueNoise(x: number, y: number, seed: number) {
-  const xi = Math.floor(x)
-  const yi = Math.floor(y)
-  const xf = fade(x - xi)
-  const yf = fade(y - yi)
-  const a = hash(xi, yi, seed)
-  const b = hash(xi + 1, yi, seed)
-  const c = hash(xi, yi + 1, seed)
-  const d = hash(xi + 1, yi + 1, seed)
-  return (a + (b - a) * xf) * (1 - yf) + (c + (d - c) * xf) * yf
-}
-
-function fbm(x: number, y: number, seed: number, octaves = 4, gain = 0.5, lacunarity = 2) {
-  let value = 0
-  let amplitude = 1
-  let total = 0
-  let fx = x
-  let fy = y
-  for (let i = 0; i < octaves; i++) {
-    value += valueNoise(fx, fy, seed + i * 17) * amplitude
-    total += amplitude
-    amplitude *= gain
-    fx *= lacunarity
-    fy *= lacunarity
-  }
-  return value / total
-}
-
-/** Sobel height -> tangent space normal map. */
-function normalFromHeight(height: Float32Array, size: number, strength: number) {
-  const canvas = document.createElement('canvas')
-  canvas.width = size
-  canvas.height = size
-  const ctx = canvas.getContext('2d')!
-  const image = ctx.createImageData(size, size)
-  const at = (x: number, y: number) => height[((y + size) % size) * size + ((x + size) % size)]
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const dx = (at(x + 1, y) - at(x - 1, y)) * strength
-      const dy = (at(x, y + 1) - at(x, y - 1)) * strength
-      const len = Math.hypot(dx, dy, 1)
-      const i = (y * size + x) * 4
-      image.data[i] = ((-dx / len) * 0.5 + 0.5) * 255
-      image.data[i + 1] = ((-dy / len) * 0.5 + 0.5) * 255
-      image.data[i + 2] = (1 / len) * 0.5 * 255 + 127
-      image.data[i + 3] = 255
-    }
-  }
-  ctx.putImageData(image, 0, 0)
-  return canvas
-}
-
-function textureFromCanvas(canvas: HTMLCanvasElement, repeat: number) {
-  const texture = new THREE.CanvasTexture(canvas)
+function dataTexture(data: Uint8Array, size: number, srgb: boolean, alpha: boolean): THREE.DataTexture {
+  const texture = new THREE.DataTexture(data as unknown as Uint8Array<ArrayBuffer>, size, size, THREE.RGBAFormat)
   texture.wrapS = THREE.RepeatWrapping
   texture.wrapT = THREE.RepeatWrapping
-  texture.repeat.set(repeat, repeat)
-  texture.colorSpace = THREE.NoColorSpace
-  texture.anisotropy = 4
+  texture.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace
+  texture.magFilter = THREE.LinearFilter
+  texture.minFilter = THREE.LinearMipmapLinearFilter
+  texture.generateMipmaps = true
+  texture.anisotropy = 8
   texture.needsUpdate = true
   return texture
 }
 
-function albedoTexture(canvas: HTMLCanvasElement, repeat: number, srgb = true) {
-  const texture = new THREE.CanvasTexture(canvas)
-  texture.wrapS = THREE.RepeatWrapping
-  texture.wrapT = THREE.RepeatWrapping
-  texture.repeat.set(repeat, repeat)
-  texture.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace
-  texture.anisotropy = 4
-  return texture
-}
-
-/** Board-formed concrete: soft blotches, pores, horizontal form lines. */
-function buildConcrete(size: number, repeat: number, tint: number): TextureSet {
-  const albedo = canvas2d(size)
-  const rough = canvas2d(size)
-  const height = new Float32Array(size * size)
-
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const u = x / size
-      const v = y / size
-      const blotch = fbm(u * 5, v * 5, 11, 5)
-      const pores = fbm(u * 90, v * 90, 31, 3)
-      const form = Math.sin(v * Math.PI * 2 * 8 + fbm(u * 3, v * 3, 7, 2) * 2) * 0.5 + 0.5
-      const grain = hash(x, y, 5)
-
-      const value = tint * (0.72 + blotch * 0.38) * (0.94 + form * 0.06) - (pores > 0.74 ? (pores - 0.74) * 0.9 : 0)
-      const c = Math.max(0, Math.min(1, value)) * 255
-      const i = (y * size + x) * 4
-      albedo.image.data[i] = c
-      albedo.image.data[i + 1] = c
-      albedo.image.data[i + 2] = c * 1.005
-      albedo.image.data[i + 3] = 255
-
-      const r = 0.62 + (1 - blotch) * 0.3 + grain * 0.06
-      const rc = Math.max(0, Math.min(1, r)) * 255
-      rough.image.data[i] = rc
-      rough.image.data[i + 1] = rc
-      rough.image.data[i + 2] = rc
-      rough.image.data[i + 3] = 255
-
-      height[y * size + x] = blotch * 0.7 + pores * 0.2 + form * 0.1
-    }
+/** Memoised texture triple for a surface (albedo / roughness / normal). */
+export function surfaceTextures(name: string, size: SurfaceSize = defaultSize): TextureSet | null {
+  const key = `${name}-${size}`
+  const hit = textureCache.get(key)
+  if (hit) return hit
+  const surface = getSurface(name, size)
+  if (!surface) return null
+  const set: TextureSet = {
+    map: dataTexture(surface.albedo, surface.size, true, true),
+    roughnessMap: dataTexture(surface.roughness, surface.size, false, false),
+    normalMap: dataTexture(surface.normal, surface.size, false, false),
   }
-  albedo.ctx.putImageData(albedo.image, 0, 0)
-  rough.ctx.putImageData(rough.image, 0, 0)
+  textureCache.set(key, set)
+  return set
+}
 
-  return {
-    map: albedoTexture(albedo.canvas, repeat),
-    roughnessMap: textureFromCanvas(rough.canvas, repeat),
-    normalMap: textureFromCanvas(normalFromHeight(height, size, size / 26), repeat),
+/** World size (metres) covered by one texture tile — used for UV generation. */
+export function surfaceTile(name: string): number {
+  return SURFACES[name]?.tile ?? 2
+}
+
+export const SURFACE_NAMES = Object.keys(SURFACES)
+
+/**
+ * Builds the surfaces that must exist before the first frame, yielding to the
+ * browser between each one so the preloader keeps animating.
+ */
+export async function warmSurfaces(names: string[], size: SurfaceSize, onProgress?: (t: number) => void) {
+  for (let i = 0; i < names.length; i++) {
+    surfaceTextures(names[i], size)
+    onProgress?.((i + 1) / names.length)
+    // let the browser breathe between textures
+    await new Promise((resolve) => setTimeout(resolve, 0))
   }
-}
-
-/** Brushed metal: strong horizontal anisotropy. */
-function buildMetal(size: number, repeat: number, tint: number): TextureSet {
-  const albedo = canvas2d(size)
-  const rough = canvas2d(size)
-  const height = new Float32Array(size * size)
-
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const u = x / size
-      const v = y / size
-      const streak = fbm(u * 3, v * 160, 3, 3)
-      const sweep = fbm(u * 6, v * 6, 19, 4)
-      const value = tint * (0.68 + streak * 0.34) * (0.9 + sweep * 0.16)
-      const c = Math.max(0, Math.min(1, value)) * 255
-      const i = (y * size + x) * 4
-      albedo.image.data[i] = c
-      albedo.image.data[i + 1] = c
-      albedo.image.data[i + 2] = c * 0.99
-      albedo.image.data[i + 3] = 255
-
-      const r = 0.18 + streak * 0.34 + sweep * 0.1
-      const rc = Math.max(0, Math.min(1, r)) * 255
-      rough.image.data[i] = rc
-      rough.image.data[i + 1] = rc
-      rough.image.data[i + 2] = rc
-      rough.image.data[i + 3] = 255
-
-      height[y * size + x] = streak * 0.9 + sweep * 0.1
-    }
-  }
-  albedo.ctx.putImageData(albedo.image, 0, 0)
-  rough.ctx.putImageData(rough.image, 0, 0)
-
-  return {
-    map: albedoTexture(albedo.canvas, repeat),
-    roughnessMap: textureFromCanvas(rough.canvas, repeat),
-    normalMap: textureFromCanvas(normalFromHeight(height, size, size / 90), repeat),
-  }
-}
-
-export type MaterialSize = 256 | 512
-
-export function concreteTextureSet(size: MaterialSize = 512, repeat = 4, tint = 0.62) {
-  return memo(`concrete-${size}-${repeat}-${tint}`, () => buildConcrete(size, repeat, tint))
-}
-
-export function metalTextureSet(size: MaterialSize = 256, repeat = 3, tint = 0.72) {
-  return memo(`metal-${size}-${repeat}-${tint}`, () => buildMetal(size, repeat, tint))
-}
-
-/** Soft round sprite used by the dust / atmosphere points. */
-export function dustSprite(size = 64) {
-  return memo(`dust-${size}`, () => {
-    const { canvas, ctx } = canvas2d(size)
-    const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2)
-    gradient.addColorStop(0, 'rgba(255,255,255,1)')
-    gradient.addColorStop(0.35, 'rgba(255,255,255,0.32)')
-    gradient.addColorStop(1, 'rgba(255,255,255,0)')
-    ctx.fillStyle = gradient
-    ctx.fillRect(0, 0, size, size)
-    const texture = new THREE.CanvasTexture(canvas)
-    texture.colorSpace = THREE.SRGBColorSpace
-    return texture
-  })
-}
-
-/** Thin architectural grid, tiled on the ground. */
-export function gridTexture(size = 512, cells = 8) {
-  return memo(`grid-${size}-${cells}`, () => {
-    const { canvas, ctx } = canvas2d(size)
-    ctx.fillStyle = '#000000'
-    ctx.fillRect(0, 0, size, size)
-    const step = size / cells
-    ctx.strokeStyle = 'rgba(255,255,255,0.5)'
-    ctx.lineWidth = 1
-    for (let i = 0; i <= cells; i++) {
-      const p = Math.round(i * step) + 0.5
-      ctx.beginPath()
-      ctx.moveTo(p, 0)
-      ctx.lineTo(p, size)
-      ctx.stroke()
-      ctx.beginPath()
-      ctx.moveTo(0, p)
-      ctx.lineTo(size, p)
-      ctx.stroke()
-    }
-    return textureFromCanvas(canvas, 1)
-  })
-}
-
-/** Radial falloff used as a fake contact shadow / glow decal. */
-export function radialTexture(size = 256, power = 2.2) {
-  return memo(`radial-${size}-${power}`, () => {
-    const { canvas, ctx } = canvas2d(size)
-    const image = ctx.createImageData(size, size)
-    for (let y = 0; y < size; y++) {
-      for (let x = 0; x < size; x++) {
-        const dx = (x / size) * 2 - 1
-        const dy = (y / size) * 2 - 1
-        const d = Math.min(1, Math.hypot(dx, dy))
-        const a = Math.pow(1 - d, power)
-        const i = (y * size + x) * 4
-        image.data[i] = 255
-        image.data[i + 1] = 255
-        image.data[i + 2] = 255
-        image.data[i + 3] = a * 255
-      }
-    }
-    ctx.putImageData(image, 0, 0)
-    const texture = new THREE.CanvasTexture(canvas)
-    texture.colorSpace = THREE.SRGBColorSpace
-    return texture
-  })
 }
 
 export function disposeTextureCache() {
-  cache.forEach((value) => {
-    if (value instanceof THREE.Texture) value.dispose()
-    else if (value && typeof value === 'object') {
-      Object.values(value as Record<string, unknown>).forEach((item) => {
-        if (item instanceof THREE.Texture) item.dispose()
-      })
-    }
+  textureCache.forEach((set) => {
+    set.map.dispose()
+    set.normalMap.dispose()
+    set.roughnessMap.dispose()
   })
-  cache.clear()
+  textureCache.clear()
+  surfaceCache.clear()
+}
+
+/** Soft radial sprite — dust motes and light haze. */
+let dust: THREE.Texture | null = null
+export function dustSprite(): THREE.Texture {
+  if (dust) return dust
+  const size = 64
+  const data = new Uint8Array(size * size * 4)
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const dx = (x / size) * 2 - 1
+      const dy = (y / size) * 2 - 1
+      const d = Math.min(1, Math.sqrt(dx * dx + dy * dy))
+      const a = Math.pow(1 - d, 2.6)
+      const i = (y * size + x) * 4
+      data[i] = 255
+      data[i + 1] = 252
+      data[i + 2] = 244
+      data[i + 3] = Math.round(a * 255)
+    }
+  }
+  dust = new THREE.DataTexture(data, size, size, THREE.RGBAFormat)
+  dust.colorSpace = THREE.SRGBColorSpace
+  dust.needsUpdate = true
+  return dust
 }

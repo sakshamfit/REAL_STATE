@@ -11,3 +11,7 @@ npm-debug.log*
 
 # raw source topologies (regenerate with `npm run data:india`)
 data/raw
+
+# raw generated GLBs (regenerate with `npm run assets:generate`)
+assets/raw
+.qa

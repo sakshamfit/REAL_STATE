@@ -1091,8 +1091,9 @@ button {
   z-index: var(--z-overlay);
   pointer-events: none;
   background:
-    radial-gradient(120% 90% at 50% 45%, rgba(16, 19, 18, 0) 42%, rgba(16, 19, 18, 0.72) 100%),
-    linear-gradient(180deg, rgba(16, 19, 18, 0.55) 0%, rgba(16, 19, 18, 0) 22%, rgba(16, 19, 18, 0) 76%, rgba(16, 19, 18, 0.6) 100%);
+    /* photographic falloff, not a game filter */
+    radial-gradient(125% 95% at 50% 45%, rgba(16, 19, 18, 0) 58%, rgba(16, 19, 18, 0.3) 100%),
+    linear-gradient(180deg, rgba(16, 19, 18, 0.34) 0%, rgba(16, 19, 18, 0) 24%, rgba(16, 19, 18, 0) 76%, rgba(16, 19, 18, 0.4) 100%);
 }
 
 .grain {
@@ -1100,7 +1101,7 @@ button {
   inset: -50%;
   z-index: var(--z-overlay);
   pointer-events: none;
-  opacity: 0.05;
+  opacity: 0.035;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
   animation: grain 6s steps(6) infinite;
   will-change: transform;
@@ -1304,22 +1305,77 @@ button {
    Environmental audio control
    ============================================================ */
 
-.audio-control {
+.audio-dock {
   position: fixed;
   bottom: clamp(22px, 4vw, 42px);
   right: clamp(20px, 4vw, 48px);
   z-index: var(--z-hud);
-  width: 46px;
-  height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 6px 6px 4px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(20, 22, 21, 0.32);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.audio-control {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
   display: grid;
   place-items: center;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.28);
   background: rgba(255, 255, 255, 0.1);
   color: var(--white);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
   transition: background 0.25s var(--ease), color 0.25s var(--ease), border-color 0.25s var(--ease);
+}
+
+.audio-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 12px 0 4px;
+  font-family: var(--font-display);
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(246, 241, 231, 0.9);
+  white-space: nowrap;
+}
+
+.audio-state i {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(246, 241, 231, 0.32);
+  transition: background 0.3s var(--ease), box-shadow 0.3s var(--ease);
+}
+
+.audio-state[data-on='true'] i {
+  background: #cbd8b4;
+  box-shadow: 0 0 0 3px rgba(203, 216, 180, 0.16);
+}
+
+.audio-level {
+  width: 74px;
+  height: 18px;
+  margin-right: 6px;
+  opacity: 0.35;
+  transition: opacity 0.25s var(--ease);
+  accent-color: #cbd8b4;
+}
+
+.audio-level:disabled {
+  cursor: default;
+}
+
+.audio-dock[data-on='true'] .audio-level {
+  opacity: 0.85;
 }
 
 .audio-control:hover,
@@ -1337,8 +1393,20 @@ button {
 }
 
 @media (max-width: 720px) {
-  .audio-control {
-    bottom: 18px;
-    right: 18px;
+  .audio-dock {
+    bottom: 16px;
+    right: 16px;
+    gap: 6px;
+    padding: 5px 5px 5px 3px;
+  }
+
+  .audio-level {
+    display: none;
+  }
+
+  .audio-state {
+    font-size: 8.5px;
+    letter-spacing: 0.24em;
+    padding: 0 8px 0 2px;
   }
 }
