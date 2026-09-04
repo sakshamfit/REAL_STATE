@@ -15,6 +15,7 @@ import { Overlays } from '@/components/ui/Overlays'
 import { DaylightDebug } from '@/components/ui/DaylightDebug'
 import { FlatExperience } from '@/components/ui/FlatExperience'
 import { AudioControl } from '@/components/ui/AudioControl'
+import { CanvasErrorBoundary } from '@/components/ui/CanvasErrorBoundary'
 import { preloadProductionAssets } from '@/lib/glb'
 
 const Experience = dynamic(() => import('@/components/experience/Experience'), { ssr: false })
@@ -47,16 +48,35 @@ export default function Page() {
     }
   }, [flat])
 
+  // After entering the experience, force a GSAP refresh once the scroll
+  // lock has been released and Lenis is live — the initial rAF-based
+  // refresh inside the Preloader can fire too early.
+  useEffect(() => {
+    if (phase !== 'entered') return
+    const t1 = setTimeout(() => {
+      ScrollTrigger.refresh()
+    }, 200)
+    const t2 = setTimeout(() => {
+      ScrollTrigger.refresh()
+    }, 800)
+    return () => {
+      clearTimeout(t1)
+      clearTimeout(t2)
+    }
+  }, [phase])
+
   return (
     <>
       {flat ? (
         <FlatExperience />
       ) : (
         <>
-          <Experience quality={quality} />
+          <CanvasErrorBoundary onError={() => setFlat(true)}>
+            <Experience quality={quality} />
+          </CanvasErrorBoundary>
           <ScrollContent />
           <MapOverlay />
-            <Hud />
+          <Hud />
           <Overlays />
         </>
       )}

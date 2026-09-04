@@ -99,10 +99,18 @@ export function Preloader() {
   const enter = () => {
     setPhase('entered')
     window.scrollTo({ top: 0 })
-    requestAnimationFrame(() => {
+    // Let React commit the phase change + effects (Lenis, scroll-unlock)
+    // before asking ScrollTrigger to recalculate. A rAF can fire before
+    // React's passive-effect flush, so we use a short setTimeout instead.
+    setTimeout(() => {
       window.dispatchEvent(new Event('resize'))
       window.dispatchEvent(new CustomEvent('rudra:refresh'))
-    })
+      // Second pass: by now Lenis is live and scroll is unlocked, so a
+      // second refresh catches the positions that depend on smooth-scroll.
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('rudra:refresh'))
+      }, 120)
+    }, 60)
   }
 
   const skip = () => {
