@@ -20,12 +20,14 @@ export type QualitySettings = {
 const PRESETS: Record<Tier, QualitySettings> = {
   high: {
     tier: 'high',
-    dpr: [1, 1.85],
+    // capped: beyond ~1.5 the extra pixels buy almost nothing on a moving
+    // camera, but cost the GPU a linear share of fill rate on every frame
+    dpr: [1, 1.5],
     textureSize: 512,
     shadows: true,
     shadowMapSize: 2048,
     environment: true,
-    dust: 900,
+    dust: 720,
     density: 1,
     fov: 42,
     grid: true,
@@ -38,7 +40,7 @@ const PRESETS: Record<Tier, QualitySettings> = {
     shadows: true,
     shadowMapSize: 1024,
     environment: true,
-    dust: 450,
+    dust: 380,
     density: 0.7,
     fov: 46,
     grid: true,
@@ -54,7 +56,7 @@ const PRESETS: Record<Tier, QualitySettings> = {
     shadows: true,
     shadowMapSize: 512,
     environment: true,
-    dust: 160,
+    dust: 150,
     density: 0.42,
     fov: 52,
     grid: false,

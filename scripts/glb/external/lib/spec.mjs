@@ -104,6 +104,24 @@ export const CLASSES = {
     instanced: true,
     substitution: 'replace',
   },
+  'construction-backhoe': {
+    label: 'Backhoe loader (JCB)',
+    category: 'construction',
+    // A real JCB 3CX backhoe loader: 5.6–5.9 m long, ~4.0 m to the top of the
+    // cab / arms, ~2.3–2.5 m wide. The measured box includes the raised
+    // bucket & stabiliser, hence the slightly wider band.
+    length: [4.2, 7.5],
+    width: [2.0, 3.4],
+    height: [2.6, 4.6],
+    target: { axis: 'x', value: 5.8 },
+    orient: 'length-x',
+    ground: 'wheels',
+    profile: { longest: 'length', shortest: 'width' },
+    keepAnimations: false,
+    maxTriangles: 120000,
+    instanced: false,
+    substitution: 'replace',
+  },
   'construction-plant': {
     label: 'Construction plant',
     category: 'construction',
@@ -163,6 +181,70 @@ export const CLASSES = {
     maxTriangles: 260000,
     instanced: false,
     substitution: 'never',
+  },
+  'infrastructure-solar': {
+    label: 'Solar panel / array',
+    category: 'infrastructure',
+    // A single domestic panel is ~1.9 × 1.1 m; a utility row or tracker runs
+    // tens of metres. The band is deliberately wide and `ground: 'base'`
+    // seats it on whatever frame the asset ships with.
+    length: [0.8, 70.0],
+    width: [0.6, 70.0],
+    height: [0.25, 8.0],
+    target: null,
+    orient: 'none',
+    ground: 'base',
+    profile: {},
+    keepAnimations: false,
+    maxTriangles: 120000,
+    instanced: false,
+    substitution: 'replace',
+  },
+  'architecture-hero': {
+    label: 'Flagship / office building',
+    category: 'architecture',
+    length: [4.0, 90.0],
+    width: [4.0, 90.0],
+    height: [3.0, 150.0],
+    target: null,
+    orient: 'none',
+    ground: 'base',
+    profile: {},
+    keepAnimations: false,
+    maxTriangles: 320000,
+    instanced: false,
+    // a real flagship tower replaces the hero composition, not the whole site
+    substitution: 'replace',
+  },
+  'architecture-residential': {
+    label: 'Residential / commercial building',
+    category: 'architecture',
+    length: [4.0, 70.0],
+    width: [4.0, 70.0],
+    height: [3.0, 80.0],
+    target: null,
+    orient: 'none',
+    ground: 'base',
+    profile: {},
+    keepAnimations: false,
+    maxTriangles: 260000,
+    instanced: false,
+    substitution: 'replace',
+  },
+  'architecture-warehouse': {
+    label: 'Warehouse / industrial building',
+    category: 'architecture',
+    length: [4.0, 130.0],
+    width: [4.0, 130.0],
+    height: [3.0, 60.0],
+    target: null,
+    orient: 'none',
+    ground: 'base',
+    profile: {},
+    keepAnimations: false,
+    maxTriangles: 260000,
+    instanced: false,
+    substitution: 'replace',
   },
   'infrastructure-lamp': {
     label: 'Street light / lamp post',
@@ -229,26 +311,36 @@ const RULES = [
   // ignored, and "lamp-post" contains "post". Matching infrastructure before
   // vegetation and props keeps those out of the wrong envelope.
   [/street[-_ ]?light|street[-_ ]?lamp|streetlamp|lamp[-_ ]?post|lamppost|lantern/i, 'infrastructure-lamp'],
+  // Solar hardware has its own slot (the solar service world + future skin),
+  // so it is matched before the generic infrastructure rule it used to fall into.
+  [/solar[-_ ]?(panel|array|farm|field|cell|module|rack|string|tile)?|photovoltaic|\bpv[-_ ]?panel/i, 'infrastructure-solar'],
   [
-    /pylon|hydrant|bollard|bench|traffic[-_ ]?light|bridge|culvert|transformer|substation|solar|antenna|utility[-_ ]?pole|power[-_ ]?pole/i,
+    /pylon|hydrant|bollard|bench|traffic[-_ ]?light|bridge|culvert|transformer|substation|antenna|utility[-_ ]?pole|power[-_ ]?pole/i,
     'infrastructure',
   ],
   [/\b(suv|crossover|jeep|4x4|4wd)\b|suv/i, 'vehicle-suv'],
   [/truck|lorry|\bvan\b|\bbus\b|tipper|tanker|trailer|pickup|\bute\b/i, 'vehicle-truck'],
   [
-    /excavat|digger|backhoe|loader|bulldoz|dozer|mixer|roller|compactor|grader|forklift|telehandler|dumper|crane|generator|genset|compressor/i,
+    /\bjcb\b|backhoe[-_ ]?loader|\bbackhoe\b|3cx|poclain/i,
+    'construction-backhoe',
+  ],
+  [
+    /excavat|digger|loader|bulldoz|dozer|mixer|roller|compactor|grader|forklift|telehandler|dumper|crane|generator|genset|compressor/i,
     'construction-plant',
   ],
   [
-    /barrier|barricade|cone|scaffold|pallet|pipe|container|cabin|portacabin|jersey|hoarding|fence|drum|barrel|toolbox|rebar|cement|brick|sandbag|formwork|wheelbarrow|ladder|signboard/i,
+    /barrier|barricade|cone|scaffold|pallet|pipe|container|cabin|portacabin|site[-_ ]?office|office[-_ ]?cabin|welfare|labour[-_ ]?hut|\bshed\b|jersey|hoarding|fence|drum|barrel|toolbox|rebar|cement|brick|sandbag|formwork|wheelbarrow|ladder|signboard/i,
     'construction-prop',
   ],
   [/tree|palm|neem|banyan|bush|shrub|hedge|plant|foliage|bamboo/i, 'vegetation'],
-  [
-    /building|tower|house|apartment|villa|office|warehouse|shed|highrise|high-rise|facade|skyscraper|bungalow|hotel|mall/i,
-    'architecture',
-  ],
-  [/\bcar\b|sedan|hatchback|coupe|saloon|rickshaw|scooter|motorbike|taxi|vehicle/i, 'vehicle-car'],
+  // Building sub-types first: the flagship tower, the warehouse and the
+  // residential/commercial mid-rise each own a distinct scene slot, so a
+  // dropped model replaces the right composition instead of every building.
+  [/hero|flagship|office|corporate|headquarters?|skyscraper|high[-_ ]?rise|glass[-_ ]?(building|tower|facade|block)|commercial[-_ ]?(tower|building|block)/i, 'architecture-hero'],
+  [/warehouse|godown|storehouse|factory|mill|industrial|depot/i, 'architecture-warehouse'],
+  [/residential|apartment|\bhouse\b|villa|bungalow|duplex|housing|cottage|commercial|building|facade|hotel|mall/i, 'architecture-residential'],
+  [/edifice|monument|memorial|institution/i, 'architecture'],
+  [/\bcar\b|sedan|hatchback|coupe|convertible|roadster|saloon|supercar|sports[-_ ]?car|rickshaw|scooter|motorbike|taxi|vehicle|porsche|911|carrera|ferrari|lamborghini|mclaren|bugatti|maserati|bentley|aston|rolls[-_ ]?royce|audi|\bbmw\b|mercedes|\bbenz\b|lexus|volvo|mini[-_ ]?cooper|volkswagen|renault|nissan|toyota|honda|hyundai|kia|maruti|suzuki|mahindra|thar|scorpio|bolero|xuv|creta|swift|i20|baleno|dzire|ertiga|innova|fortuner|nexon|harrier|safari|punch|brezza|wagonr|kwid|duster|hector/i, 'vehicle-car'],
 ]
 
 /**
@@ -291,8 +383,8 @@ export function slugify(filename) {
  * they need the same streaming metadata the procedural registry carries.
  */
 export const CATEGORY_RUNTIME = {
-  vehicle: { scene: ['road', 'environment'], priority: 3, cullDistance: 200, preload: false },
-  construction: { scene: ['construction', 'hero', 'process'], priority: 3, cullDistance: 220, preload: false },
+  vehicle: { scene: ['road', 'environment'], priority: 3, cullDistance: 200, preload: true },
+  construction: { scene: ['construction', 'hero', 'process'], priority: 3, cullDistance: 220, preload: true },
   vegetation: { scene: ['environment', 'hero', 'approach'], priority: 3, cullDistance: 300, preload: false },
   architecture: { scene: ['residential', 'facade', 'services'], priority: 2, cullDistance: 320, preload: false },
   infrastructure: { scene: ['road', 'environment', 'construction'], priority: 3, cullDistance: 200, preload: false },

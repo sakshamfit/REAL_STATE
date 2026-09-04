@@ -140,7 +140,7 @@ export function yardProps(): Placed[] {
   // Construction plant and site props are exactly the objects the brief (§11)
   // says benefit most from real modelling, so external assets win these slots
   // whenever the developer has supplied one.
-  const [plant] = resolveAssetIds({ external: ['construction-plant'], project: ['excavator'] })
+  const [plant] = resolveAssetIds({ external: ['construction-plant', 'construction-backhoe'], project: ['excavator'] })
   const [lorry] = truckPool()
 
   /**

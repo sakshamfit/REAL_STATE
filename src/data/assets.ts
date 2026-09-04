@@ -635,6 +635,31 @@ const VALID_EXTERNAL = (EXTERNAL_MANIFEST.assets ?? []).filter(
   (entry) => Boolean(entry && entry.id && entry.path && entry.materialMap),
 )
 
+/**
+ * Named model slots.
+ *
+ * These are the composition-owned scenes that always mount a specific model —
+ * the hero tower, the residential/commercial mid-rise, the warehouse, the
+ * solar service world. When the developer drops a real GLB whose class matches
+ * a slot (see `docs/MODEL_SLOTS.md`), the runtime swaps it in everywhere that
+ * slot is used. Nothing else in the app knows an external asset exists: one
+ * lookup replaces the whole scene (brief §13).
+ *
+ * `fit` is the footprint the built-in model occupies, measured in metres
+ * (`scripts/glb/measure-assets.mjs`). Replacement models are uniformly scaled
+ * onto that footprint so camera framing, plinths and scaffolding stay valid —
+ * the visitor sees the client's real building exactly where the procedural
+ * one stood.
+ */
+export const ROLE_SLOTS: Record<string, { classes: string[]; fit?: { x: number; z: number } }> = {
+  'hero-building': { classes: ['architecture-hero'], fit: { x: 29.2, z: 33.1 } },
+  'residential-building': { classes: ['architecture-residential'], fit: { x: 22.4, z: 15.0 } },
+  warehouse: { classes: ['architecture-warehouse'] },
+  'solar-panel': { classes: ['infrastructure-solar'], fit: { x: 8.87, z: 8.6 } },
+}
+
+const ROLE_FILL_CLASSES = new Set(Object.values(ROLE_SLOTS).flatMap((slot) => slot.classes))
+
 export const EXTERNAL_ASSETS: AssetEntry[] = VALID_EXTERNAL.map((entry) => ({
   id: entry.id,
   path: entry.path,
@@ -645,7 +670,9 @@ export const EXTERNAL_ASSETS: AssetEntry[] = VALID_EXTERNAL.map((entry) => ({
   scale: [1, 1, 1],
   scene: entry.scene,
   lod: ['high', 'medium', 'low'],
-  preload: entry.preload,
+  // an external model that fills a named slot is part of the opening shots
+  // (hero / services), so it warms the cache during the loading screen
+  preload: entry.preload || ROLE_FILL_CLASSES.has(entry.class),
   cullDistance: entry.cullDistance,
   materialMap: Object.fromEntries(Object.entries(entry.materialMap).map(([name, rule]) => [name, rule.key])),
   external: true,
@@ -789,4 +816,45 @@ export function stageByRealism(ids: string[]): string[] {
 /** True when at least one external asset covers this role. */
 export function hasExternal(...classes: string[]): boolean {
   return externalAssetsOfClass(...classes).length > 0
+}
+
+/* -------------------------------------------------------- role resolution */
+
+export type RoleResolution = {
+  /** id of the entry that actually plays the slot (external when supplied) */
+  id: string
+  /** undefined when the role id is unknown — callers keep their null guard */
+  entry: AssetEntry | undefined
+  /** uniform scale applied to fit an external model onto the slot footprint */
+  fitScale: number
+}
+
+/**
+ * Resolve a named model slot to the asset that plays it.
+ *
+ *     real external GLB for the role  →  built-in project GLB
+ *
+ * First registered external of a matching class (filename order) wins the
+ * slot; `fit` re-scales it onto the footprint the built-in occupied. This is
+ * the single seam where client-supplied buildings / solar hardware enter the
+ * composition — `AssetModel` calls it for every mounted model.
+ */
+export function resolveRoleSlot(role: string): RoleResolution {
+  const slot = ROLE_SLOTS[role]
+  if (!slot) {
+    return { id: role, entry: assetById.get(role), fitScale: 1 }
+  }
+  const external = externalAssetsOfClass(...slot.classes).filter(
+    (asset) => substitutionFor(asset.id) !== 'never',
+  )
+  if (external.length === 0) {
+    return { id: role, entry: assetById.get(role), fitScale: 1 }
+  }
+  const winner = external[0]
+  let fitScale = 1
+  if (slot.fit && winner.dimensions && winner.dimensions[0] > 0.1 && winner.dimensions[2] > 0.1) {
+    fitScale = Math.min(slot.fit.x / winner.dimensions[0], slot.fit.z / winner.dimensions[2])
+    fitScale = Math.min(2.5, Math.max(0.25, fitScale))
+  }
+  return { id: winner.id, entry: winner, fitScale }
 }

@@ -190,10 +190,11 @@ export async function normalizeDocument(doc, plan, options) {
     applied.push('missing attributes generated')
   }
 
-  // Orientation and unit scale, then bake the whole hierarchy flat so nothing
-  // downstream has to know an external asset was ever transformed.
+  // Developer override: CREDITS.json `scale` multiplies the measured unit
+  // scale, for sources whose unit the auto-measurement cannot distinguish from
+  // a genuinely huge object.
   applyYaw(doc, plan.yaw)
-  applyScale(doc, plan.scale)
+  applyScale(doc, (plan.scale ?? 1) * (options.scale ?? 1))
   await doc.transform(flatten())
   if (plan.yaw || Math.abs(plan.scale - 1) > 1e-6) applied.push('orientation and unit scale baked')
 

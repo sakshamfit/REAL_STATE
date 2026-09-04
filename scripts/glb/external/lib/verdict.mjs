@@ -87,15 +87,39 @@ export function scaleFor(spec, size) {
   // No hard target: bring the asset inside the class envelope with the smallest
   // uniform correction that makes every axis plausible. This is what catches
   // centimetre and inch exports for trees, plant and buildings.
-  const ranges = [spec.length, spec.width, spec.height]
-  const sortedSize = [...size].sort((a, b) => b - a)
-  const sortedRange = ranges.map(([lo, hi]) => [lo, hi]).sort((a, b) => (b[0] + b[1]) / 2 - (a[0] + a[1]) / 2)
+  // Axis alignment: size is oriented [x, y, z] — x length, y height, z width.
+  const axes = [
+    { band: spec.length, value: size[0] },
+    { band: spec.height, value: size[1] },
+    { band: spec.width, value: size[2] },
+  ]
+  const fits = (candidate) =>
+    axes.every(({ band, value }) => {
+      const scaled = value * candidate
+      return scaled >= band[0] && scaled <= band[1]
+    })
 
   let scale = 1
-  const longest = sortedSize[0]
-  const [lo, hi] = sortedRange[0]
-  if (longest > hi) scale = hi / longest
-  else if (longest < lo) scale = lo / longest
+  const longest = Math.max(...axes.map(({ value }) => value))
+  const loosest = [...axes].sort((a, b) => (b.band[0] + b.band[1]) / 2 - (a.band[0] + a.band[1]) / 2)[0]
+  if (longest > loosest.band[1]) scale = loosest.band[1] / longest
+  else if (longest < loosest.band[0]) scale = loosest.band[0] / longest
+
+  // The largest-axis correction can still leave a *different* axis outside its
+  // band (a tall export whose height, not length, is the constraint). Try
+  // scaling each measured axis onto the top of its own band and keep the first
+  // candidate that lands every axis inside the envelope.
+  if (!fits(scale)) {
+    const fallbacks = axes
+      .map(({ band, value }) => (value > 0 ? band[1] / value : 1))
+      .sort((a, b) => b - a)
+    for (const candidate of fallbacks) {
+      if (fits(candidate)) {
+        scale = candidate
+        break
+      }
+    }
+  }
 
   // Snap to a recognisable unit conversion when we are close to one: assets are
   // almost always authored in m, cm, mm or inches, and a clean 0.01 reads far

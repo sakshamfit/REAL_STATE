@@ -31,8 +31,8 @@ export type SkyOptions = {
  */
 export const DEFAULT_SKY: SkyOptions = {
   sunDirection: new THREE.Vector3(-0.31, 0.788, 0.532).normalize(),
-  zenith: new THREE.Color('#3f86d4'),
-  horizon: new THREE.Color('#e2eae6'),
+  zenith: new THREE.Color('#2f7fd6'),
+  horizon: new THREE.Color('#e2ebf4'),
   ground: new THREE.Color('#948268'),
   sunColor: new THREE.Color('#fff6e3'),
   turbidity: 3.1,

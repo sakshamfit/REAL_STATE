@@ -29,10 +29,10 @@ export const SUN_COLOR = new THREE.Color('#fff6e3')
  * IBL is the real sky convolved into irradiance. Together they keep the shadow
  * side of a facade readable without flattening the sun.
  */
-export const FILL_SKY = new THREE.Color('#a8cbe8')
+export const FILL_SKY = new THREE.Color('#a9cdf3')
 export const FILL_BOUNCE = new THREE.Color('#9a8b6d')
 export const HEMI_INTENSITY = 0.95
-export const AMBIENT_COLOR = new THREE.Color('#d2dde2')
+export const AMBIENT_COLOR = new THREE.Color('#d8e3f5')
 export const AMBIENT_INTENSITY = 0.14
 
 /**

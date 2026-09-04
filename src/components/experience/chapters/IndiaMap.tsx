@@ -18,12 +18,12 @@ import { concreteMaterial, metalMaterial, stateBaseMaterial } from '@/lib/materi
 import { latLngToXZ } from '@/lib/projection'
 import { useChapterVisibility } from '../hooks'
 
-const COLOR_BASE = new THREE.Color('#666353')
-const COLOR_PRESENCE = new THREE.Color('#7c7661')
-const COLOR_ACTIVE = new THREE.Color('#aa9a7d')
-const COLOR_BORDER = new THREE.Color('#91887a')
-const COLOR_BORDER_ACTIVE = new THREE.Color('#c3b49a')
-const COLOR_DIM = new THREE.Color('#3e3a31')
+const COLOR_BASE = new THREE.Color('#47517a')
+const COLOR_PRESENCE = new THREE.Color('#5f86f7')
+const COLOR_ACTIVE = new THREE.Color('#c9d9ff')
+const COLOR_BORDER = new THREE.Color('#7886b5')
+const COLOR_BORDER_ACTIVE = new THREE.Color('#dce8ff')
+const COLOR_DIM = new THREE.Color('#232c47')
 
 type StateAnim = {
   lift: number
@@ -216,8 +216,8 @@ export function IndiaMap({ quality }: { quality: QualitySettings }) {
       const material = entry.material
       const base = entry.presence ? COLOR_PRESENCE : COLOR_BASE
       material.color.copy(base).lerp(COLOR_ACTIVE, anim.glow).lerp(COLOR_DIM, anim.dim * 0.7)
-      material.emissive.set('#d7c7aa')
-      material.emissiveIntensity = entry.presence ? 0.03 + anim.glow * 0.06 : anim.glow * 0.05
+      material.emissive.set('#cfe0ff')
+      material.emissiveIntensity = entry.presence ? 0.06 + anim.glow * 0.08 : anim.glow * 0.06
       material.metalness = 0.14 + anim.glow * 0.06
       material.roughness = 0.84 - anim.glow * 0.1
 
@@ -249,7 +249,7 @@ export function IndiaMap({ quality }: { quality: QualitySettings }) {
         <primitive object={concreteMaterial('light', 30, quality.textureSize)} attach="material" />
       </mesh>
       <lineSegments geometry={rings} position={[0, 0.01, 0]}>
-        <lineBasicMaterial color={'#8f8570'} transparent opacity={0.12} depthWrite={false} />
+        <lineBasicMaterial color={'#93a3cf'} transparent opacity={0.14} depthWrite={false} />
       </lineSegments>
 
       {states.map((entry, index) => (
@@ -308,7 +308,7 @@ export function IndiaMap({ quality }: { quality: QualitySettings }) {
               fontSize: '11px',
               fontWeight: 500,
               letterSpacing: '0.36em',
-              color: "#b9ab93",
+              color: "#c6d6f8",
               textTransform: 'uppercase',
               whiteSpace: 'nowrap',
             }}
@@ -362,7 +362,7 @@ function CityMarker({
       </mesh>
       <mesh ref={ring} rotation-x={-Math.PI / 2} position={[0, 0.06, 0]}>
         <ringGeometry args={[0.4, 0.44, 40]} />
-        <meshBasicMaterial color="#8f8570" transparent opacity={0.32} depthWrite={false} />
+        <meshBasicMaterial color="#93a3cf" transparent opacity={0.36} depthWrite={false} />
       </mesh>
       <Html transform position={[0, 3.1, 0]} distanceFactor={13} style={{ pointerEvents: 'none' }}>
         <span
@@ -371,7 +371,7 @@ function CityMarker({
             fontSize: '10px',
             fontWeight: 500,
             letterSpacing: '0.32em',
-            color: "#f6f1e7",
+            color: "#eef4ff",
             textTransform: 'uppercase',
             whiteSpace: 'nowrap',
           }}
