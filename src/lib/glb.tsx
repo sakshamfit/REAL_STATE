@@ -255,6 +255,25 @@ export type InstanceItem = {
  * only the transform buffer differs. This is what lets the scene hold a real
  * tree line and real street furniture without a few hundred draw calls.
  */
+/**
+ * Copy an attribute to a plain (non-normalised) Float32 attribute, reading
+ * through `getComponent` so quantised Int8/Int16 values are de-quantised to
+ * their true float value. Attributes already stored as raw Float32 are
+ * returned unchanged so the common path stays free.
+ */
+function toFloat32(
+  attribute: THREE.BufferAttribute | THREE.InterleavedBufferAttribute,
+  itemSize: number,
+): THREE.BufferAttribute {
+  if (attribute.array instanceof Float32Array && !attribute.normalized) return attribute as THREE.BufferAttribute
+  const count = attribute.count
+  const out = new Float32Array(count * itemSize)
+  for (let i = 0; i < count; i++) {
+    for (let k = 0; k < itemSize; k++) out[i * itemSize + k] = attribute.getComponent(i, k)
+  }
+  return new THREE.BufferAttribute(out, itemSize)
+}
+
 export function InstancedAsset({
   id,
   items,
@@ -318,22 +337,50 @@ export function InstancedAsset({
           clean.deleteAttribute(attribute)
         }
       }
+      /**
+       * Normalise the three attributes we keep to plain (non-normalised)
+       * Float32. Quantised GLBs (KHR_mesh_quantization) can ship Int8/Int16
+       * positions, normals and UVs, and a single asset can mix quantised and
+       * float attributes across meshes that share one material.
+       * `mergeGeometries` refuses to merge attributes of differing array
+       * types and returns null, which used to crash the whole scene.
+       */
       if (!clean.attributes.normal) clean.computeVertexNormals()
+      else clean.setAttribute('normal', toFloat32(clean.attributes.normal, 3))
       if (!clean.attributes.uv) {
         const count = clean.attributes.position.count
         clean.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(count * 2), 2))
+      } else {
+        clean.setAttribute('uv', toFloat32(clean.attributes.uv, 2))
       }
+      clean.setAttribute('position', toFloat32(clean.attributes.position, 3))
       const bucket = buckets.get(bucketKey)
       if (bucket) bucket.geometries.push(clean)
       else buckets.set(bucketKey, { geometries: [clean], material: preserve ? original : null, key })
     })
 
-    return [...buckets.entries()].map(([bucketKey, bucket]) => {
+    return [...buckets.entries()].flatMap(([bucketKey, bucket]) => {
       const { geometries } = bucket
       const merged = geometries.length === 1 ? geometries[0] : mergeGeometries(geometries, false)
-      if (merged !== geometries[0]) geometries.forEach((geometry) => geometry.dispose())
-      merged.computeBoundingSphere()
-      return { key: bucketKey, materialKey: bucket.key, geometry: merged, material: bucket.material }
+      if (merged) {
+        if (merged !== geometries[0]) geometries.forEach((geometry) => geometry.dispose())
+        merged.computeBoundingSphere()
+        return [{ key: bucketKey, materialKey: bucket.key, geometry: merged, material: bucket.material }]
+      }
+      /**
+       * Defensive fallback: after the attribute normalisation above a merge
+       * should always succeed, but if two meshes still disagree on layout we
+       * draw them individually rather than throw and lose the whole scene.
+       */
+      return geometries.map((geometry, index) => {
+        geometry.computeBoundingSphere()
+        return {
+          key: `${bucketKey}-${index}`,
+          materialKey: bucket.key,
+          geometry,
+          material: bucket.material,
+        }
+      })
     })
   }, [gltf, asset, quality.textureSize, quality.shadows])
 
