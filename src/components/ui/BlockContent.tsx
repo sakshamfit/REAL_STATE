@@ -89,6 +89,8 @@ export function BlockContent({ block }: { block: TextBlock }) {
               <button type="button" onClick={() => scrollToBeatById('contact')}>
                 Contact
               </button>
+              <a href="/projects">Projects</a>
+              <a href="/admin">Admin</a>
             </nav>
             <p className="footer__copy">{company.copyright}</p>
           </div>

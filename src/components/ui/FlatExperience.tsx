@@ -1,8 +1,50 @@
 'use client'
 
+import { useEffect } from 'react'
 import { clients, company, processStages, services, trustPillars } from '@/data/company'
 import { locationsForState, presenceStates, stateId } from '@/data/presence'
+import { PROJECT_STATUS_LABEL } from '@/data/projects'
+import { bindStorageSync, useProjectStore } from '@/lib/projects-store'
 import { Reveal } from './Reveal'
+
+/** Projects grid for the SKIP-3D / low-power mode (same store as /projects). */
+function FlatProjects() {
+  const projects = useProjectStore((state) => state.projects)
+  const hydrate = useProjectStore((state) => state.hydrate)
+
+  useEffect(() => {
+    hydrate()
+    const unbind = bindStorageSync()
+    return unbind
+  }, [hydrate])
+
+  const visible = projects.filter((project) => project.featured || project.status !== 'Planning')
+  const shown = [...visible].sort((a, b) => Number(b.featured) - Number(a.featured)).slice(0, 6)
+
+  if (shown.length === 0) return null
+
+  return (
+    <div className="flat-projects">
+      {shown.map((project) => (
+        <article className="flat-project" key={project.id}>
+          <p className="flat-project__cat">
+            {project.category} · {PROJECT_STATUS_LABEL[project.status]}
+          </p>
+          <h3 className="flat-project__name">{project.name}</h3>
+          <p className="flat-project__loc">
+            {project.city}, {project.state}
+            {project.year ? ` · ${project.year}` : ''}
+            {project.client ? ` · ${project.client}` : ''}
+          </p>
+          <p className="flat-project__desc">{project.description}</p>
+        </article>
+      ))}
+      <a className="contact__cta reveal" href="/projects" style={{ marginTop: 28 }}>
+        ALL PROJECTS <span aria-hidden="true">→</span>
+      </a>
+    </div>
+  )
+}
 
 /**
  * Low-power / SKIP 3D / no-WebGL path: the same story, told with typography
@@ -132,6 +174,22 @@ export function FlatExperience() {
           </ul>
         </Reveal>
 
+        <Reveal className="flat__section" id="projects">
+          <p className="eyebrow">PROJECTS</p>
+          <h2 className="display">
+            <span className="line">
+              <span>SELECTED</span>
+            </span>
+            <span className="line">
+              <span>WORK</span>
+            </span>
+          </h2>
+          <p className="body-text reveal">
+            <span>Built across Bihar &amp; Assam — see the full, filterable list on the Projects page.</span>
+          </p>
+          <FlatProjects />
+        </Reveal>
+
         <Reveal className="flat__section" id="presence">
           <p className="eyebrow">PRESENCE</p>
           <h2 className="display">
@@ -194,6 +252,13 @@ export function FlatExperience() {
           </div>
           <div className="footer__row">
             <p className="footer__copy">{company.copyright}</p>
+          </div>
+          <div className="footer__row" style={{ borderTop: '1px solid rgba(206,222,255,.08)', paddingTop: 18 }}>
+            <nav className="footer__links" aria-label="Footer">
+              <a href="/projects">Projects</a>
+              <a href="/admin">Admin</a>
+            </nav>
+            <p className="footer__copy">CIVIL · INFRASTRUCTURE · SOLAR · RENOVATION · MATERIALS</p>
           </div>
         </footer>
       </div>

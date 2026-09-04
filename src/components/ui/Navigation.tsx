@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { navigation } from '@/data/company'
 import { useExperience } from '@/lib/store'
@@ -56,6 +57,9 @@ export function Navigation() {
               {item.label}
             </button>
           ))}
+          <Link href="/projects" className="nav__link" data-active={false}>
+            Projects
+          </Link>
         </nav>
 
         <button type="button" className="nav__menu" onClick={() => setMenuOpen(true)}>
@@ -73,6 +77,17 @@ export function Navigation() {
             {item.label}
           </button>
         ))}
+        <Link href="/projects" className="menu__item" onClick={() => setMenuOpen(false)}>
+          <span>05</span>
+          Projects
+        </Link>
+        <Link
+          href="/admin"
+          onClick={() => setMenuOpen(false)}
+          style={{ display: 'inline-block', marginTop: 22, fontSize: 11, letterSpacing: '0.26em', color: 'var(--muted)', textTransform: 'uppercase' }}
+        >
+          Admin panel →
+        </Link>
       </div>
     </>
   )
