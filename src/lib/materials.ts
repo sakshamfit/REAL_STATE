@@ -14,7 +14,7 @@ import * as THREE from 'three'
 import { surfaceTextures, type TextureSet } from './textures'
 
 export const PALETTE = {
-  concrete: '#a9b1c2',
+  concrete: '#9ca4b4',
   concreteLight: '#c5cbd8',
   render: '#d9d6cd',
   renderWarm: '#d4cebe',
@@ -23,7 +23,7 @@ export const PALETTE = {
   metal: '#9ca5b5',
   darkMetal: '#353b49',
   rim: '#ccd3e2',
-  asphalt: '#41464f',
+  asphalt: '#454a53',
   soil: '#7a6449',
   grass: '#5f7040',
   foliage: '#4c6134',

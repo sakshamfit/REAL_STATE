@@ -87,10 +87,9 @@ export const FUTURE_BUILDING = { x: 0, z: -1150, width: 30, depth: 30, height: 5
  * `scene.fog`): bright, blue-white, thin enough that the far terrain stays
  * legible instead of turning into a wall of grey.
  *
- * V12: density raised from 0.0016 to 0.0022 — this creates visible
- * atmospheric depth separation between foreground and background without
- * obscuring the world. Objects at 200 m are softly hazed, at 400 m they
- * dissolve into the sky. This is what gives real landscapes their sense
- * of distance.
+ * V13: pulled back from V12's 0.0022 to 0.0019. The V12 value was washing out
+ * mid-range colour. At 0.0019, objects at 200 m are softly hazed (68 %
+ * visible), at 400 m they dissolve into the sky (47 % visible). The
+ * atmosphere reads as a clear sunny Indian daytime, not a hazy morning.
  */
-export const FOG = { color: '#e0eaf4', density: 0.0022 } as const
+export const FOG = { color: '#e0eaf4', density: 0.0019 } as const

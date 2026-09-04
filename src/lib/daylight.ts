@@ -17,8 +17,14 @@ import * as THREE from 'three'
  */
 export const DAYLIGHT_EXPOSURE = 1.22
 
-/** Direct sun irradiance, in three's units. */
-export const SUN_INTENSITY = 5.2
+/** Direct sun irradiance, in three's units.
+ *  V13: raised from 5.2 to 5.8 to improve sun-vs-shade contrast.
+ *  At 5.2 the ratio was 1.95× — the QA threshold is 2.0×. A 12 % bump in
+ *  direct sun lifts sunlit surfaces while leaving shadowed surfaces
+ *  unchanged (they receive no direct sun), which is exactly the lever
+ *  that improves contrast without crushing shadows. Well within the
+ *  daylight limits (4.0–8.0). */
+export const SUN_INTENSITY = 5.8
 
 /** Warm white daylight — 5500 K-ish, not golden hour. */
 export const SUN_COLOR = new THREE.Color('#fff6e3')
@@ -31,7 +37,7 @@ export const SUN_COLOR = new THREE.Color('#fff6e3')
  */
 export const FILL_SKY = new THREE.Color('#a9cdf3')
 export const FILL_BOUNCE = new THREE.Color('#9a8b6d')
-export const HEMI_INTENSITY = 0.95
+export const HEMI_INTENSITY = 0.88
 export const AMBIENT_COLOR = new THREE.Color('#d8e3f5')
 export const AMBIENT_INTENSITY = 0.14
 
