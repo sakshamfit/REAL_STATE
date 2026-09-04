@@ -9,13 +9,12 @@
  * Progress is derived from the real DOM height of the sections, so the camera
  * and the typography can never drift apart.
  *
- * V12 CAMERA LANGUAGE:
- *   • Every beat has real camera movement — no dead time.
- *   • Heights range from 1.5 m (ground level) to 36 m (establishing).
- *   • Approach beats use fast camera travel; reveal beats use slow drift.
- *   • Process beats dip to eye level for procurement, rise as structure grows.
- *   • Service worlds vary in approach height and angle.
- *   • Beat boundaries are position-continuous (no spline kinks).
+ * V14 PREMIUM MASTERING:
+ *   • Three signature "wow" shots: hero reveal, construction scale, finished project.
+ *   • Lateral parallax reveals instead of straight-on approaches.
+ *   • Camera "holds" through keyframe clustering at reveal moments.
+ *   • Asymmetric compositions (building in left-third or right-third).
+ *   • Every beat has intentional foreground/midground/background.
  */
 
 export type CameraKey = {
@@ -71,15 +70,16 @@ export const beats: Beat[] = [
     span: 100,
     anchor: [0, 0, 0],
     keys: [
-      // opening: a long, low approach with a dramatic upward tilt.
-      // V12: the camera starts looking at the ground ahead (1.5m height,
-      // 5m ahead) and tilts up to the gate entrance (4.2m, 30m ahead).
-      // This creates a cinematic "reveal" as the site appears above the
-      // horizon line.
-      k(0.0, [0, 1.1, 30], [0, 1.5, 24]),
-      k(0.4, [0, 1.2, 18], [0, 2.4, 2]),
-      k(0.75, [0, 1.5, 8], [0, 3.2, -14]),
-      k(1.0, [0, 1.9, -2], [0, 4.2, -34]),
+      // V14: dramatic low approach with lateral drift. The camera starts
+      // right of centre (x=6), looking at the ground ahead. As it advances,
+      // it drifts left, creating parallax. The building at x=-40 is initially
+      // off-frame — it slides into view as the camera drifts left. The tilt-up
+      // reveals the sky above the gate. This is Signature Shot #1's setup.
+      k(0.0, [6, 1.1, 30], [2, 1.5, 24]),
+      k(0.35, [4, 1.2, 18], [-2, 2.2, 4]),
+      k(0.65, [2, 1.4, 8], [-4, 3.0, -10]),
+      k(0.85, [0, 1.7, 0], [-6, 3.8, -24]),
+      k(1.0, [-2, 1.9, -4], [-10, 4.2, -36]),
     ],
     blocks: [
       {
@@ -92,19 +92,39 @@ export const beats: Beat[] = [
     ],
   },
 
+  /* ============================================================
+   * SIGNATURE SHOT #1 — HERO REVEAL
+   * "Low human-level approach. Building initially partially obscured.
+   *  Foreground passes. Entrance appears. Camera tilts upward.
+   *  Tower is revealed. Short cinematic hold."
+   * ============================================================ */
   {
     id: 'build',
     label: 'THE BUILD',
-    span: 260,
+    span: 280,
     anchor: [-40, 12, -104],
     keys: [
-      k(0.0, [0, 1.9, -2], [0, 4.2, -34]),
-      // V12: ground-level shot of the compound — camera dips to 1.6 m,
-      // human eye height. The boundary wall and gate read at real scale.
-      k(0.12, [-6, 1.6, -14], [-37, 4, -86]),
-      k(0.32, [-10, 4.5, -30], [-38, 14, -100]),
-      k(0.55, [4, 10, -46], [-38, 24, -104]),
-      k(0.78, [18, 16, -56], [-38, 32, -104]),
+      k(0.0, [-2, 1.9, -4], [-10, 4.2, -36]),
+      // Phase 1: ground-level approach — camera at human eye height (1.6m).
+      // The boundary wall and gate are in the midground. Building is hidden
+      // behind the wall. Camera drifts left, creating parallax.
+      k(0.08, [-4, 1.6, -12], [-30, 3, -60]),
+      k(0.16, [-6, 1.5, -20], [-36, 4, -80]),
+      // Phase 2: entrance reveal — camera passes the gate, building entrance
+      // appears. Camera still at eye level. The compound interior is revealed.
+      k(0.25, [-8, 1.6, -28], [-38, 6, -96]),
+      // Phase 3: tower reveal — camera rises as the tower comes into view.
+      // This is the "wow" moment. The tilt-up is dramatic but controlled.
+      k(0.38, [-10, 4, -36], [-38, 16, -104]),
+      k(0.52, [-4, 8, -44], [-38, 26, -104]),
+      // Phase 4: hold + orbit — camera slows down (keyframes clustered) to
+      // let the viewer absorb the full building. Then continues orbiting.
+      k(0.65, [6, 13, -50], [-38, 30, -104]),
+      k(0.78, [16, 16, -54], [-38, 33, -104]),
+      k(0.88, [24, 18, -56], [-40, 34, -104]),
+      // Phase 5: settle — final hold position. Building in left third,
+      // sky in right third. Strong architectural silhouette.
+      k(0.94, [28, 18, -58], [-40, 34, -104]),
       k(1.0, [28, 18, -58], [-40, 34, -104]),
     ],
     blocks: [
@@ -131,11 +151,12 @@ export const beats: Beat[] = [
     anchor: [-40, 16, -104],
     keys: [
       k(0.0, [28, 18, -58], [-40, 34, -104]),
-      k(0.32, [38, 28, -76], [-40, 28, -104]),
-      // V12: mid-orbit descent — the camera dips through 14 m to show the
-      // building's middle floors at eye-catching detail, then rises again
-      k(0.55, [24, 14, -92], [-38, 20, -104]),
-      k(0.78, [8, 10, -116], [-20, 12, -170]),
+      k(0.28, [36, 26, -72], [-40, 28, -104]),
+      // V14: mid-orbit descent with lateral parallax — the camera dips to
+      // 12m to show the building's middle floors, then continues the orbit
+      k(0.5, [22, 14, -88], [-38, 20, -104]),
+      k(0.72, [8, 10, -112], [-24, 14, -160]),
+      k(0.88, [4, 9, -128], [-8, 11, -186]),
       k(1.0, [2, 9, -136], [0, 10, -196]),
     ],
     blocks: [
@@ -176,7 +197,6 @@ export const beats: Beat[] = [
     ],
   },
 
-  // V12: Each service world now has a distinct camera identity.
   // Civil — high establishing, descend to ground level.
   {
     id: 'service-civil',
@@ -185,8 +205,6 @@ export const beats: Beat[] = [
     anchor: [0, 8, -206],
     keys: [
       k(0.0, [0, 7.5, -168], [-48, 8, -206]),
-      // V12: high establishing shot — camera rises to 14 m to show the
-      // structural frame in full, then descends to eye level
       k(0.3, [-4, 14, -180], [-46, 12, -212]),
       k(0.65, [-8, 4, -198], [-44, 5, -220]),
       k(1.0, [0, 3.5, -216], [10, 4, -248]),
@@ -202,7 +220,7 @@ export const beats: Beat[] = [
     ],
   },
 
-  // Residential — eye-level approach, slight rise to show balconies.
+  // Residential — eye-level lateral approach.
   {
     id: 'service-residential',
     label: 'RESIDENTIAL & COMMERCIAL',
@@ -211,8 +229,6 @@ export const beats: Beat[] = [
     keys: [
       k(0.0, [0, 3.5, -216], [10, 4, -248]),
       k(0.3, [6, 2.5, -234], [46, 3, -256]),
-      // V12: rise to show the balcony stack — the building's most
-      // distinctive feature is its layered facade
       k(0.6, [12, 5, -248], [50, 7, -268]),
       k(1.0, [16, 6, -256], [50, 6, -280]),
     ],
@@ -227,7 +243,7 @@ export const beats: Beat[] = [
     ],
   },
 
-  // Infrastructure — high wide shot showing the arch profile, then side approach.
+  // Infrastructure — high wide shot showing the arch profile.
   {
     id: 'service-infrastructure',
     label: 'INFRASTRUCTURE',
@@ -235,7 +251,6 @@ export const beats: Beat[] = [
     anchor: [-26, 6, -300],
     keys: [
       k(0.0, [16, 6, -256], [50, 6, -280]),
-      // V12: high wide shot — the arch reads best from above and to the side
       k(0.28, [-2, 18, -270], [-46, 10, -300]),
       k(0.6, [-8, 6, -290], [-46, 8, -314]),
       k(1.0, [-6, 5, -300], [-48, 6, -324]),
@@ -251,7 +266,7 @@ export const beats: Beat[] = [
     ],
   },
 
-  // Solar — dramatic high angle showing the full field, then descend.
+  // Solar — dramatic high angle, then descend.
   {
     id: 'service-solar',
     label: 'SOLAR & RENEWABLE',
@@ -259,9 +274,6 @@ export const beats: Beat[] = [
     anchor: [28, 4, -360],
     keys: [
       k(0.0, [-6, 5, -300], [-48, 6, -324]),
-      // V12: the highest service-world shot — the solar field reads as a
-      // geometric pattern from above, then the camera descends to show
-      // individual panel detail
       k(0.25, [4, 28, -330], [50, 2, -358]),
       k(0.55, [16, 12, -342], [50, 2, -372]),
       k(1.0, [28, 22, -350], [50, 2, -388]),
@@ -285,8 +297,6 @@ export const beats: Beat[] = [
     anchor: [-46, 6, -412],
     keys: [
       k(0.0, [28, 22, -350], [50, 2, -388]),
-      // V12: fast approach from the solar field, then slow close-up of the
-      // scaffolding — the camera decelerates as it nears the facade
       k(0.35, [-2, 12, -380], [-46, 8, -410]),
       k(0.65, [-12, 5, -392], [-46, 4, -422]),
       k(1.0, [-14, 4, -396], [-48, 5, -432]),
@@ -302,7 +312,7 @@ export const beats: Beat[] = [
     ],
   },
 
-  // Materials — low angle showing truck loading, slight rise.
+  // Materials — low angle showing truck loading.
   {
     id: 'service-materials',
     label: 'BUILDING MATERIALS',
@@ -311,8 +321,6 @@ export const beats: Beat[] = [
     keys: [
       k(0.0, [-14, 4, -396], [-48, 5, -432]),
       k(0.35, [0, 3, -418], [48, 3, -450]),
-      // V12: slight rise to show the warehouse interior — the camera lifts
-      // from truck-bed height to show the full stockpile arrangement
       k(0.65, [6, 5, -428], [50, 5, -462]),
       k(1.0, [10, 6, -434], [50, 5, -468]),
     ],
@@ -351,12 +359,6 @@ export const beats: Beat[] = [
     ],
   },
 
-  // V12 PROCESS CAMERA ARC: the camera descends from 22 m to 3.5 m
-  // during procurement (stage 3), then rises to 18 m during execution
-  // (stage 4). This creates a dramatic "dip and rise" that mirrors the
-  // construction story: materials arrive at ground level, then the
-  // structure rises.
-
   {
     id: 'process-1',
     label: 'REQUIREMENT ANALYSIS',
@@ -384,7 +386,6 @@ export const beats: Beat[] = [
     anchor: [0, 4, -512],
     keys: [
       k(0.0, [-56, 18, -474], [-56, 4, -512]),
-      // V12: camera descends from 18 m to 10 m — approaching the diorama
       k(0.5, [-52, 14, -474], [-52, 3, -518]),
       k(1.0, [-48, 10, -474], [-50, 3, -522]),
     ],
@@ -405,8 +406,6 @@ export const beats: Beat[] = [
     anchor: [0, 4, -522],
     keys: [
       k(0.0, [-48, 10, -474], [-50, 3, -522]),
-      // V12: eye-level descent — the camera drops to 3.5 m to show
-      // materials at human scale. This is the lowest process shot.
       k(0.5, [-44, 5, -474], [-44, 2.5, -528]),
       k(1.0, [-40, 3.5, -474], [-42, 2.5, -532]),
     ],
@@ -420,18 +419,34 @@ export const beats: Beat[] = [
     ],
   },
 
+  /* ============================================================
+   * SIGNATURE SHOT #2 — CONSTRUCTION SCALE
+   * "Camera starts close to materials. Then rises. Crane enters
+   *  composition. Building structure becomes visible. Finish with
+   *  elevated scale reveal."
+   * ============================================================ */
   {
     id: 'process-4',
     label: 'EXECUTION',
-    span: 55,
+    span: 65,
     anchor: [0, 4, -532],
     keys: [
       k(0.0, [-40, 3.5, -474], [-42, 2.5, -532]),
-      // V12: the structure rises — camera lifts from 3.5 m to 16 m as
-      // the miniature building grows. The most dramatic single beat.
-      k(0.3, [-36, 5, -474], [-38, 4, -536]),
-      k(0.65, [-32, 12, -474], [-34, 10, -540]),
-      k(1.0, [-28, 16, -474], [-30, 12, -544]),
+      // Phase 1: close to materials — camera at eye level, looking at
+      // the construction stage. The model fills the frame.
+      k(0.15, [-38, 3.5, -474], [-40, 3, -534]),
+      // Phase 2: structure rises — camera lifts AND drifts laterally.
+      // The lateral movement creates parallax as the structure grows.
+      k(0.35, [-34, 6, -474], [-36, 6, -538]),
+      k(0.55, [-28, 10, -472], [-32, 10, -540]),
+      // Phase 3: crane enters — the camera rises above the structure,
+      // and the crane appears in the composition. The full construction
+      // site is revealed.
+      k(0.75, [-20, 15, -470], [-28, 14, -542]),
+      // Phase 4: elevated reveal — camera settles at high angle.
+      // The full construction process is visible from above.
+      k(0.9, [-14, 18, -468], [-24, 14, -544]),
+      k(1.0, [-10, 18, -468], [-20, 12, -546]),
     ],
     blocks: [
       {
@@ -449,8 +464,12 @@ export const beats: Beat[] = [
     span: 55,
     anchor: [0, 4, -542],
     keys: [
-      k(0.0, [-28, 16, -474], [-30, 12, -544]),
-      k(0.4, [-10, 18, -476], [-8, 8, -548]),
+      k(0.0, [-10, 18, -468], [-20, 12, -546]),
+      // V14: camera descends slightly during the quality scan — from 18m
+      // to 14m — to show the inspection detail at closer range, then rises
+      // back to 18m for the elevated overview
+      k(0.35, [-6, 14, -470], [-14, 8, -548]),
+      k(0.65, [0, 16, -474], [-6, 8, -550]),
       k(1.0, [14, 18, -478], [10, 6, -554]),
     ],
     blocks: [
@@ -474,8 +493,6 @@ export const beats: Beat[] = [
     anchor: [0, 10, -610],
     keys: [
       k(0.0, [14, 18, -478], [10, 6, -554]),
-      // V12: the descent through the material gates — camera drops from
-      // 18 m to 7 m while driving through the gate sequence
       k(0.25, [-4, 10, -548], [0, 7, -590]),
       k(0.5, [0, 7, -580], [0, 7, -620]),
       k(0.75, [0, 6.5, -620], [0, 7, -660]),
@@ -500,9 +517,6 @@ export const beats: Beat[] = [
     anchor: [0, 6, -744],
     keys: [
       k(0.0, [0, 6, -648], [0, 6, -690]),
-      // V12: low approach to the trust building — camera starts at 3.5 m
-      // (the building entrance reads at human scale), then rises to 8 m
-      // for the wide shot with the four standards floating around it
       k(0.3, [-4, 3.5, -688], [-24, 4, -730]),
       k(0.6, [-8, 6, -708], [-34, 8, -748]),
       k(1.0, [-10, 7, -722], [-38, 10, -762]),
@@ -524,9 +538,6 @@ export const beats: Beat[] = [
     anchor: [0, 5, -830],
     keys: [
       k(0.0, [-10, 7, -722], [-38, 10, -762]),
-      // V12: drive through the corridor — camera enters at 5 m (column
-      // height), rises slightly to 7 m at the midpoint for a wider view
-      // of the client names, then settles back to 6 m
       k(0.25, [10, 5, -750], [38, 5, -800]),
       k(0.5, [28, 5, -780], [44, 5, -830]),
       k(0.75, [38, 7, -820], [44, 6, -880]),
@@ -554,9 +565,6 @@ export const beats: Beat[] = [
     mapWindow: [0.3, 0.86],
     keys: [
       k(0.0, [44, 6, -862], [44, 7, -940]),
-      // V12: rising establishing shot — the camera climbs from 6 m to
-      // 34 m, pulling back to reveal the India map on its plinth. The
-      // ascent is the transition from the corridor to the national view.
       k(0.15, [10, 18, -900], [0, 2, -990]),
       k(0.28, [0, 32, -960], [0, 2, -1000]),
       k(0.32, [0, 34, -969], [0, 2, -1000]),
@@ -581,9 +589,6 @@ export const beats: Beat[] = [
     anchor: [0, 20, -1150],
     keys: [
       k(0.0, [0, 12, -1090], [0, 10, -1160]),
-      // V12: closer approach with orbit — the camera drifts from 30 m
-      // away to 18 m, dropping to 6 m to look up at the growing tower.
-      // The low angle makes the future building feel monumental.
       k(0.3, [10, 8, -1078], [0, 22, -1148]),
       k(0.55, [16, 5, -1068], [0, 30, -1150]),
       k(0.78, [8, 7, -1072], [0, 36, -1150]),
@@ -598,20 +603,36 @@ export const beats: Beat[] = [
     ],
   },
 
+  /* ============================================================
+   * SIGNATURE SHOT #3 — FINISHED PROJECT
+   * "Camera approaches finished architecture. Vehicle/landscape
+   *  provides scale. Camera moves laterally. Facade catches
+   *  natural sunlight. End on strong architectural silhouette."
+   * ============================================================ */
   {
     id: 'contact',
     label: 'CONTACT',
-    span: 150,
+    span: 170,
     anchor: [0, 10, -1150],
     keys: [
       k(0.0, [0, 9, -1078], [0, 36, -1150]),
-      // V12: final approach — the camera descends to 3.5 m (human eye)
-      // and pushes in to 14 m from the building. The close, low angle
-      // makes the closing frame feel intimate and grounded.
-      k(0.3, [4, 5, -1090], [0, 28, -1148]),
-      k(0.6, [6, 3.5, -1100], [0, 20, -1150]),
-      k(0.8, [3, 3.5, -1108], [0, 16, -1150]),
-      k(1.0, [0, 3.5, -1114], [0, 14, -1150]),
+      // Phase 1: lateral approach — camera approaches from the right side,
+      // not dead-centre. The building's facade catches sunlight from the left.
+      // This creates a strong architectural silhouette with light and shadow.
+      k(0.15, [8, 6, -1086], [4, 28, -1148]),
+      k(0.3, [14, 4, -1096], [2, 22, -1150]),
+      // Phase 2: lateral drift — camera moves from right to left, creating
+      // parallax across the facade. The building appears to rotate slightly.
+      k(0.5, [10, 3.5, -1104], [0, 18, -1150]),
+      k(0.7, [4, 3.5, -1110], [-2, 15, -1150]),
+      // Phase 3: settle — camera arrives at a strong three-quarter view.
+      // Building in left third, sky in right third. The facade catches
+      // the afternoon sun. Strong architectural silhouette.
+      k(0.85, [0, 3.5, -1114], [-2, 14, -1150]),
+      k(0.95, [-2, 3.5, -1116], [-4, 13, -1150]),
+      // Phase 4: hold — final frame. The camera barely moves. The viewer
+      // absorbs the completed project. Then the contact UI appears.
+      k(1.0, [-2, 3.5, -1116], [-4, 13, -1150]),
     ],
     blocks: [
       {

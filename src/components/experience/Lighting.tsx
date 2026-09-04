@@ -35,7 +35,7 @@ export function Lighting({ quality }: { quality: QualitySettings }) {
   const camera = useThree((state) => state.camera)
   const gl = useThree((state) => state.gl)
   const scene = useThree((state) => state.scene)
-  const shadowExtent = quality.tier === 'low' ? 42 : quality.tier === 'mid' ? 70 : 92
+  const shadowExtent = quality.tier === 'low' ? 42 : quality.tier === 'mid' ? 70 : 88
 
   useEffect(() => {
     if (sun.current) sun.current.target = target
@@ -81,9 +81,9 @@ export function Lighting({ quality }: { quality: QualitySettings }) {
         shadow-camera-right={shadowExtent}
         shadow-camera-top={shadowExtent}
         shadow-camera-bottom={-shadowExtent}
-        shadow-bias={-0.00035}
-        shadow-normalBias={0.045}
-        shadow-radius={quality.tier === 'high' ? 2.4 : 1.6}
+        shadow-bias={-0.0003}
+        shadow-normalBias={0.04}
+        shadow-radius={quality.tier === 'high' ? 2.0 : 1.4}
       />
       <primitive object={target} />
     </>
