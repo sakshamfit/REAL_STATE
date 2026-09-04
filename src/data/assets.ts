@@ -655,7 +655,7 @@ export const ROLE_SLOTS: Record<string, { classes: string[]; fit?: { x: number; 
   'hero-building': { classes: ['architecture-hero'], fit: { x: 29.2, z: 33.1 } },
   'residential-building': { classes: ['architecture-residential'], fit: { x: 22.4, z: 15.0 } },
   warehouse: { classes: ['architecture-warehouse'] },
-  'solar-panel': { classes: ['infrastructure-solar'] },
+  'solar-panel': { classes: ['infrastructure-solar'], fit: { x: 8.87, z: 8.6 } },
 }
 
 const ROLE_FILL_CLASSES = new Set(Object.values(ROLE_SLOTS).flatMap((slot) => slot.classes))

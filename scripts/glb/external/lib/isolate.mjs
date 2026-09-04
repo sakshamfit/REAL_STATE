@@ -127,6 +127,75 @@ function stripBackdrop(candidates) {
 }
 
 /**
+ * Remove a leftover oversized backdrop / presentation grid.
+ *
+ * `stripBackdrop` above requires the flat mesh to sit low and dominate the
+ * scene's own bounds, which stops it deleting real canopies or roofs. This
+ * sweep is the safer cousin for files whose units were scaled up so far that
+ * the studio grid dwarfs everything: a near-2D mesh whose footprint is larger
+ * than the combined footprint of every other mesh is never part of a real
+ * object — nothing real is that flat *and* that dominant.
+ */
+function stripOversizedBackdrop(candidates) {
+  const removed = []
+  // A backdrop plane can lie in any of the three planes (Sketchfab grids often
+  // stand in X/Y), so its "area" is the product of its two largest axes, not
+  // the x-z footprint.
+  const faceArea = (item) => {
+    const [a, b, c] = [...item.bounds.size].sort((x, y) => y - x)
+    return a * b
+  }
+  const othersTotal = (item) =>
+    candidates
+      .filter((other) => other !== item)
+      .reduce((sum, other) => sum + faceArea(other), 0)
+
+  for (const item of candidates) {
+    const [w, h, d] = item.bounds.size
+    const thinnest = Math.min(w, h, d)
+    const thickest = Math.max(w, h, d)
+    // tolerant: `grid_floor` planes are 2-triangle quads, but a real quad roof
+    // would still be vastly smaller than everything else combined
+    if (thinnest > thickest * 0.06) continue
+    if (faceArea(item) < othersTotal(item) * 1.8) continue
+    removed.push(item)
+  }
+  return removed
+}
+
+/**
+ * Remove a leftover presentation grid that is smaller than the subject.
+ *
+ * Signature: ultra-flat (thickness < 1% of its own largest side), nearly free
+ * (under 1% of the scene's triangles), and not the largest thing in the file.
+ * A 2-triangle checker quad sitting under a panel is exactly that; a real
+ * thin object that cheap (a decal sheet, a wire) is not worth keeping either.
+ */
+function stripLeftoverGrid(candidates) {
+  if (candidates.length < 2) return []
+  const totalTriangles = candidates.reduce((sum, item) => sum + item.triangles, 0)
+  const largestArea = Math.max(
+    ...candidates.map((item) => {
+      const [a, b] = [...item.bounds.size].sort((x, y) => y - x)
+      return a * b
+    }),
+  )
+  const removed = []
+  for (const item of candidates) {
+    const [w, h, d] = item.bounds.size
+    const thinnest = Math.min(w, h, d)
+    const thickest = Math.max(w, h, d)
+    const [a, b] = [w, h, d].sort((x, y) => y - x)
+    const area = a * b
+    if (thinnest > thickest * 0.01) continue
+    if (item.triangles * 100 > totalTriangles) continue
+    if (area >= largestArea * 0.5) continue // the subject itself is never "leftover"
+    removed.push(item)
+  }
+  return removed
+}
+
+/**
  * Group mesh nodes into spatially connected clusters.
  *
  * Two parts belong to the same object when their bounding boxes touch or
@@ -249,6 +318,36 @@ export function isolateSubject(doc) {
   if (rig) notes.push(`removed ${rig} camera/light node(s) from the asset's own studio rig`)
 
   let candidates = meshNodes(scene)
+  if (candidates.length < 2) return { notes }
+
+  // Some Sketchfab exports leave a grid/backdrop plane in place after the
+  // studio camera is removed. `stripBackdrop` requires the plane to dominate
+  // the *remaining* scene, which an oversized scale can defeat — a 200-unit
+  // checker grid still dwarfs a model whose units were scaled up. Sweep any
+  // near-2D mesh whose own footprint is larger than everything else's put
+  // together: nothing a real object needs is that flat and that dominant.
+  const oversized = stripOversizedBackdrop(candidates)
+  for (const item of oversized) item.node.dispose()
+  if (oversized.length) {
+    notes.push(
+      `removed ${oversized.length} oversized backdrop/floor plane(s) (${oversized.length} nodes) — leftover presentation grid, the scene supplies its own ground`,
+    )
+    candidates = candidates.filter((item) => !oversized.includes(item))
+  }
+
+  // Grids that are *smaller* than the subject (a 200-unit grid under a
+  // 500-unit panel) escape the dominance test above. The other signature of a
+  // presentation grid is cost: a 2-triangle ultra-flat quad among real
+  // geometry. Sweep those too — a genuinely flat real object that cheap and
+  // that thin does not exist on a construction site.
+  const leftovers = stripLeftoverGrid(candidates)
+  for (const item of leftovers) item.node.dispose()
+  if (leftovers.length) {
+    notes.push(
+      `removed ${leftovers.length} leftover grid/backdrop plane(s) (${leftovers.length} nodes) — presentation floor, the scene supplies its own ground`,
+    )
+    candidates = candidates.filter((item) => !leftovers.includes(item))
+  }
   if (candidates.length < 2) return { notes }
 
   const backdrops = stripBackdrop(candidates)

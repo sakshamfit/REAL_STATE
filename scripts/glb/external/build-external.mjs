@@ -180,6 +180,10 @@ async function processAsset(filename, credits) {
     maxTexture: TEXTURE_BUDGET[spec.category] ?? 1024,
     maxTriangles: spec.maxTriangles,
     triangles: subject.triangles,
+    // developer-supplied correction: some sources export in a unit scale the
+    // auto-measurement cannot distinguish from a genuinely huge object, and
+    // CREDITS.json may carry the truth
+    scale: typeof credit?.scale === 'number' && Number.isFinite(credit.scale) ? credit.scale : null,
   })
 
   fs.mkdirSync(BUILD_DIR, { recursive: true })

@@ -21,14 +21,14 @@
     "author": "Eric Chadwick (Khronos Group), from a public-domain model by Unity Fan",
     "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CarConcept",
     "license": "CC-BY-4.0",
-    "notes": "Complete exterior with shutlines, wheels, tyres, glass, headlights, mirrors, full interior with dashboard and seats. Khronos logos removed from the shipped build is not required \u2014 they are non-copyrightable marks under the model's own licence file."
+    "notes": "Complete exterior with shutlines, wheels, tyres, glass, headlights, mirrors, full interior with dashboard and seats. Khronos logos removed from the shipped build is not required — they are non-copyrightable marks under the model's own licence file."
   },
   "truck-delivery.glb": {
     "title": "Cesium Milk Truck",
     "author": "Cesium",
     "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CesiumMilkTruck",
     "license": "CC-BY-4.0",
-    "notes": "Light delivery truck. Low triangle count, single texture atlas \u2014 cheap enough to instance along the corridor."
+    "notes": "Light delivery truck. Low triangle count, single texture atlas — cheap enough to instance along the corridor."
   },
   "street-lamp-old.glb": {
     "title": "Lantern",
@@ -43,5 +43,40 @@
     "source": "https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/TrafficCone",
     "license": "CC-BY-4.0",
     "notes": "Photoscanned-quality traffic cone with reflective banding. Originally published on Sketchfab under CC BY 4.0."
+  },
+  "jcb_backhoe_loader_3cx_tractor.glb": {
+    "title": "JCB 3CX backhoe loader",
+    "author": "Client-supplied",
+    "source": "client upload — confirm original source",
+    "license": "proprietary-licensed",
+    "notes": "Real JCB 3CX. The GLB ships at ~2x scale (export units); the pipeline's backhoe class re-measures it to real metres. Confirm provenance/licence before public launch."
+  },
+  "apartmen_building.glb": {
+    "title": "Apartment building",
+    "author": "Client-supplied",
+    "source": "client upload — confirm original source",
+    "license": "proprietary-licensed",
+    "notes": "Client provided this file for their own site. Confirm provenance/licence before public launch."
+  },
+  "glass_building_low_poly.glb": {
+    "title": "Glass office building (low poly)",
+    "author": "Client-supplied",
+    "source": "client upload — confirm original source",
+    "license": "proprietary-licensed",
+    "notes": "Client provided this file for their own site. Confirm provenance/licence before public launch."
+  },
+  "big_solar_pannel.glb": {
+    "title": "Big solar panel",
+    "author": "Client-supplied",
+    "source": "client upload — confirm original source",
+    "license": "proprietary-licensed",
+    "notes": "Sketchfab-style scene: leftover presentation grid floor is auto-removed; panel auto-scaled to real metres. Confirm provenance/licence before public launch."
+  },
+  "free_porsche_911_carrera_4s.glb": {
+    "title": "Porsche 911 Carrera 4S",
+    "author": "Client-supplied",
+    "source": "client upload — confirm original source (likely Sketchfab 'free' tier = CC-BY)",
+    "license": "proprietary-licensed",
+    "notes": "Client provided this file for their own site. If downloaded from Sketchfab, replace licence with CC-BY-4.0 and record the author/source URL."
   }
 }

@@ -104,6 +104,24 @@ export const CLASSES = {
     instanced: true,
     substitution: 'replace',
   },
+  'construction-backhoe': {
+    label: 'Backhoe loader (JCB)',
+    category: 'construction',
+    // A real JCB 3CX backhoe loader: 5.6–5.9 m long, ~4.0 m to the top of the
+    // cab / arms, ~2.3–2.5 m wide. The measured box includes the raised
+    // bucket & stabiliser, hence the slightly wider band.
+    length: [4.2, 7.5],
+    width: [2.0, 3.4],
+    height: [2.6, 4.6],
+    target: { axis: 'x', value: 5.8 },
+    orient: 'length-x',
+    ground: 'wheels',
+    profile: { longest: 'length', shortest: 'width' },
+    keepAnimations: false,
+    maxTriangles: 120000,
+    instanced: false,
+    substitution: 'replace',
+  },
   'construction-plant': {
     label: 'Construction plant',
     category: 'construction',
@@ -303,7 +321,11 @@ const RULES = [
   [/\b(suv|crossover|jeep|4x4|4wd)\b|suv/i, 'vehicle-suv'],
   [/truck|lorry|\bvan\b|\bbus\b|tipper|tanker|trailer|pickup|\bute\b/i, 'vehicle-truck'],
   [
-    /excavat|digger|backhoe|\bjcb\b|poclain|earthmover|skid[-_ ]?steer|track[-_ ]?loader|loader|bulldoz|dozer|mixer|roller|compactor|grader|forklift|telehandler|dumper|crane|generator|genset|compressor/i,
+    /\bjcb\b|backhoe[-_ ]?loader|\bbackhoe\b|3cx|poclain/i,
+    'construction-backhoe',
+  ],
+  [
+    /excavat|digger|loader|bulldoz|dozer|mixer|roller|compactor|grader|forklift|telehandler|dumper|crane|generator|genset|compressor/i,
     'construction-plant',
   ],
   [
@@ -314,11 +336,11 @@ const RULES = [
   // Building sub-types first: the flagship tower, the warehouse and the
   // residential/commercial mid-rise each own a distinct scene slot, so a
   // dropped model replaces the right composition instead of every building.
-  [/hero|flagship|office|corporate|headquarters?|skyscraper|high[-_ ]?rise/i, 'architecture-hero'],
+  [/hero|flagship|office|corporate|headquarters?|skyscraper|high[-_ ]?rise|glass[-_ ]?(building|tower|facade|block)|commercial[-_ ]?(tower|building|block)/i, 'architecture-hero'],
   [/warehouse|godown|storehouse|factory|mill|industrial|depot/i, 'architecture-warehouse'],
   [/residential|apartment|\bhouse\b|villa|bungalow|duplex|housing|cottage|commercial|building|facade|hotel|mall/i, 'architecture-residential'],
   [/edifice|monument|memorial|institution/i, 'architecture'],
-  [/\bcar\b|sedan|hatchback|coupe|saloon|rickshaw|scooter|motorbike|taxi|vehicle/i, 'vehicle-car'],
+  [/\bcar\b|sedan|hatchback|coupe|convertible|roadster|saloon|supercar|sports[-_ ]?car|rickshaw|scooter|motorbike|taxi|vehicle|porsche|911|carrera|ferrari|lamborghini|mclaren|bugatti|maserati|bentley|aston|rolls[-_ ]?royce|audi|\bbmw\b|mercedes|\bbenz\b|lexus|volvo|mini[-_ ]?cooper|volkswagen|renault|nissan|toyota|honda|hyundai|kia|maruti|suzuki|mahindra|thar|scorpio|bolero|xuv|creta|swift|i20|baleno|dzire|ertiga|innova|fortuner|nexon|harrier|safari|punch|brezza|wagonr|kwid|duster|hector/i, 'vehicle-car'],
 ]
 
 /**
@@ -361,8 +383,8 @@ export function slugify(filename) {
  * they need the same streaming metadata the procedural registry carries.
  */
 export const CATEGORY_RUNTIME = {
-  vehicle: { scene: ['road', 'environment'], priority: 3, cullDistance: 200, preload: false },
-  construction: { scene: ['construction', 'hero', 'process'], priority: 3, cullDistance: 220, preload: false },
+  vehicle: { scene: ['road', 'environment'], priority: 3, cullDistance: 200, preload: true },
+  construction: { scene: ['construction', 'hero', 'process'], priority: 3, cullDistance: 220, preload: true },
   vegetation: { scene: ['environment', 'hero', 'approach'], priority: 3, cullDistance: 300, preload: false },
   architecture: { scene: ['residential', 'facade', 'services'], priority: 2, cullDistance: 320, preload: false },
   infrastructure: { scene: ['road', 'environment', 'construction'], priority: 3, cullDistance: 200, preload: false },
