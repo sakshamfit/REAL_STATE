@@ -11,6 +11,29 @@ interactive **3D India presence map** at its core.
 * What the site contains, scene by scene: [`docs/SITE-CONTENTS.md`](./docs/SITE-CONTENTS.md)
 * **Give us your real 3D models** (buildings, JCB, cars, solar…): [`docs/MODEL_SLOTS.md`](./docs/MODEL_SLOTS.md)
 
+## Projects section + admin panel
+
+* **Public projects** — `/projects` (linked from the nav and every footer). Fully
+  crawlable listing with filters, and it also appears as a grid inside SKIP 3D mode.
+* **Admin panel** — `/admin`. Passcode: `rudra@2025` (defined in
+  `src/data/projects.ts`). Add / edit / delete / feature project records; changes
+  are stored in the browser (localStorage) and appear instantly on `/projects`
+  and the SKIP-3D grid, including across open tabs. Rows shipped with the build
+  are marked SAMPLE in the panel — replace them with Rudra's verified records.
+  The panel is `noindex`ed and disallowed in `robots.txt`.
+* **Records** live in `src/data/projects.ts` (`seedProjects`); the admin panel is
+  a UI over the same shape, so the public page stays server-rendered with content.
+
+## Indian SEO
+
+* India-targeted metadata in `app/layout.tsx` (geo tags `IN-BR`, Patna/Bettiah
+  keywords, `lang="en-IN"`), Open Graph + Twitter cards with `public/og.jpg`,
+  and JSON-LD `ConstructionBusiness` / `WebSite` schema (phone `+91…`, `areaServed`
+  = all presence states, `inLanguage en-IN`).
+* `/projects` adds its own title/description, `ItemList` + `BreadcrumbList` schema.
+* `sitemap.xml` and `robots.txt` are generated; set **`NEXT_PUBLIC_SITE_URL`** to
+  your production domain at deploy time so canonicals/sitemap carry the real origin.
+
 ---
 
 ## Quick start
