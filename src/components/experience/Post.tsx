@@ -2,19 +2,23 @@
 
 import { useEffect } from 'react'
 import { useThree } from '@react-three/fiber'
-import { EffectComposer, N8AO, ToneMapping } from '@react-three/postprocessing'
-import { ToneMappingMode } from 'postprocessing'
+import { EffectComposer, N8AO, ToneMapping, Vignette } from '@react-three/postprocessing'
+import { ToneMappingMode, BlendFunction } from 'postprocessing'
 import type { QualitySettings } from '@/lib/quality'
 import { DAYLIGHT_EXPOSURE } from './Lighting'
 
 /**
- * Post — restrained tone mapping and ambient occlusion.
+ * Post — tone mapping, ambient occlusion, and photographic finishing.
  *
  * The objective of the AO pass is not dramatic dark outlines; it is that
- * objects read as *embedded* in the ground instead of standing on it. Anything
- * stronger than this starts to look like a video game: a dark halo around every
- * silhouette, black corners in the building reveals, dirty contact edges on the
- * road.
+ * objects read as *embedded* in the ground instead of standing on it.
+ *
+ * V12 additions:
+ *  · Vignette — subtle natural lens vignetting (12 % corner darkening) that
+ *    frames the subject and reads as photographic rather than rendered.
+ *  · Boosted AO — stronger contact shadows (intensity 1.0–1.2) so buildings
+ *    read as sitting on the earth rather than floating above it.
+ *  · Warm dust AO colour is preserved — never pure black.
  *
  * Deliberately conservative:
  *  · warm dust-coloured occlusion, never pure black;
@@ -23,15 +27,6 @@ import { DAYLIGHT_EXPOSURE } from './Lighting'
  *  · half resolution on the mid tier with depth-aware upsampling, so the
  *    upsample cannot bleed occlusion across silhouettes;
  *  · disabled on the low tier, where the contact decals carry grounding.
- *
- * `EffectComposer` forces `gl.toneMapping = NoToneMapping` while mounted (three
- * skips in-material tone mapping when rendering to a target), so the ACES
- * operator is re-applied here as an effect. Exposure still comes from
- * `gl.toneMappingExposure`, which three uploads as a common uniform.
- *
- * The AO pass runs at half resolution on every tier — depth-aware upsampling
- * keeps contact edges clean and the pass costs roughly a quarter of the fill
- * rate it did at full resolution.
  */
 
 /**
@@ -41,7 +36,7 @@ import { DAYLIGHT_EXPOSURE } from './Lighting'
  * crevices, so the darkening under a truck or inside a parapet is a few
  * percent, not a black halo. Black AO was tolerable in the old low-key look;
  * under a bright sun it reads as dirt, so the colour is warm dust and the
- * intensity is roughly two thirds of what it was.
+ * intensity is boosted from V11 for stronger grounding.
  */
 const AO_COLOR = '#332e26'
 
@@ -64,11 +59,13 @@ export function Post({ quality }: { quality: QualitySettings }) {
   return (
     <EffectComposer multisampling={high ? 4 : 0} enableNormalPass={false}>
       <N8AO
-        aoRadius={high ? 1.25 : 1.05}
-        distanceFalloff={0.78}
-        intensity={high ? 0.8 : 0.66}
+        aoRadius={high ? 1.4 : 1.15}
+        distanceFalloff={0.72}
+        // V12: boosted AO intensity for stronger grounding — buildings now
+        // read as embedded in the earth rather than floating above it
+        intensity={high ? 1.15 : 0.9}
         quality={high ? 'medium' : 'low'}
-        aoSamples={high ? 10 : 8}
+        aoSamples={high ? 12 : 8}
         denoiseSamples={high ? 4 : 2}
         denoiseRadius={12}
         color={AO_COLOR}
@@ -77,6 +74,13 @@ export function Post({ quality }: { quality: QualitySettings }) {
         screenSpaceRadius
       />
       <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
+      {/* V12: subtle natural vignette — 12 % corner darkening, soft edge.
+          This is what separates a photograph from a render. */}
+      <Vignette
+        offset={0.35}
+        darkness={high ? 0.35 : 0.28}
+        blendFunction={BlendFunction.NORMAL}
+      />
     </EffectComposer>
   )
 }

@@ -86,5 +86,11 @@ export const FUTURE_BUILDING = { x: 0, z: -1150, width: 30, depth: 30, height: 5
  * Daylight haze. Kept in sync with `Atmosphere` (which is what actually sets
  * `scene.fog`): bright, blue-white, thin enough that the far terrain stays
  * legible instead of turning into a wall of grey.
+ *
+ * V12: density raised from 0.0016 to 0.0022 — this creates visible
+ * atmospheric depth separation between foreground and background without
+ * obscuring the world. Objects at 200 m are softly hazed, at 400 m they
+ * dissolve into the sky. This is what gives real landscapes their sense
+ * of distance.
  */
-export const FOG = { color: '#e0eaf4', density: 0.0016 } as const
+export const FOG = { color: '#e0eaf4', density: 0.0022 } as const
