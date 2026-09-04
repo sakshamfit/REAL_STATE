@@ -6,6 +6,9 @@ import { clamp, flowEase } from './math'
  * All beat keyframes flattened into one continuous camera spline.
  * Centripetal Catmull-Rom keeps the move smooth through every beat boundary —
  * the camera never stops dead, it only slows down on the beats.
+ *
+ * V12: asymmetric easing — the camera accelerates into approach shots
+ * and decelerates into reveals, the way a real camera operator would.
  */
 
 type Keyframe = { at: number; pos: THREE.Vector3; look: THREE.Vector3 }

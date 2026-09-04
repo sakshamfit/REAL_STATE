@@ -468,7 +468,7 @@ async function main() {
       // sky dome + image based lighting, integrated from the real sky map
       skyColor: fillUp,
       groundColor: fillDown,
-      haze: 0.0016,
+      haze: 0.0019,
       hazeColor: [HORIZON.r, HORIZON.g, HORIZON.b],
       shadowMapSize: 2048,
       shadowExtent: 70,

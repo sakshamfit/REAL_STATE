@@ -29,7 +29,10 @@ export function Atmosphere({ quality }: { quality: QualitySettings }) {
 
 function Dust({ quality }: { quality: QualitySettings }) {
   const points = useRef<THREE.Points>(null)
-  const count = Math.max(30, Math.round(quality.dust * 0.22))
+  // V12: doubled dust count for more visible construction atmosphere.
+  // Dust motes catch the light near the ground in the construction stretches
+  // and give the air volume — without them the world reads as vacuum-cleaned.
+  const count = Math.max(60, Math.round(quality.dust * 0.44))
   const bounds = useMemo(() => new THREE.Vector3(150, 30, 150), [])
 
   const { geometry, drift } = useMemo(() => {
@@ -82,13 +85,14 @@ function Dust({ quality }: { quality: QualitySettings }) {
   return (
     <points ref={points} geometry={geometry} frustumCulled={false}>
       <pointsMaterial
-        size={0.05}
+        size={0.06}
         sizeAttenuation
         map={sprite}
         alphaMap={sprite}
         color="#efe6cf"
         transparent
-        opacity={0.13}
+        // V12: slightly higher opacity so dust catches the light more visibly
+        opacity={0.18}
         depthWrite={false}
         blending={THREE.NormalBlending}
       />
